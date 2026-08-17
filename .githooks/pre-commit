@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+dotnet format Diyarak.Platform.All.sln --verify-no-changes --no-restore
