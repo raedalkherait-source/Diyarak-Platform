@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.BuildingBlocks</AssemblyName>
+    <RootNamespace>Diyarak.Platform.BuildingBlocks</RootNamespace>
+    <Description>Application-neutral results, errors, guards, time, and pagination.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+</Project>
