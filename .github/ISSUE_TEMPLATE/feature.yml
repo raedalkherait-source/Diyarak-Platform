@@ -1,0 +1,17 @@
+name: Feature request
+description: Propose a capability with measurable value
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and users affected
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Expected business outcome
+    validations:
+      required: true
