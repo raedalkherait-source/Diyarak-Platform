@@ -1,0 +1,27 @@
+name: Release Foundation Packages
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet restore Diyarak.Platform.Foundation.sln
+      - run: dotnet build Diyarak.Platform.Foundation.sln -c Release --no-restore
+      - run: dotnet test Diyarak.Platform.Foundation.sln -c Release --no-build
+      - run: dotnet pack Diyarak.Platform.Foundation.sln -c Release --no-build -o artifacts/packages -p:PackageVersion=${GITHUB_REF_NAME#v}
+        shell: bash
+      - run: gh release create "$GITHUB_REF_NAME" artifacts/packages/*.*nupkg --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
