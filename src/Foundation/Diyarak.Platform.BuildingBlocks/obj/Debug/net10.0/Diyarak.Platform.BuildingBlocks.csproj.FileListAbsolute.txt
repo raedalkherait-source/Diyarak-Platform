@@ -1,0 +1,13 @@
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\bin\Debug\net10.0\Diyarak.Platform.BuildingBlocks.deps.json
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\bin\Debug\net10.0\Diyarak.Platform.BuildingBlocks.dll
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\bin\Debug\net10.0\Diyarak.Platform.BuildingBlocks.pdb
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\bin\Debug\net10.0\Diyarak.Platform.BuildingBlocks.xml
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\Diyarak.Platform.BuildingBlocks.GeneratedMSBuildEditorConfig.editorconfig
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\Diyarak.Platform.BuildingBlocks.AssemblyInfoInputs.cache
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\Diyarak.Platform.BuildingBlocks.AssemblyInfo.cs
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\Diyarak.Platform.BuildingBlocks.csproj.CoreCompileInputs.cache
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\Diyarak.Platform.BuildingBlocks.dll
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\refint\Diyarak.Platform.BuildingBlocks.dll
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\Diyarak.Platform.BuildingBlocks.xml
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\Diyarak.Platform.BuildingBlocks.pdb
+C:\diyarak\src\Foundation\Diyarak.Platform.BuildingBlocks\obj\Debug\net10.0\ref\Diyarak.Platform.BuildingBlocks.dll
