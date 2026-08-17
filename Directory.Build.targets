@@ -1,0 +1,7 @@
+<Project>
+  <Target Name="ValidateProjectNaming" BeforeTargets="BeforeBuild" Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+    <Error Condition="$([System.String]::Copy('$(MSBuildProjectName)').Contains('Common'))" Text="Project names must not contain Common." />
+    <Error Condition="$([System.String]::Copy('$(MSBuildProjectName)').Contains('Utils'))" Text="Project names must not contain Utils." />
+    <Error Condition="$([System.String]::Copy('$(MSBuildProjectName)').Contains('Helpers'))" Text="Project names must not contain Helpers." />
+  </Target>
+</Project>
