@@ -1,5 +1,5 @@
-using Diyarak.Platform.Persistence.PostgreSql;
 using System.Threading.RateLimiting;
+using Diyarak.Platform.Persistence.PostgreSql;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpLogging;
