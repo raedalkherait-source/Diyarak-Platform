@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.Domain.Primitives</AssemblyName>
+    <RootNamespace>Diyarak.Platform.Domain.Primitives</RootNamespace>
+    <Description>Stable business primitives used across Diyarak.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+</Project>

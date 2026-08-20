@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.SharedKernel</AssemblyName>
+    <RootNamespace>Diyarak.Platform.SharedKernel</RootNamespace>
+    <Description>DDD abstractions and domain foundations.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Diyarak.Platform.Domain.Primitives/Diyarak.Platform.Domain.Primitives.csproj" />
+  </ItemGroup>
+</Project>
