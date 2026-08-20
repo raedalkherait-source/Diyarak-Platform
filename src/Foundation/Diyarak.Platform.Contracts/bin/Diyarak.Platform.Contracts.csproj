@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <AssemblyName>Diyarak.Platform.Contracts</AssemblyName>
-    <RootNamespace>Diyarak.Platform.Contracts</RootNamespace>
-    <Description>Transport-neutral shared contracts.</Description>
-    <IsPackable>true</IsPackable>
-  </PropertyGroup>
-
-</Project>

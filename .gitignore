@@ -36,3 +36,15 @@ coverage/
 # Packages
 *.nupkg
 *.snupkg
+**/bin/
+**/obj/
+.vs/
+TestResults/
+*.user
+*.suo
+**/bin/
+**/obj/
+.vs/
+TestResults/
+*.user
+*.suo
