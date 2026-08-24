@@ -27,4 +27,20 @@ public sealed class UserTests
 
         Assert.Equal(newEmail, user.Email);
     }
+
+    [Fact]
+    public void Change_email_raises_domain_event()
+    {
+        Guid id = Guid.NewGuid();
+        User user = new(id, EmailAddress.Create("old@example.com"));
+        EmailAddress newEmail = EmailAddress.Create("new@example.com");
+
+        user.ChangeEmail(newEmail);
+
+        UserEmailChangedDomainEvent domainEvent =
+            Assert.IsType<UserEmailChangedDomainEvent>(Assert.Single(user.DomainEvents));
+
+        Assert.Equal(id, domainEvent.UserId);
+        Assert.Equal(newEmail, domainEvent.Email);
+    }
 }
