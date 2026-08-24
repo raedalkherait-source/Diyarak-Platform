@@ -15,7 +15,12 @@ public sealed class User : AggregateRoot<Guid>
 
     public void ChangeEmail(EmailAddress email)
     {
-        Email = email ?? throw new ArgumentNullException(nameof(email));
+        ArgumentNullException.ThrowIfNull(email);
+
+        if (Email == email)
+            return;
+
+        Email = email;
         RaiseDomainEvent(new UserEmailChangedDomainEvent(Id, Email));
     }
 }
