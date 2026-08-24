@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.SharedKernel\Diyarak.Platform.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.Domain.Primitives\Diyarak.Platform.Domain.Primitives.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.Identity</AssemblyName>
+    <RootNamespace>Diyarak.Platform.Identity</RootNamespace>
+    <Description>Core identity capabilities for the Diyarak platform.</Description>
+  </PropertyGroup>
+</Project>

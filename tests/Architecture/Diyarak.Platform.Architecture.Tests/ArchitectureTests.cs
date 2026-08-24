@@ -41,6 +41,17 @@ public sealed class ArchitectureTests
             }
     }
 
+    [Fact]
+    public void Core_does_not_reference_modules_integrations_or_hosts()
+    {
+        string[] forbiddenSegments = ["/Modules/", "/Integrations/", "/Hosts/"];
+        foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Core"), "*.csproj", SearchOption.AllDirectories))
+            foreach (string reference in ReadProjectReferences(project))
+            {
+                string normalized = reference.Replace('\\', '/');
+                Assert.DoesNotContain(forbiddenSegments, segment => normalized.Contains(segment, StringComparison.OrdinalIgnoreCase));
+            }
+    }
     private static string[] ReadProjectReferences(string project)
     {
         XDocument document = XDocument.Load(project);
@@ -58,3 +69,6 @@ public sealed class ArchitectureTests
         throw new DirectoryNotFoundException("Repository root was not found.");
     }
 }
+
+
+
