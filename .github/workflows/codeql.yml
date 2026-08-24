@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: csharp
           build-mode: manual
@@ -26,4 +26,4 @@ jobs:
           global-json-file: global.json
       - run: dotnet restore Diyarak.Platform.All.sln
       - run: dotnet build Diyarak.Platform.All.sln -c Release --no-restore
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
