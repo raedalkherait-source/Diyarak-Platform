@@ -54,4 +54,18 @@ public sealed class UserTests
 
         Assert.Empty(user.DomainEvents);
     }
+
+    [Fact]
+    public void Constructor_rejects_empty_id()
+    {
+        EmailAddress email = EmailAddress.Create("user@example.com");
+
+        Assert.Throws<ArgumentException>(() => new User(Guid.Empty, email));
+    }
+
+    [Fact]
+    public void Constructor_rejects_null_email()
+    {
+        Assert.Throws<ArgumentNullException>(() => new User(Guid.NewGuid(), null!));
+    }
 }
