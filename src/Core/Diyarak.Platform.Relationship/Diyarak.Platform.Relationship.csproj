@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.Relationship</AssemblyName>
+    <RootNamespace>Diyarak.Platform.Relationship</RootNamespace>
+    <Description>Core relationship capabilities for the Diyarak platform.</Description>
+  </PropertyGroup>
+</Project>
