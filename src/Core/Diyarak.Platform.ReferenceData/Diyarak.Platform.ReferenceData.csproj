@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.ReferenceData</AssemblyName>
+    <RootNamespace>Diyarak.Platform.ReferenceData</RootNamespace>
+    <Description>Core reference data capabilities for the Diyarak platform.</Description>
+  </PropertyGroup>
+</Project>
