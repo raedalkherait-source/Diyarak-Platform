@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Platform.ReferenceD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Platform.Audit", "src\Core\Diyarak.Platform.Audit\Diyarak.Platform.Audit.csproj", "{795ED3F7-6209-4B3A-AB9E-DE0E5A33FDCE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Platform.Media", "src\Core\Diyarak.Platform.Media\Diyarak.Platform.Media.csproj", "{E2785F22-5274-4994-A0F5-1355D0EE176F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -249,6 +251,18 @@ Global
 		{795ED3F7-6209-4B3A-AB9E-DE0E5A33FDCE}.Release|x64.Build.0 = Release|Any CPU
 		{795ED3F7-6209-4B3A-AB9E-DE0E5A33FDCE}.Release|x86.ActiveCfg = Release|Any CPU
 		{795ED3F7-6209-4B3A-AB9E-DE0E5A33FDCE}.Release|x86.Build.0 = Release|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Debug|x64.Build.0 = Debug|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Debug|x86.Build.0 = Debug|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Release|x64.ActiveCfg = Release|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Release|x64.Build.0 = Release|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Release|x86.ActiveCfg = Release|Any CPU
+		{E2785F22-5274-4994-A0F5-1355D0EE176F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -265,5 +279,6 @@ Global
 		{7B25BA89-608D-417F-ABB9-F400D85F5D3F} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 		{D486029D-DC51-4F0C-9EA6-B662F08AA822} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 		{795ED3F7-6209-4B3A-AB9E-DE0E5A33FDCE} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
+		{E2785F22-5274-4994-A0F5-1355D0EE176F} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 	EndGlobalSection
 EndGlobal
