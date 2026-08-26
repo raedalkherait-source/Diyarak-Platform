@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.Search</AssemblyName>
+    <RootNamespace>Diyarak.Platform.Search</RootNamespace>
+    <Description>Core search capabilities for the Diyarak platform.</Description>
+  </PropertyGroup>
+</Project>

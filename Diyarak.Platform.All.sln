@@ -53,6 +53,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Platform.Relationsh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Platform.Listing", "src\Core\Diyarak.Platform.Listing\Diyarak.Platform.Listing.csproj", "{BD5C4E7D-0CD3-4577-BDF9-642978C85FBF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Platform.Search", "src\Core\Diyarak.Platform.Search\Diyarak.Platform.Search.csproj", "{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -291,6 +293,18 @@ Global
 		{BD5C4E7D-0CD3-4577-BDF9-642978C85FBF}.Release|x64.Build.0 = Release|Any CPU
 		{BD5C4E7D-0CD3-4577-BDF9-642978C85FBF}.Release|x86.ActiveCfg = Release|Any CPU
 		{BD5C4E7D-0CD3-4577-BDF9-642978C85FBF}.Release|x86.Build.0 = Release|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Debug|x64.Build.0 = Debug|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Debug|x86.Build.0 = Debug|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Release|x64.ActiveCfg = Release|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Release|x64.Build.0 = Release|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Release|x86.ActiveCfg = Release|Any CPU
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -310,5 +324,6 @@ Global
 		{E2785F22-5274-4994-A0F5-1355D0EE176F} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 		{4C9D8C78-C41F-470B-8DDC-984DA1EC826C} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 		{BD5C4E7D-0CD3-4577-BDF9-642978C85FBF} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
+		{DE46E1CD-07AF-44FF-ACD1-9AA6D61E2DCF} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 	EndGlobalSection
 EndGlobal
