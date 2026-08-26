@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.Authorization</AssemblyName>
+    <RootNamespace>Diyarak.Platform.Authorization</RootNamespace>
+    <Description>Core authorization capabilities for the Diyarak platform.</Description>
+  </PropertyGroup>
+</Project>
