@@ -68,4 +68,12 @@ public sealed class UserTests
     {
         Assert.Throws<ArgumentNullException>(() => new User(Guid.NewGuid(), null!));
     }
+
+    [Fact]
+    public void Change_email_rejects_null()
+    {
+        User user = new(Guid.NewGuid(), EmailAddress.Create("user@example.com"));
+
+        Assert.Throws<ArgumentNullException>(() => user.ChangeEmail(null!));
+    }
 }
