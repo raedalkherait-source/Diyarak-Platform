@@ -16,7 +16,7 @@
     <NuGetAuditMode>all</NuGetAuditMode>
     <NuGetAuditLevel>moderate</NuGetAuditLevel>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/diyarak/diyarak-platform</RepositoryUrl>
+    <RepositoryUrl>https://github.com/raedalkherait-source/Diyarak-Platform</RepositoryUrl>
     <Authors>Diyarak Engineering</Authors>
     <Company>Diyarak</Company>
     <Copyright>Copyright © 2026 Diyarak</Copyright>
