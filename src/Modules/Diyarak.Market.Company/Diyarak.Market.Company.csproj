@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Market.Company</AssemblyName>
+    <RootNamespace>Diyarak.Market.Company</RootNamespace>
+    <Description>Company module for Diyarak Market.</Description>
+  </PropertyGroup>
+</Project>
