@@ -1,8 +1,8 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 127
-- C# source files: 56
-- Projects: 9
+- Files (excluding inventory and manifest): 159
+- C# source files: 65
+- Projects: 23
 
 ## Files
 
@@ -32,6 +32,8 @@
 - `LICENSE`
 - `Makefile`
 - `NuGet.config`
+- `PATCH-v1.0.1.md`
+- `PATCH-v1.0.2.md`
 - `README.md`
 - `ROADMAP.md`
 - `SECURITY.md`
@@ -39,6 +41,7 @@
 - `VALIDATION.md`
 - `compose.yaml`
 - `coverage.runsettings`
+- `docker/.env`
 - `docker/.env.example`
 - `docs/README.md`
 - `docs/adr/ADR-0001.md`
@@ -54,6 +57,7 @@
 - `docs/standards/coding.md`
 - `docs/standards/security.md`
 - `docs/standards/testing.md`
+- `dotnet-tools.json`
 - `global.json`
 - `samples/README.md`
 - `scripts/bootstrap.ps1`
@@ -61,6 +65,17 @@
 - `scripts/test-coverage.sh`
 - `scripts/verify.ps1`
 - `scripts/verify.sh`
+- `src/Core/Diyarak.Platform.Audit/Diyarak.Platform.Audit.csproj`
+- `src/Core/Diyarak.Platform.Authorization/Diyarak.Platform.Authorization.csproj`
+- `src/Core/Diyarak.Platform.Identity/Diyarak.Platform.Identity.csproj`
+- `src/Core/Diyarak.Platform.Identity/User.cs`
+- `src/Core/Diyarak.Platform.Identity/UserEmailChangedDomainEvent.cs`
+- `src/Core/Diyarak.Platform.Listing/Diyarak.Platform.Listing.csproj`
+- `src/Core/Diyarak.Platform.Media/Diyarak.Platform.Media.csproj`
+- `src/Core/Diyarak.Platform.Notification/Diyarak.Platform.Notification.csproj`
+- `src/Core/Diyarak.Platform.ReferenceData/Diyarak.Platform.ReferenceData.csproj`
+- `src/Core/Diyarak.Platform.Relationship/Diyarak.Platform.Relationship.csproj`
+- `src/Core/Diyarak.Platform.Search/Diyarak.Platform.Search.csproj`
 - `src/Core/README.md`
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/Diyarak.Platform.BuildingBlocks.csproj`
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/Error.cs`
@@ -104,12 +119,29 @@
 - `src/Foundation/Diyarak.Platform.SharedKernel/ISpecification.cs`
 - `src/Foundation/Diyarak.Platform.SharedKernel/Specification.cs`
 - `src/Foundation/Diyarak.Platform.SharedKernel/ValueObject.cs`
+- `src/Hosts/Diyarak.Api/Diyarak.Api.csproj`
+- `src/Hosts/Diyarak.Api/Diyarak.Api.http`
+- `src/Hosts/Diyarak.Api/Program.cs`
+- `src/Hosts/Diyarak.Api/Properties/launchSettings.json`
+- `src/Hosts/Diyarak.Api/appsettings.Development.json`
+- `src/Hosts/Diyarak.Api/appsettings.Production.json`
+- `src/Hosts/Diyarak.Api/appsettings.json`
 - `src/Hosts/README.md`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Diyarak.Platform.Persistence.PostgreSql.csproj`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.Designer.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/PlatformDbContextModelSnapshot.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PersistenceServiceCollectionExtensions.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PlatformDbContext.cs`
 - `src/Integrations/README.md`
+- `src/Modules/Diyarak.Market.Company/Diyarak.Market.Company.csproj`
+- `src/Modules/Diyarak.Market.Property/Diyarak.Market.Property.csproj`
 - `src/Modules/README.md`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/ArchitectureTests.cs`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/Diyarak.Platform.Architecture.Tests.csproj`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/GlobalUsings.cs`
+- `tests/Core/Diyarak.Platform.Identity.Tests/Diyarak.Platform.Identity.Tests.csproj`
+- `tests/Core/Diyarak.Platform.Identity.Tests/UserTests.cs`
 - `tests/Core/README.md`
 - `tests/Foundation/Diyarak.Platform.BuildingBlocks.Tests/ClockTests.cs`
 - `tests/Foundation/Diyarak.Platform.BuildingBlocks.Tests/Diyarak.Platform.BuildingBlocks.Tests.csproj`
