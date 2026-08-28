@@ -9,17 +9,23 @@ This area records concrete Diyarak Market product and domain requirements before
 - Public and administrative APIs.
 - Search and listings.
 
+## Requirements
+
+- `property-listing-requirements.md` records the currently confirmed Property and Listing concepts derived from the supplied Market reference flow.
+
 ## Architectural constraint
 
 A property is a persistent domain asset; a listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`.
 
 ## Current implementation status
 
-- `Diyarak.Market.Property` is a foundation scaffold.
-- `Diyarak.Market.Company` is a foundation scaffold.
-- Concrete property and company domain behavior is not yet defined.
+- `Diyarak.Market.Property` has an initial domain baseline with aggregate identity and supported top-level property categories.
+- `Diyarak.Market.Property.Tests` verifies aggregate identity, category assignment, and constructor invariants.
+- Additional Property characteristics documented in `property-listing-requirements.md` are not yet implemented.
+- `Diyarak.Market.Company` remains a foundation scaffold pending concrete company requirements.
 - Public and administrative endpoint requirements are not yet defined.
 - Authentication and authorization requirements for administrative APIs are not yet defined.
-- Search and listing behavior is not yet defined.
+- Listing lifecycle and publication workflow are not yet defined.
+- Search behavior is not yet defined.
 
 Implementation should not introduce speculative domain fields, lifecycle states, API contracts, or dependencies before concrete requirements are documented.

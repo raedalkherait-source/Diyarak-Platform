@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.SharedKernel\Diyarak.Platform.SharedKernel.csproj" />
+  </ItemGroup>
   <PropertyGroup>
     <AssemblyName>Diyarak.Market.Property</AssemblyName>
     <RootNamespace>Diyarak.Market.Property</RootNamespace>

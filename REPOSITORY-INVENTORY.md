@@ -1,21 +1,21 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 160
-- C# source files: 65
-- Projects: 23
+- Files (excluding inventory and manifest): 165
+- C# source files: 68
+- Projects: 24
 
 ## Files
 
-- `.devcontainer/Dockerfile`
 - `.devcontainer/devcontainer.json`
+- `.devcontainer/Dockerfile`
 - `.editorconfig`
 - `.gitattributes`
 - `.githooks/pre-commit`
 - `.github/CODEOWNERS`
+- `.github/dependabot.yml`
 - `.github/ISSUE_TEMPLATE/bug.yml`
 - `.github/ISSUE_TEMPLATE/feature.yml`
 - `.github/PULL_REQUEST_TEMPLATE.md`
-- `.github/dependabot.yml`
 - `.github/workflows/ci.yml`
 - `.github/workflows/codeql.yml`
 - `.github/workflows/dependency-review.yml`
@@ -23,27 +23,16 @@
 - `.gitignore`
 - `CHANGELOG.md`
 - `CODE_OF_CONDUCT.md`
+- `compose.yaml`
 - `CONTRIBUTING.md`
+- `coverage.runsettings`
 - `Directory.Build.props`
 - `Directory.Build.targets`
 - `Directory.Packages.props`
 - `Diyarak.Platform.All.sln`
 - `Diyarak.Platform.Foundation.sln`
-- `LICENSE`
-- `Makefile`
-- `NuGet.config`
-- `PATCH-v1.0.1.md`
-- `PATCH-v1.0.2.md`
-- `README.md`
-- `ROADMAP.md`
-- `SECURITY.md`
-- `SUPPORT.md`
-- `VALIDATION.md`
-- `compose.yaml`
-- `coverage.runsettings`
 - `docker/.env`
 - `docker/.env.example`
-- `docs/README.md`
 - `docs/adr/ADR-0001.md`
 - `docs/adr/ADR-0002.md`
 - `docs/adr/ADR-0003.md`
@@ -52,7 +41,9 @@
 - `docs/adr/ADR-0006.md`
 - `docs/architecture/dependency-rules.md`
 - `docs/architecture/overview.md`
+- `docs/market/property-listing-requirements.md`
 - `docs/market/README.md`
+- `docs/README.md`
 - `docs/release-checklist.md`
 - `docs/runbooks/development.md`
 - `docs/standards/coding.md`
@@ -60,12 +51,20 @@
 - `docs/standards/testing.md`
 - `dotnet-tools.json`
 - `global.json`
+- `LICENSE`
+- `Makefile`
+- `NuGet.config`
+- `PATCH-v1.0.1.md`
+- `PATCH-v1.0.2.md`
+- `README.md`
+- `ROADMAP.md`
 - `samples/README.md`
 - `scripts/bootstrap.ps1`
 - `scripts/bootstrap.sh`
 - `scripts/test-coverage.sh`
 - `scripts/verify.ps1`
 - `scripts/verify.sh`
+- `SECURITY.md`
 - `src/Core/Diyarak.Platform.Audit/Diyarak.Platform.Audit.csproj`
 - `src/Core/Diyarak.Platform.Authorization/Diyarak.Platform.Authorization.csproj`
 - `src/Core/Diyarak.Platform.Identity/Diyarak.Platform.Identity.csproj`
@@ -83,8 +82,8 @@
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/ErrorType.cs`
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/Guard.cs`
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/IClock.cs`
-- `src/Foundation/Diyarak.Platform.BuildingBlocks/PageRequest.cs`
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/PagedResult.cs`
+- `src/Foundation/Diyarak.Platform.BuildingBlocks/PageRequest.cs`
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/Result.cs`
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/ResultOfT.cs`
 - `src/Foundation/Diyarak.Platform.BuildingBlocks/SystemClock.cs`
@@ -120,24 +119,27 @@
 - `src/Foundation/Diyarak.Platform.SharedKernel/ISpecification.cs`
 - `src/Foundation/Diyarak.Platform.SharedKernel/Specification.cs`
 - `src/Foundation/Diyarak.Platform.SharedKernel/ValueObject.cs`
+- `src/Hosts/Diyarak.Api/appsettings.Development.json`
+- `src/Hosts/Diyarak.Api/appsettings.json`
+- `src/Hosts/Diyarak.Api/appsettings.Production.json`
 - `src/Hosts/Diyarak.Api/Diyarak.Api.csproj`
 - `src/Hosts/Diyarak.Api/Diyarak.Api.http`
 - `src/Hosts/Diyarak.Api/Program.cs`
 - `src/Hosts/Diyarak.Api/Properties/launchSettings.json`
-- `src/Hosts/Diyarak.Api/appsettings.Development.json`
-- `src/Hosts/Diyarak.Api/appsettings.Production.json`
-- `src/Hosts/Diyarak.Api/appsettings.json`
 - `src/Hosts/README.md`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Diyarak.Platform.Persistence.PostgreSql.csproj`
-- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.Designer.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.Designer.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/PlatformDbContextModelSnapshot.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PersistenceServiceCollectionExtensions.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PlatformDbContext.cs`
 - `src/Integrations/README.md`
 - `src/Modules/Diyarak.Market.Company/Diyarak.Market.Company.csproj`
 - `src/Modules/Diyarak.Market.Property/Diyarak.Market.Property.csproj`
+- `src/Modules/Diyarak.Market.Property/Property.cs`
+- `src/Modules/Diyarak.Market.Property/PropertyCategory.cs`
 - `src/Modules/README.md`
+- `SUPPORT.md`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/ArchitectureTests.cs`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/Diyarak.Platform.Architecture.Tests.csproj`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/GlobalUsings.cs`
@@ -164,5 +166,8 @@
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/EntityTests.cs`
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/GlobalUsings.cs`
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/SpecificationTests.cs`
+- `tests/Modules/Diyarak.Market.Property.Tests/Diyarak.Market.Property.Tests.csproj`
+- `tests/Modules/Diyarak.Market.Property.Tests/PropertyTests.cs`
 - `tests/Modules/README.md`
 - `tools/README.md`
+- `VALIDATION.md`

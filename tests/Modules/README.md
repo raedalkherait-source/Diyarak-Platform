@@ -4,7 +4,7 @@ This directory contains tests for implemented business module behavior.
 
 Current Diyarak Market modules:
 
-- `Diyarak.Market.Property` — foundation scaffold; no tests yet.
+- `Diyarak.Market.Property` — initial domain baseline implemented and covered by tests.
 - `Diyarak.Market.Company` — foundation scaffold; no tests yet.
 
 Empty test projects are not created. Tests are added when concrete domain behavior is implemented.
