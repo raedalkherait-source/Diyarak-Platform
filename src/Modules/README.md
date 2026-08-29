@@ -4,7 +4,7 @@ This directory contains business modules built on top of Platform Foundation and
 
 Current Diyarak Market 1.0 structure:
 
-- `Diyarak.Market.Property` — property module with an initial domain baseline covering aggregate identity, supported top-level property categories, required property address, optional geographic location, and optional living and usable areas.
+- `Diyarak.Market.Property` — property module with an initial domain baseline covering aggregate identity, supported top-level property categories, required property address, optional geographic location, optional living and usable areas, and optional room counts.
 - `Diyarak.Market.Company` — company module foundation.
 
 Additional Property behavior, Company domain models, APIs, and dependencies are added only when supported by concrete requirements.

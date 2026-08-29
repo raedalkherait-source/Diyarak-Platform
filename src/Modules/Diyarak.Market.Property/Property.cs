@@ -10,7 +10,10 @@ public sealed class Property : AggregateRoot<Guid>
         PropertyCategory category,
         PropertyAddress address,
         Area? livingArea = null,
-        Area? usableArea = null)
+        Area? usableArea = null,
+        decimal? totalRooms = null,
+        int? bedroomCount = null,
+        int? bathroomCount = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
@@ -18,10 +21,22 @@ public sealed class Property : AggregateRoot<Guid>
 
         ArgumentNullException.ThrowIfNull(address);
 
+        if (totalRooms is < 0m)
+            throw new ArgumentOutOfRangeException(nameof(totalRooms));
+
+        if (bedroomCount is < 0)
+            throw new ArgumentOutOfRangeException(nameof(bedroomCount));
+
+        if (bathroomCount is < 0)
+            throw new ArgumentOutOfRangeException(nameof(bathroomCount));
+
         Category = category;
         Address = address;
         LivingArea = livingArea;
         UsableArea = usableArea;
+        TotalRooms = totalRooms;
+        BedroomCount = bedroomCount;
+        BathroomCount = bathroomCount;
     }
 
     public PropertyCategory Category { get; }
@@ -31,4 +46,10 @@ public sealed class Property : AggregateRoot<Guid>
     public Area? LivingArea { get; }
 
     public Area? UsableArea { get; }
+
+    public decimal? TotalRooms { get; }
+
+    public int? BedroomCount { get; }
+
+    public int? BathroomCount { get; }
 }
