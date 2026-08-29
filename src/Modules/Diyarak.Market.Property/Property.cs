@@ -1,3 +1,4 @@
+using Diyarak.Platform.Domain.Primitives;
 using Diyarak.Platform.SharedKernel;
 
 namespace Diyarak.Market.Property;
@@ -7,7 +8,9 @@ public sealed class Property : AggregateRoot<Guid>
     public Property(
         Guid id,
         PropertyCategory category,
-        PropertyAddress address)
+        PropertyAddress address,
+        Area? livingArea = null,
+        Area? usableArea = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
@@ -17,9 +20,15 @@ public sealed class Property : AggregateRoot<Guid>
 
         Category = category;
         Address = address;
+        LivingArea = livingArea;
+        UsableArea = usableArea;
     }
 
     public PropertyCategory Category { get; }
 
     public PropertyAddress Address { get; }
+
+    public Area? LivingArea { get; }
+
+    public Area? UsableArea { get; }
 }

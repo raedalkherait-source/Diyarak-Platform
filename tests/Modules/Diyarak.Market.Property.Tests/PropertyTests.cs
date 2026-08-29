@@ -1,3 +1,4 @@
+using Diyarak.Platform.Domain.Primitives;
 using Xunit;
 
 namespace Diyarak.Market.Property.Tests;
@@ -15,6 +16,25 @@ public sealed class PropertyTests
         Assert.Equal(id, property.Id);
         Assert.Equal(PropertyCategory.Apartment, property.Category);
         Assert.Equal(address, property.Address);
+        Assert.Null(property.LivingArea);
+        Assert.Null(property.UsableArea);
+    }
+
+    [Fact]
+    public void Constructor_sets_optional_areas()
+    {
+        var livingArea = new Area(120m, AreaUnit.SquareMeter);
+        var usableArea = new Area(145m, AreaUnit.SquareMeter);
+
+        var property = new Property(
+            Guid.NewGuid(),
+            PropertyCategory.House,
+            CreateAddress(),
+            livingArea,
+            usableArea);
+
+        Assert.Equal(livingArea, property.LivingArea);
+        Assert.Equal(usableArea, property.UsableArea);
     }
 
     [Fact]

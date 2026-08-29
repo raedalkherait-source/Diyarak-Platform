@@ -19,9 +19,10 @@ A property is a persistent domain asset; a listing is a market publication with 
 
 ## Current implementation status
 
-- `Diyarak.Market.Property` has an initial domain baseline with aggregate identity, supported top-level property categories, and a required property address.
+- `Diyarak.Market.Property` has an initial domain baseline with aggregate identity, supported top-level property categories, a required property address, and optional living and usable areas.
 - `PropertyAddress` captures street, house number, postal code, city, and an optional geographic location using the shared `GeoCoordinate` primitive.
-- `Diyarak.Market.Property.Tests` verifies aggregate invariants, address validation and equality, and geographic-location assignment.
+- Living and usable areas use the shared `Area` primitive and remain optional because they do not apply to every property category.
+- `Diyarak.Market.Property.Tests` verifies aggregate invariants, address validation and equality, geographic-location assignment, and optional area assignment.
 - Additional Property characteristics documented in `property-listing-requirements.md` are not yet implemented.
 - `Diyarak.Market.Company` remains a foundation scaffold pending concrete company requirements.
 - Public and administrative endpoint requirements are not yet defined.

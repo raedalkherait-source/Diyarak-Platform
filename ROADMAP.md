@@ -7,7 +7,7 @@
    - Status: structure complete. Identity has an implemented domain baseline; remaining capabilities are foundation scaffolds pending concrete requirements.
 
 3. **Diyarak Market 1.0** — property and company modules, public/admin APIs, search and listings.
-   - Status: in progress. Property has an initial domain baseline covering aggregate identity, supported top-level categories, required property address, and optional geographic location; Company remains a foundation scaffold. API, listing, search, and additional market behavior remain pending concrete requirements.
+   - Status: in progress. Property has an initial domain baseline covering aggregate identity, supported top-level categories, required property address, optional geographic location, and optional living and usable areas; Company remains a foundation scaffold. API, listing, search, and additional market behavior remain pending concrete requirements.
 
 4. **Sector Expansion** — services, materials, equipment, opportunities.
    - Status: not started.
