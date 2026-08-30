@@ -13,7 +13,8 @@ public sealed class Property : AggregateRoot<Guid>
         Area? usableArea = null,
         decimal? totalRooms = null,
         int? bedroomCount = null,
-        int? bathroomCount = null)
+        int? bathroomCount = null,
+        FurnishingQuality? furnishingQuality = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
@@ -30,6 +31,9 @@ public sealed class Property : AggregateRoot<Guid>
         if (bathroomCount is < 0)
             throw new ArgumentOutOfRangeException(nameof(bathroomCount));
 
+        if (furnishingQuality is { } quality && !Enum.IsDefined(quality))
+            throw new ArgumentOutOfRangeException(nameof(furnishingQuality), furnishingQuality, "Unsupported furnishing quality.");
+
         Category = category;
         Address = address;
         LivingArea = livingArea;
@@ -37,6 +41,7 @@ public sealed class Property : AggregateRoot<Guid>
         TotalRooms = totalRooms;
         BedroomCount = bedroomCount;
         BathroomCount = bathroomCount;
+        FurnishingQuality = furnishingQuality;
     }
 
     public PropertyCategory Category { get; }
@@ -52,4 +57,6 @@ public sealed class Property : AggregateRoot<Guid>
     public int? BedroomCount { get; }
 
     public int? BathroomCount { get; }
+
+    public FurnishingQuality? FurnishingQuality { get; }
 }

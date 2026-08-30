@@ -1,7 +1,7 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 167
-- C# source files: 70
+- Files (excluding inventory and manifest): 168
+- C# source files: 71
 - Projects: 24
 
 ## Files
@@ -136,6 +136,7 @@
 - `src/Integrations/README.md`
 - `src/Modules/Diyarak.Market.Company/Diyarak.Market.Company.csproj`
 - `src/Modules/Diyarak.Market.Property/Diyarak.Market.Property.csproj`
+- `src/Modules/Diyarak.Market.Property/FurnishingQuality.cs`
 - `src/Modules/Diyarak.Market.Property/Property.cs`
 - `src/Modules/Diyarak.Market.Property/PropertyAddress.cs`
 - `src/Modules/Diyarak.Market.Property/PropertyCategory.cs`

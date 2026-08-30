@@ -21,6 +21,7 @@ public sealed class PropertyTests
         Assert.Null(property.TotalRooms);
         Assert.Null(property.BedroomCount);
         Assert.Null(property.BathroomCount);
+        Assert.Null(property.FurnishingQuality);
     }
 
     [Fact]
@@ -57,6 +58,18 @@ public sealed class PropertyTests
     }
 
     [Fact]
+    public void Constructor_sets_optional_furnishing_quality()
+    {
+        var property = new Property(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            CreateAddress(),
+            furnishingQuality: FurnishingQuality.Luxury);
+
+        Assert.Equal(FurnishingQuality.Luxury, property.FurnishingQuality);
+    }
+
+    [Fact]
     public void Constructor_rejects_empty_id()
     {
         Assert.Throws<ArgumentException>(
@@ -76,7 +89,6 @@ public sealed class PropertyTests
         Assert.Throws<ArgumentNullException>(
             () => new Property(Guid.NewGuid(), PropertyCategory.Apartment, null!));
     }
-
 
     [Fact]
     public void Constructor_rejects_negative_room_counts()
@@ -102,6 +114,18 @@ public sealed class PropertyTests
                 CreateAddress(),
                 bathroomCount: -1));
     }
+
+    [Fact]
+    public void Constructor_rejects_invalid_furnishing_quality()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new Property(
+                Guid.NewGuid(),
+                PropertyCategory.Apartment,
+                CreateAddress(),
+                furnishingQuality: (FurnishingQuality)0));
+    }
+
     private static PropertyAddress CreateAddress() =>
         new("Example Street", "12A", "12345", "Example City");
 }
