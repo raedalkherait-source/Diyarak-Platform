@@ -14,7 +14,8 @@ public sealed class Property : AggregateRoot<Guid>
         decimal? totalRooms = null,
         int? bedroomCount = null,
         int? bathroomCount = null,
-        FurnishingQuality? furnishingQuality = null)
+        FurnishingQuality? furnishingQuality = null,
+        IEnumerable<PropertyFeature>? features = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
@@ -34,6 +35,16 @@ public sealed class Property : AggregateRoot<Guid>
         if (furnishingQuality is { } quality && !Enum.IsDefined(quality))
             throw new ArgumentOutOfRangeException(nameof(furnishingQuality), furnishingQuality, "Unsupported furnishing quality.");
 
+        HashSet<PropertyFeature> featureSet = features is null
+            ? []
+            : [.. features];
+
+        foreach (PropertyFeature feature in featureSet)
+        {
+            if (!Enum.IsDefined(feature))
+                throw new ArgumentOutOfRangeException(nameof(features), feature, "Unsupported property feature.");
+        }
+
         Category = category;
         Address = address;
         LivingArea = livingArea;
@@ -42,6 +53,7 @@ public sealed class Property : AggregateRoot<Guid>
         BedroomCount = bedroomCount;
         BathroomCount = bathroomCount;
         FurnishingQuality = furnishingQuality;
+        Features = featureSet.ToArray();
     }
 
     public PropertyCategory Category { get; }
@@ -59,4 +71,6 @@ public sealed class Property : AggregateRoot<Guid>
     public int? BathroomCount { get; }
 
     public FurnishingQuality? FurnishingQuality { get; }
+
+    public IReadOnlyCollection<PropertyFeature> Features { get; }
 }

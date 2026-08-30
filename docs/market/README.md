@@ -19,12 +19,13 @@ A property is a persistent domain asset; a listing is a market publication with 
 
 ## Current implementation status
 
-- `Diyarak.Market.Property` has an initial domain baseline with aggregate identity, supported top-level property categories, a required property address, optional living and usable areas, optional room counts, and optional furnishing quality.
+- `Diyarak.Market.Property` has an initial domain baseline with aggregate identity, supported top-level property categories, a required property address, optional living and usable areas, optional room counts, optional furnishing quality, and optional property features.
 - `PropertyAddress` captures street, house number, postal code, city, and an optional geographic location using the shared `GeoCoordinate` primitive.
 - Living and usable areas use the shared `Area` primitive and remain optional because they do not apply to every property category.
 - Total rooms, bedroom count, and bathroom count are optional and reject negative values.
 - Furnishing quality is optional and supports the confirmed values `Simple`, `Normal`, `Upscale`, and `Luxury`.
-- `Diyarak.Market.Property.Tests` verifies aggregate invariants, address validation and equality, geographic-location assignment, optional area assignment, room-count validation, and furnishing-quality validation.
+- Property features are optional, de-duplicated, and limited to the currently confirmed feature set.
+- `Diyarak.Market.Property.Tests` verifies aggregate invariants, address validation and equality, geographic-location assignment, optional area assignment, room-count validation, furnishing-quality validation, and property-feature validation.
 - Additional Property characteristics documented in `property-listing-requirements.md` are not yet implemented.
 - `Diyarak.Market.Company` remains a foundation scaffold pending concrete company requirements.
 - Public and administrative endpoint requirements are not yet defined.

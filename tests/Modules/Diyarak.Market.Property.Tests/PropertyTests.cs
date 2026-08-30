@@ -22,6 +22,7 @@ public sealed class PropertyTests
         Assert.Null(property.BedroomCount);
         Assert.Null(property.BathroomCount);
         Assert.Null(property.FurnishingQuality);
+        Assert.Empty(property.Features);
     }
 
     [Fact]
@@ -67,6 +68,25 @@ public sealed class PropertyTests
             furnishingQuality: FurnishingQuality.Luxury);
 
         Assert.Equal(FurnishingQuality.Luxury, property.FurnishingQuality);
+    }
+
+    [Fact]
+    public void Constructor_sets_distinct_optional_features()
+    {
+        var property = new Property(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            CreateAddress(),
+            features:
+            [
+                PropertyFeature.Elevator,
+                PropertyFeature.BalconyOrTerrace,
+                PropertyFeature.Elevator
+            ]);
+
+        Assert.Equal(2, property.Features.Count);
+        Assert.Contains(PropertyFeature.Elevator, property.Features);
+        Assert.Contains(PropertyFeature.BalconyOrTerrace, property.Features);
     }
 
     [Fact]
@@ -124,6 +144,17 @@ public sealed class PropertyTests
                 PropertyCategory.Apartment,
                 CreateAddress(),
                 furnishingQuality: (FurnishingQuality)0));
+    }
+
+    [Fact]
+    public void Constructor_rejects_invalid_feature()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new Property(
+                Guid.NewGuid(),
+                PropertyCategory.Apartment,
+                CreateAddress(),
+                features: [(PropertyFeature)0]));
     }
 
     private static PropertyAddress CreateAddress() =>
