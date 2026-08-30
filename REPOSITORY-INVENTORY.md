@@ -1,7 +1,7 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 170
-- C# source files: 73
+- Files (excluding inventory and manifest): 172
+- C# source files: 75
 - Projects: 24
 
 ## Files
@@ -135,6 +135,7 @@
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PlatformDbContext.cs`
 - `src/Integrations/README.md`
 - `src/Modules/Diyarak.Market.Company/Diyarak.Market.Company.csproj`
+- `src/Modules/Diyarak.Market.Property/CommercialPropertySubtype.cs`
 - `src/Modules/Diyarak.Market.Property/Diyarak.Market.Property.csproj`
 - `src/Modules/Diyarak.Market.Property/FurnishingQuality.cs`
 - `src/Modules/Diyarak.Market.Property/Property.cs`
@@ -169,6 +170,7 @@
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/EntityTests.cs`
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/GlobalUsings.cs`
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/SpecificationTests.cs`
+- `tests/Modules/Diyarak.Market.Property.Tests/CommercialPropertySubtypeTests.cs`
 - `tests/Modules/Diyarak.Market.Property.Tests/Diyarak.Market.Property.Tests.csproj`
 - `tests/Modules/Diyarak.Market.Property.Tests/PropertyAddressTests.cs`
 - `tests/Modules/Diyarak.Market.Property.Tests/PropertyBuildingDataTests.cs`

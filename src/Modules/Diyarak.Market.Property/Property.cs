@@ -17,7 +17,8 @@ public sealed class Property : AggregateRoot<Guid>
         FurnishingQuality? furnishingQuality = null,
         IEnumerable<PropertyFeature>? features = null,
         int? constructionYear = null,
-        int? lastModernizationYear = null)
+        int? lastModernizationYear = null,
+        CommercialPropertySubtype? commercialSubtype = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
@@ -43,6 +44,12 @@ public sealed class Property : AggregateRoot<Guid>
         if (lastModernizationYear is < 1)
             throw new ArgumentOutOfRangeException(nameof(lastModernizationYear));
 
+        if (commercialSubtype is { } subtype && !Enum.IsDefined(subtype))
+            throw new ArgumentOutOfRangeException(nameof(commercialSubtype), commercialSubtype, "Unsupported commercial property subtype.");
+
+        if (commercialSubtype is not null && category != PropertyCategory.CommercialProperty)
+            throw new ArgumentException("A commercial subtype can only be assigned to a commercial property.", nameof(commercialSubtype));
+
         HashSet<PropertyFeature> featureSet = features is null
             ? []
             : [.. features];
@@ -64,6 +71,7 @@ public sealed class Property : AggregateRoot<Guid>
         Features = featureSet.ToArray();
         ConstructionYear = constructionYear;
         LastModernizationYear = lastModernizationYear;
+        CommercialSubtype = commercialSubtype;
     }
 
     public PropertyCategory Category { get; }
@@ -87,4 +95,6 @@ public sealed class Property : AggregateRoot<Guid>
     public int? ConstructionYear { get; }
 
     public int? LastModernizationYear { get; }
+
+    public CommercialPropertySubtype? CommercialSubtype { get; }
 }
