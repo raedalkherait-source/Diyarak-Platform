@@ -4,7 +4,7 @@ This directory contains tests for implemented business module behavior.
 
 Current Diyarak Market modules:
 
-- `Diyarak.Market.Property` — initial domain baseline implemented and covered by tests for aggregate invariants, property address validation and equality, optional geographic location, optional living and usable areas, optional room-count validation, optional furnishing-quality validation, and property-feature validation.
+- `Diyarak.Market.Property` — initial domain baseline implemented and covered by tests for aggregate invariants, property address validation and equality, optional geographic location, optional living and usable areas, optional room-count validation, optional furnishing-quality validation, property-feature validation, and optional building-year validation.
 - `Diyarak.Market.Company` — foundation scaffold; no tests yet.
 
 Empty test projects are not created. Tests are added when concrete domain behavior is implemented.

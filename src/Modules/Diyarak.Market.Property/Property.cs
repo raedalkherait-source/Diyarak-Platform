@@ -15,7 +15,9 @@ public sealed class Property : AggregateRoot<Guid>
         int? bedroomCount = null,
         int? bathroomCount = null,
         FurnishingQuality? furnishingQuality = null,
-        IEnumerable<PropertyFeature>? features = null)
+        IEnumerable<PropertyFeature>? features = null,
+        int? constructionYear = null,
+        int? lastModernizationYear = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
@@ -34,6 +36,12 @@ public sealed class Property : AggregateRoot<Guid>
 
         if (furnishingQuality is { } quality && !Enum.IsDefined(quality))
             throw new ArgumentOutOfRangeException(nameof(furnishingQuality), furnishingQuality, "Unsupported furnishing quality.");
+
+        if (constructionYear is < 1)
+            throw new ArgumentOutOfRangeException(nameof(constructionYear));
+
+        if (lastModernizationYear is < 1)
+            throw new ArgumentOutOfRangeException(nameof(lastModernizationYear));
 
         HashSet<PropertyFeature> featureSet = features is null
             ? []
@@ -54,6 +62,8 @@ public sealed class Property : AggregateRoot<Guid>
         BathroomCount = bathroomCount;
         FurnishingQuality = furnishingQuality;
         Features = featureSet.ToArray();
+        ConstructionYear = constructionYear;
+        LastModernizationYear = lastModernizationYear;
     }
 
     public PropertyCategory Category { get; }
@@ -73,4 +83,8 @@ public sealed class Property : AggregateRoot<Guid>
     public FurnishingQuality? FurnishingQuality { get; }
 
     public IReadOnlyCollection<PropertyFeature> Features { get; }
+
+    public int? ConstructionYear { get; }
+
+    public int? LastModernizationYear { get; }
 }
