@@ -20,7 +20,8 @@ public sealed class Property : AggregateRoot<Guid>
         int? lastModernizationYear = null,
         CommercialPropertySubtype? commercialSubtype = null,
         Area? salesArea = null,
-        Area? totalArea = null)
+        Area? totalArea = null,
+        int? parkingSpaceCount = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
@@ -45,6 +46,9 @@ public sealed class Property : AggregateRoot<Guid>
 
         if (lastModernizationYear is < 1)
             throw new ArgumentOutOfRangeException(nameof(lastModernizationYear));
+
+        if (parkingSpaceCount is < 0)
+            throw new ArgumentOutOfRangeException(nameof(parkingSpaceCount));
 
         if (commercialSubtype is { } subtype && !Enum.IsDefined(subtype))
             throw new ArgumentOutOfRangeException(nameof(commercialSubtype), commercialSubtype, "Unsupported commercial property subtype.");
@@ -76,6 +80,7 @@ public sealed class Property : AggregateRoot<Guid>
         CommercialSubtype = commercialSubtype;
         SalesArea = salesArea;
         TotalArea = totalArea;
+        ParkingSpaceCount = parkingSpaceCount;
     }
 
     public PropertyCategory Category { get; }
@@ -105,4 +110,6 @@ public sealed class Property : AggregateRoot<Guid>
     public Area? SalesArea { get; }
 
     public Area? TotalArea { get; }
+
+    public int? ParkingSpaceCount { get; }
 }
