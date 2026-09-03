@@ -18,7 +18,9 @@ public sealed class Property : AggregateRoot<Guid>
         IEnumerable<PropertyFeature>? features = null,
         int? constructionYear = null,
         int? lastModernizationYear = null,
-        CommercialPropertySubtype? commercialSubtype = null)
+        CommercialPropertySubtype? commercialSubtype = null,
+        Area? salesArea = null,
+        Area? totalArea = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
@@ -72,6 +74,8 @@ public sealed class Property : AggregateRoot<Guid>
         ConstructionYear = constructionYear;
         LastModernizationYear = lastModernizationYear;
         CommercialSubtype = commercialSubtype;
+        SalesArea = salesArea;
+        TotalArea = totalArea;
     }
 
     public PropertyCategory Category { get; }
@@ -97,4 +101,8 @@ public sealed class Property : AggregateRoot<Guid>
     public int? LastModernizationYear { get; }
 
     public CommercialPropertySubtype? CommercialSubtype { get; }
+
+    public Area? SalesArea { get; }
+
+    public Area? TotalArea { get; }
 }

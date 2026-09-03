@@ -1,7 +1,7 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 173
-- C# source files: 75
+- Files (excluding inventory and manifest): 174
+- C# source files: 76
 - Projects: 24
 
 ## Files
@@ -175,6 +175,7 @@
 - `tests/Modules/Diyarak.Market.Property.Tests/Diyarak.Market.Property.Tests.csproj`
 - `tests/Modules/Diyarak.Market.Property.Tests/PropertyAddressTests.cs`
 - `tests/Modules/Diyarak.Market.Property.Tests/PropertyBuildingDataTests.cs`
+- `tests/Modules/Diyarak.Market.Property.Tests/PropertyCommercialAreaTests.cs`
 - `tests/Modules/Diyarak.Market.Property.Tests/PropertyTests.cs`
 - `tests/Modules/README.md`
 - `tools/README.md`
