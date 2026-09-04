@@ -32,10 +32,11 @@ A property is a persistent domain asset; a listing is a market publication with 
 - `Diyarak.Market.Property.Tests` verifies aggregate invariants, address validation and equality, geographic-location assignment, optional living, usable, sales, and total area assignment, room-count validation, furnishing-quality validation, property-feature validation, building-year validation, parking-space-count validation, and commercial-subtype rules.
 - Additional Property characteristics documented in `property-listing-requirements.md` are not yet implemented.
 - `Diyarak.Market.Company` remains a foundation scaffold pending concrete company requirements.
-- `Diyarak.Market.Listing` is a foundation scaffold for Market-specific listing behavior; its domain model and lifecycle remain deferred pending concrete requirements.
+- `Diyarak.Market.Listing` has an initial context baseline covering the confirmed publishing roles `Owner`, `Tenant`, and `ProfessionalOrAgent`, and the confirmed transaction intentions `Rent`, `Sell`, and `RentForLimitedPeriod`.
+- `Diyarak.Market.Listing.Tests` verifies the currently confirmed publishing-role and transaction-intent value sets.
+- The Listing aggregate, subject-reference contract, lifecycle, commercial terms, and publication workflow remain deferred pending concrete requirements.
 - Public and administrative endpoint requirements are not yet defined.
 - Authentication and authorization requirements for administrative APIs are not yet defined.
-- Listing lifecycle and publication workflow are not yet defined.
 - Search behavior is not yet defined.
 
 Implementation should not introduce speculative domain fields, lifecycle states, API contracts, or dependencies before concrete requirements are documented.

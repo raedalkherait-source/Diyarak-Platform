@@ -69,6 +69,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Market.Property.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Market.Listing", "src\Modules\Diyarak.Market.Listing\Diyarak.Market.Listing.csproj", "{800AAC15-47F7-418C-AEAB-F911C878BA94}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Market.Listing.Tests", "tests\Modules\Diyarak.Market.Listing.Tests\Diyarak.Market.Listing.Tests.csproj", "{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -379,6 +381,18 @@ Global
 		{800AAC15-47F7-418C-AEAB-F911C878BA94}.Release|x64.Build.0 = Release|Any CPU
 		{800AAC15-47F7-418C-AEAB-F911C878BA94}.Release|x86.ActiveCfg = Release|Any CPU
 		{800AAC15-47F7-418C-AEAB-F911C878BA94}.Release|x86.Build.0 = Release|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Debug|x64.Build.0 = Debug|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Debug|x86.Build.0 = Debug|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Release|x64.ActiveCfg = Release|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Release|x64.Build.0 = Release|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Release|x86.ActiveCfg = Release|Any CPU
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -406,5 +420,6 @@ Global
 		{D7DC9B74-6BC4-2470-2038-1E57C2DCB73B} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{73AB6474-67AB-45AF-9778-08A0906D1F88} = {D7DC9B74-6BC4-2470-2038-1E57C2DCB73B}
 		{800AAC15-47F7-418C-AEAB-F911C878BA94} = {EC447DCF-ABFA-6E24-52A5-D7FD48A5C558}
+		{31B1A89D-E4E3-46C1-947A-A5D72F3F6B6F} = {D7DC9B74-6BC4-2470-2038-1E57C2DCB73B}
 	EndGlobalSection
 EndGlobal
