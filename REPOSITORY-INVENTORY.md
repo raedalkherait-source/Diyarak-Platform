@@ -1,7 +1,7 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 183
-- C# source files: 82
+- Files (excluding inventory and manifest): 185
+- C# source files: 84
 - Projects: 26
 
 ## Files
@@ -139,6 +139,7 @@
 - `src/Modules/Diyarak.Market.Company/Diyarak.Market.Company.csproj`
 - `src/Modules/Diyarak.Market.Listing/Diyarak.Market.Listing.csproj`
 - `src/Modules/Diyarak.Market.Listing/ListingContext.cs`
+- `src/Modules/Diyarak.Market.Listing/ListingPrice.cs`
 - `src/Modules/Diyarak.Market.Listing/PublishingRole.cs`
 - `src/Modules/Diyarak.Market.Listing/TransactionIntent.cs`
 - `src/Modules/Diyarak.Market.Property/CommercialPropertySubtype.cs`
@@ -179,6 +180,7 @@
 - `tests/Modules/Diyarak.Market.Listing.Tests/Diyarak.Market.Listing.Tests.csproj`
 - `tests/Modules/Diyarak.Market.Listing.Tests/ListingContextTests.cs`
 - `tests/Modules/Diyarak.Market.Listing.Tests/ListingContextValueObjectTests.cs`
+- `tests/Modules/Diyarak.Market.Listing.Tests/ListingPriceTests.cs`
 - `tests/Modules/Diyarak.Market.Property.Tests/CommercialPropertySubtypeTests.cs`
 - `tests/Modules/Diyarak.Market.Property.Tests/Diyarak.Market.Property.Tests.csproj`
 - `tests/Modules/Diyarak.Market.Property.Tests/PropertyAddressTests.cs`
