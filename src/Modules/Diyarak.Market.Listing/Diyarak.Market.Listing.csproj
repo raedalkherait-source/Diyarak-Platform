@@ -4,4 +4,8 @@
     <RootNamespace>Diyarak.Market.Listing</RootNamespace>
     <Description>Listing module for Diyarak Market.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.SharedKernel\Diyarak.Platform.SharedKernel.csproj" />
+  </ItemGroup>
 </Project>
