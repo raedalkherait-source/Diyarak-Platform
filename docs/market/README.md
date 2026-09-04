@@ -6,8 +6,9 @@ This area records concrete Diyarak Market product and domain requirements before
 
 - Property module.
 - Company module.
+- Listing module.
 - Public and administrative APIs.
-- Search and listings.
+- Search.
 
 ## Requirements
 
@@ -15,7 +16,7 @@ This area records concrete Diyarak Market product and domain requirements before
 
 ## Architectural constraint
 
-A property is a persistent domain asset; a listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`.
+A property is a persistent domain asset; a listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`. Market-specific listing behavior belongs to `Diyarak.Market.Listing` while Platform Listing remains sector-agnostic; see `../adr/ADR-0008.md`.
 
 ## Current implementation status
 
@@ -31,6 +32,7 @@ A property is a persistent domain asset; a listing is a market publication with 
 - `Diyarak.Market.Property.Tests` verifies aggregate invariants, address validation and equality, geographic-location assignment, optional living, usable, sales, and total area assignment, room-count validation, furnishing-quality validation, property-feature validation, building-year validation, parking-space-count validation, and commercial-subtype rules.
 - Additional Property characteristics documented in `property-listing-requirements.md` are not yet implemented.
 - `Diyarak.Market.Company` remains a foundation scaffold pending concrete company requirements.
+- `Diyarak.Market.Listing` is a foundation scaffold for Market-specific listing behavior; its domain model and lifecycle remain deferred pending concrete requirements.
 - Public and administrative endpoint requirements are not yet defined.
 - Authentication and authorization requirements for administrative APIs are not yet defined.
 - Listing lifecycle and publication workflow are not yet defined.

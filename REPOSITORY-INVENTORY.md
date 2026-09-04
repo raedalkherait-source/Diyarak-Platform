@@ -1,8 +1,8 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 176
+- Files (excluding inventory and manifest): 177
 - C# source files: 77
-- Projects: 24
+- Projects: 25
 
 ## Files
 
@@ -137,6 +137,7 @@
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PlatformDbContext.cs`
 - `src/Integrations/README.md`
 - `src/Modules/Diyarak.Market.Company/Diyarak.Market.Company.csproj`
+- `src/Modules/Diyarak.Market.Listing/Diyarak.Market.Listing.csproj`
 - `src/Modules/Diyarak.Market.Property/CommercialPropertySubtype.cs`
 - `src/Modules/Diyarak.Market.Property/Diyarak.Market.Property.csproj`
 - `src/Modules/Diyarak.Market.Property/FurnishingQuality.cs`
