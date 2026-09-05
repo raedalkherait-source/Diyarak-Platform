@@ -13,11 +13,11 @@ This area records concrete Diyarak Market product and domain requirements before
 ## Requirements
 
 - `property-listing-requirements.md` records the currently confirmed Property and Listing concepts derived from the supplied Market reference flow.
-- `listing-subject-reference-requirements.md` records the confirmed subject-reference requirements, the decisions implemented by ADR-0010, and the remaining unresolved behavior around subject validation and lifecycle.
+- `listing-subject-reference-requirements.md` records the confirmed subject-reference requirements, the decisions implemented by ADR-0010 and ADR-0011, and the remaining unresolved behavior around subject validation and lifecycle.
 
 ## Architectural constraint
 
-A property is a persistent domain asset; a listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`. Market-specific listing behavior belongs to `Diyarak.Market.Listing` while Platform Listing remains sector-agnostic; see `../adr/ADR-0008.md`. ADR-0010 defines the sector-agnostic `ListingSubjectReference` contract and explicitly approves the `Diyarak.Market.Listing` dependency on `Diyarak.Platform.Listing`.
+A property is a persistent domain asset; a listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`. Market-specific listing behavior belongs to `Diyarak.Market.Listing` while Platform Listing remains sector-agnostic; see `../adr/ADR-0008.md`. ADR-0010 defines the sector-agnostic `ListingSubjectReference` contract and explicitly approves the `Diyarak.Market.Listing` dependency on `Diyarak.Platform.Listing`. ADR-0011 keeps that subject reference immutable for the lifetime of a Listing.
 
 ## Current implementation status
 
@@ -33,7 +33,7 @@ A property is a persistent domain asset; a listing is a market publication with 
 - `Diyarak.Market.Property.Tests` verifies aggregate invariants, address validation and equality, geographic-location assignment, optional living, usable, sales, and total area assignment, room-count validation, furnishing-quality validation, property-feature validation, building-year validation, parking-space-count validation, and commercial-subtype rules.
 - Additional Property characteristics documented in `property-listing-requirements.md` are not yet implemented.
 - `Diyarak.Market.Company` remains a foundation scaffold pending concrete company requirements.
-- `Diyarak.Market.Listing` has an initial aggregate baseline. `Listing` uses a `Guid` identity and requires a sector-agnostic `ListingSubjectReference`.
+- `Diyarak.Market.Listing` has an initial aggregate baseline. `Listing` uses a `Guid` identity, requires a sector-agnostic `ListingSubjectReference`, and keeps that reference immutable for its lifetime.
 - `ListingContext` combines the confirmed publishing roles `Owner`, `Tenant`, and `ProfessionalOrAgent` with the confirmed transaction intentions `Rent`, `Sell`, and `RentForLimitedPeriod`.
 - `ListingPrice` represents either a known non-negative `Money` amount or price on request.
 - `ListingHeadline` represents a non-empty listing headline without imposing an undocumented maximum length.

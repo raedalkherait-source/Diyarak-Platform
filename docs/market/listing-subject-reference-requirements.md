@@ -2,7 +2,7 @@
 
 This document records the confirmed requirements and remaining unresolved behavior for identifying the subject published by a listing.
 
-ADR-0010 defines the initial sector-agnostic contract.
+ADR-0010 defines the initial sector-agnostic contract. ADR-0011 defines the Listing subject reference as immutable for the lifetime of a Listing.
 
 ## Confirmed requirements
 
@@ -30,13 +30,14 @@ Business modules own the meaning of their subject-type values.
 
 `Diyarak.Market.Listing` defines the confirmed Property subject type as `market.property` and is explicitly approved to reference `Diyarak.Platform.Listing` for this contract.
 
+ADR-0011 requires a Listing to keep the same `ListingSubjectReference` for its lifetime. Publishing a different subject requires creating a new Listing.
+
 ## Remaining open requirements
 
 The following behavior remains undefined and must not be invented:
 
 - Which component verifies that the referenced subject exists.
 - Which component verifies that the referenced subject is of the expected type.
-- Whether the subject reference can change after a listing is created.
 - What happens to a listing when its referenced subject is removed, archived, or otherwise becomes unavailable.
 - Persistence representation beyond the domain contract.
 - Transport representation beyond the domain contract.
