@@ -10,8 +10,8 @@ Current Platform Core 0.5 structure:
 - `Diyarak.Platform.Audit` — foundation scaffold.
 - `Diyarak.Platform.Media` — foundation scaffold.
 - `Diyarak.Platform.Relationship` — foundation scaffold.
-- `Diyarak.Platform.Listing` — foundation scaffold.
+- `Diyarak.Platform.Listing` — initial sector-agnostic listing subject-reference baseline with `ListingSubjectReference`.
 - `Diyarak.Platform.Search` — foundation scaffold.
 - `Diyarak.Platform.Notification` — foundation scaffold.
 
-Scaffold projects intentionally contain no speculative domain model or dependencies until concrete platform requirements are defined.
+Projects that remain scaffolds intentionally contain no speculative domain model or dependencies until concrete platform requirements are defined.

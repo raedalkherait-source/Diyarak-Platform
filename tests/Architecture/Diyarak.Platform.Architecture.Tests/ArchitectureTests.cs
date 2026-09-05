@@ -56,7 +56,10 @@ public sealed class ArchitectureTests
     public void Modules_only_reference_foundation_or_explicitly_approved_core_projects()
     {
         string[] forbiddenSegments = ["/Modules/", "/Integrations/", "/Hosts/"];
-        string[] approvedCoreProjects = [];
+        string[] approvedCoreDependencies =
+        [
+            "Diyarak.Market.Listing.csproj->Diyarak.Platform.Listing.csproj",
+        ];
 
         foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Modules"), "*.csproj", SearchOption.AllDirectories))
             foreach (string reference in ReadProjectReferences(project))
@@ -66,7 +69,10 @@ public sealed class ArchitectureTests
                 Assert.DoesNotContain(forbiddenSegments, segment => normalized.Contains(segment, StringComparison.OrdinalIgnoreCase));
 
                 if (normalized.Contains("/Core/", StringComparison.OrdinalIgnoreCase))
-                    Assert.Contains(Path.GetFileName(reference), approvedCoreProjects);
+                {
+                    string dependency = $"{Path.GetFileName(project)}->{Path.GetFileName(reference)}";
+                    Assert.Contains(dependency, approvedCoreDependencies);
+                }
             }
     }
     private static string[] ReadProjectReferences(string project)

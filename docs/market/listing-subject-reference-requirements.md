@@ -1,8 +1,8 @@
 # Listing Subject Reference Requirements
 
-This document records the confirmed constraints and unresolved requirements for identifying the subject published by a listing.
+This document records the confirmed requirements and remaining unresolved behavior for identifying the subject published by a listing.
 
-It does not define the concrete contract yet.
+ADR-0010 defines the initial sector-agnostic contract.
 
 ## Confirmed requirements
 
@@ -13,20 +13,34 @@ It does not define the concrete contract yet.
 - `Diyarak.Platform.Listing` must not depend on a business module such as `Diyarak.Market.Property`.
 - `Diyarak.Market.Listing` must not depend directly on another business module implementation such as `Diyarak.Market.Property`.
 - A Module-to-Core dependency requires explicit approval through an accepted architecture decision.
-- The concrete subject-reference contract remains deferred until the requirements below are resolved.
+- The initial Market use case is publishing a Property while preserving a design that can support additional subject types later.
 
-## Open requirements
+## Implemented contract
 
-The following questions must be answered before implementing the contract:
+ADR-0010 defines `ListingSubjectReference` in `Diyarak.Platform.Listing`.
 
-- What information uniquely identifies a published subject?
-- Does the reference require both a subject identifier and a sector-agnostic subject type or kind?
-- Which Platform capability owns the subject-reference contract?
-- Which component verifies that the referenced subject exists?
-- Which component verifies that the referenced subject is of the expected type?
-- Can the subject reference change after a listing is created?
-- What happens to a listing when its referenced subject is removed, archived, or otherwise becomes unavailable?
-- Does the contract need persistence or transport representation requirements beyond its domain representation?
-- Which Module-to-Core dependency, if any, should be explicitly approved to consume the contract?
+The reference contains:
+
+- a `Guid` subject identifier;
+- a non-empty opaque string subject type.
+
+Platform Listing does not define a business-sector enum for subject types.
+
+Business modules own the meaning of their subject-type values.
+
+`Diyarak.Market.Listing` defines the confirmed Property subject type as `market.property` and is explicitly approved to reference `Diyarak.Platform.Listing` for this contract.
+
+## Remaining open requirements
+
+The following behavior remains undefined and must not be invented:
+
+- Which component verifies that the referenced subject exists.
+- Which component verifies that the referenced subject is of the expected type.
+- Whether the subject reference can change after a listing is created.
+- What happens to a listing when its referenced subject is removed, archived, or otherwise becomes unavailable.
+- Persistence representation beyond the domain contract.
+- Transport representation beyond the domain contract.
+- Listing lifecycle behavior associated with the subject reference.
+- Approval of any additional Module-to-Core dependency or additional Market subject type.
 
 These questions must be resolved from concrete product and architecture requirements rather than inferred from the current Market implementation.

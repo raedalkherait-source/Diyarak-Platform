@@ -1,8 +1,8 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 191
-- C# source files: 88
-- Projects: 26
+- Files (excluding inventory and manifest): 197
+- C# source files: 92
+- Projects: 27
 
 ## Files
 
@@ -42,6 +42,7 @@
 - `docs/adr/ADR-0007.md`
 - `docs/adr/ADR-0008.md`
 - `docs/adr/ADR-0009.md`
+- `docs/adr/ADR-0010.md`
 - `docs/architecture/dependency-rules.md`
 - `docs/architecture/overview.md`
 - `docs/market/listing-subject-reference-requirements.md`
@@ -75,6 +76,7 @@
 - `src/Core/Diyarak.Platform.Identity/User.cs`
 - `src/Core/Diyarak.Platform.Identity/UserEmailChangedDomainEvent.cs`
 - `src/Core/Diyarak.Platform.Listing/Diyarak.Platform.Listing.csproj`
+- `src/Core/Diyarak.Platform.Listing/ListingSubjectReference.cs`
 - `src/Core/Diyarak.Platform.Media/Diyarak.Platform.Media.csproj`
 - `src/Core/Diyarak.Platform.Notification/Diyarak.Platform.Notification.csproj`
 - `src/Core/Diyarak.Platform.ReferenceData/Diyarak.Platform.ReferenceData.csproj`
@@ -144,6 +146,7 @@
 - `src/Modules/Diyarak.Market.Listing/ListingContext.cs`
 - `src/Modules/Diyarak.Market.Listing/ListingHeadline.cs`
 - `src/Modules/Diyarak.Market.Listing/ListingPrice.cs`
+- `src/Modules/Diyarak.Market.Listing/MarketListingSubjectTypes.cs`
 - `src/Modules/Diyarak.Market.Listing/PublishingRole.cs`
 - `src/Modules/Diyarak.Market.Listing/TransactionIntent.cs`
 - `src/Modules/Diyarak.Market.Property/CommercialPropertySubtype.cs`
@@ -160,6 +163,8 @@
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/GlobalUsings.cs`
 - `tests/Core/Diyarak.Platform.Identity.Tests/Diyarak.Platform.Identity.Tests.csproj`
 - `tests/Core/Diyarak.Platform.Identity.Tests/UserTests.cs`
+- `tests/Core/Diyarak.Platform.Listing.Tests/Diyarak.Platform.Listing.Tests.csproj`
+- `tests/Core/Diyarak.Platform.Listing.Tests/ListingSubjectReferenceTests.cs`
 - `tests/Core/README.md`
 - `tests/Foundation/Diyarak.Platform.BuildingBlocks.Tests/ClockTests.cs`
 - `tests/Foundation/Diyarak.Platform.BuildingBlocks.Tests/Diyarak.Platform.BuildingBlocks.Tests.csproj`
@@ -187,6 +192,7 @@
 - `tests/Modules/Diyarak.Market.Listing.Tests/ListingContextValueObjectTests.cs`
 - `tests/Modules/Diyarak.Market.Listing.Tests/ListingHeadlineTests.cs`
 - `tests/Modules/Diyarak.Market.Listing.Tests/ListingPriceTests.cs`
+- `tests/Modules/Diyarak.Market.Listing.Tests/MarketListingSubjectTypesTests.cs`
 - `tests/Modules/Diyarak.Market.Property.Tests/CommercialPropertySubtypeTests.cs`
 - `tests/Modules/Diyarak.Market.Property.Tests/Diyarak.Market.Property.Tests.csproj`
 - `tests/Modules/Diyarak.Market.Property.Tests/PropertyAddressTests.cs`

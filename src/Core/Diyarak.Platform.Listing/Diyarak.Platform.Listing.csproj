@@ -4,4 +4,8 @@
     <RootNamespace>Diyarak.Platform.Listing</RootNamespace>
     <Description>Core listing lifecycle capabilities for the Diyarak platform.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.SharedKernel\Diyarak.Platform.SharedKernel.csproj" />
+  </ItemGroup>
 </Project>
