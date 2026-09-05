@@ -53,15 +53,20 @@ public sealed class ArchitectureTests
             }
     }
     [Fact]
-    public void Modules_do_not_reference_other_modules_integrations_or_hosts()
+    public void Modules_only_reference_foundation_or_explicitly_approved_core_projects()
     {
         string[] forbiddenSegments = ["/Modules/", "/Integrations/", "/Hosts/"];
+        string[] approvedCoreProjects = [];
 
         foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Modules"), "*.csproj", SearchOption.AllDirectories))
             foreach (string reference in ReadProjectReferences(project))
             {
                 string normalized = reference.Replace('\\', '/');
+
                 Assert.DoesNotContain(forbiddenSegments, segment => normalized.Contains(segment, StringComparison.OrdinalIgnoreCase));
+
+                if (normalized.Contains("/Core/", StringComparison.OrdinalIgnoreCase))
+                    Assert.Contains(Path.GetFileName(reference), approvedCoreProjects);
             }
     }
     private static string[] ReadProjectReferences(string project)
