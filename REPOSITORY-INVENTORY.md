@@ -1,6 +1,6 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 203
+- Files (excluding inventory and manifest): 205
 - C# source files: 95
 - Projects: 27
 
@@ -46,6 +46,8 @@
 - `docs/adr/ADR-0011.md`
 - `docs/adr/ADR-0012.md`
 - `docs/adr/ADR-0013.md`
+- `docs/adr/ADR-0014.md`
+- `docs/adr/ADR-0015.md`
 - `docs/architecture/dependency-rules.md`
 - `docs/architecture/overview.md`
 - `docs/market/listing-subject-reference-requirements.md`
