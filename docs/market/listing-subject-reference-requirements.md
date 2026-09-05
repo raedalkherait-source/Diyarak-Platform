@@ -42,7 +42,7 @@ The following behavior remains undefined and must not be invented:
 - What happens to a listing when its referenced subject is removed, archived, or otherwise becomes unavailable.
 - Persistence representation beyond the domain contract.
 - Transport representation beyond the domain contract.
-- Listing lifecycle behavior associated with the subject reference.
+- Any lifecycle behavior specifically associated with subject availability or subject-reference resolution.
 - Approval of any additional Module-to-Core dependency or additional Market subject type.
 
 These questions must be resolved from concrete product and architecture requirements rather than inferred from the current Market implementation.

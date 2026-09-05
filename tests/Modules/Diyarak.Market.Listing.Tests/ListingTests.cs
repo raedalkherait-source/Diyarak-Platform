@@ -21,6 +21,43 @@ public sealed class ListingTests
     }
 
     [Fact]
+    public void Constructor_starts_listing_as_draft()
+    {
+        var subjectReference = new ListingSubjectReference(
+            Guid.NewGuid(),
+            MarketListingSubjectTypes.Property);
+
+        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+
+        Assert.Equal(ListingStatus.Draft, listing.Status);
+    }
+
+    [Fact]
+    public void Publish_sets_status_to_published()
+    {
+        var subjectReference = new ListingSubjectReference(
+            Guid.NewGuid(),
+            MarketListingSubjectTypes.Property);
+
+        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+
+        listing.Publish();
+
+        Assert.Equal(ListingStatus.Published, listing.Status);
+    }
+    [Fact]
+    public void Publish_rejects_listing_that_is_already_published()
+    {
+        var subjectReference = new ListingSubjectReference(
+            Guid.NewGuid(),
+            MarketListingSubjectTypes.Property);
+
+        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        listing.Publish();
+
+        Assert.Throws<InvalidOperationException>(() => listing.Publish());
+    }
+    [Fact]
     public void Constructor_rejects_null_subject_reference()
     {
         Assert.Throws<ArgumentNullException>(

@@ -18,7 +18,19 @@ public sealed class Listing : AggregateRoot<Guid>
                 nameof(subjectReference));
 
         SubjectReference = subjectReference;
+        Status = ListingStatus.Draft;
     }
 
     public PlatformListing.ListingSubjectReference SubjectReference { get; }
+
+    public ListingStatus Status { get; private set; }
+
+    public void Publish()
+    {
+        if (Status != ListingStatus.Draft)
+            throw new InvalidOperationException(
+                "Only a Draft listing can be published.");
+
+        Status = ListingStatus.Published;
+    }
 }

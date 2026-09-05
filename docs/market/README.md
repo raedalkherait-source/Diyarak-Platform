@@ -17,7 +17,7 @@ This area records concrete Diyarak Market product and domain requirements before
 
 ## Architectural constraint
 
-A property is a persistent domain asset; a listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`. Market-specific listing behavior belongs to `Diyarak.Market.Listing` while Platform Listing remains sector-agnostic; see `../adr/ADR-0008.md`. ADR-0010 defines the sector-agnostic `ListingSubjectReference` contract and explicitly approves the `Diyarak.Market.Listing` dependency on `Diyarak.Platform.Listing`. ADR-0011 keeps that subject reference immutable for the lifetime of a Listing. ADR-0012 assigns supported subject-type validation to the consuming business module.
+A property is a persistent domain asset; a listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`. Market-specific listing behavior belongs to `Diyarak.Market.Listing` while Platform Listing remains sector-agnostic; see `../adr/ADR-0008.md`. ADR-0010 defines the sector-agnostic `ListingSubjectReference` contract and explicitly approves the `Diyarak.Market.Listing` dependency on `Diyarak.Platform.Listing`. ADR-0011 keeps that subject reference immutable for the lifetime of a Listing. ADR-0012 assigns supported subject-type validation to the consuming business module. ADR-0013 defines the initial Market Listing lifecycle as `Draft` followed by an explicit transition to `Published`.
 
 ## Current implementation status
 
@@ -41,7 +41,8 @@ A property is a persistent domain asset; a listing is a market publication with 
 - `MarketListingSubjectTypes.Property` defines the stable sector-qualified `market.property` subject type consumed through the Platform Listing subject-reference contract without creating a dependency on `Diyarak.Market.Property`.
 - `Diyarak.Market.Listing.Tests` verifies Listing identity and required subject-reference assignment, rejection of unsupported Market subject types, the confirmed publishing-role and transaction-intent value sets, `ListingContext` assignment and equality, rejection of unsupported enum values, `ListingPrice` known/on-request behavior and negative-price rejection, `ListingHeadline` assignment, equality, and blank-value rejection, `ListingAvailableFromDate` assignment and value equality, and the stable Property subject-type value.
 - `Diyarak.Platform.Listing` now provides the sector-agnostic `ListingSubjectReference` value object using a `Guid` subject identifier and a non-empty opaque subject-type string.
-- Subject existence validation, subject resolution, behavior when a referenced subject becomes unavailable, Listing lifecycle, transaction-specific commercial terms, and publication workflow remain deferred pending concrete requirements.
+- New Market Listings start as `Draft`; `Publish()` performs the currently approved `Draft` to `Published` transition and rejects publishing an already published Listing.
+- Subject existence validation, subject resolution, behavior when a referenced subject becomes unavailable, publication-readiness requirements, additional Listing lifecycle states and transitions, transaction-specific commercial terms, and publication workflow details remain deferred pending concrete requirements.
 - Public and administrative endpoint requirements are not yet defined.
 - Authentication and authorization requirements for administrative APIs are not yet defined.
 - Search behavior is not yet defined.

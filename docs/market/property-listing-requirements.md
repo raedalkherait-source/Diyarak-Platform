@@ -226,4 +226,4 @@ The first Property implementation should introduce only stable asset concepts su
 
 Observed fields whose complete value sets or semantics are unknown must not be converted into speculative enums or domain rules.
 
-Listing lifecycle states, publication workflows, company behavior, authorization rules, search behavior, persistence mappings, contact workflows, and API contracts must not be invented before their requirements are defined.
+ADR-0013 defines only the initial Market Listing lifecycle states `Draft` and `Published` and the explicit `Draft` to `Published` transition. Additional lifecycle states and transitions, publication-readiness rules, publication workflow details, company behavior, authorization rules, search behavior, persistence mappings, contact workflows, and API contracts must not be invented before their requirements are defined.
