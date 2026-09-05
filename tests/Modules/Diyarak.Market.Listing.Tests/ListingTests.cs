@@ -26,4 +26,15 @@ public sealed class ListingTests
         Assert.Throws<ArgumentNullException>(
             () => new MarketListing(Guid.NewGuid(), null!));
     }
+
+    [Fact]
+    public void Constructor_rejects_unsupported_subject_type()
+    {
+        var subjectReference = new ListingSubjectReference(
+            Guid.NewGuid(),
+            "market.unsupported");
+
+        Assert.Throws<ArgumentException>(
+            () => new MarketListing(Guid.NewGuid(), subjectReference));
+    }
 }

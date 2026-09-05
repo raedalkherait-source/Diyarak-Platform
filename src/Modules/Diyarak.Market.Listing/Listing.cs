@@ -12,6 +12,11 @@ public sealed class Listing : AggregateRoot<Guid>
     {
         ArgumentNullException.ThrowIfNull(subjectReference);
 
+        if (subjectReference.SubjectType != MarketListingSubjectTypes.Property)
+            throw new ArgumentException(
+                "Unsupported Market listing subject type.",
+                nameof(subjectReference));
+
         SubjectReference = subjectReference;
     }
 
