@@ -13,6 +13,7 @@ This area records concrete Diyarak Market product and domain requirements before
 ## Requirements
 
 - `property-listing-requirements.md` records the currently confirmed Property and Listing concepts derived from the supplied Market reference flow.
+- `listing-subject-reference-requirements.md` records the confirmed architectural constraints and unresolved requirements for the deferred sector-agnostic listing subject-reference contract.
 
 ## Architectural constraint
 
