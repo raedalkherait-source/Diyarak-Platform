@@ -13,11 +13,15 @@ This area records concrete Diyarak Market product and domain requirements before
 ## Requirements
 
 - `property-listing-requirements.md` records the currently confirmed Property and Listing concepts derived from the supplied Market reference flow.
-- `listing-subject-reference-requirements.md` records the confirmed subject-reference requirements, the decisions implemented by ADR-0010, ADR-0011, and ADR-0012, and the remaining unresolved behavior around subject existence, availability, and lifecycle.
+- `listing-subject-reference-requirements.md` records the confirmed subject-reference and publication-availability requirements, the decisions implemented by ADR-0010 through ADR-0019, and the remaining unresolved persistence, transport, and post-publication availability behavior.
 
 ## Architectural constraint
 
-A property is a persistent domain asset; a listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`. Market-specific listing behavior belongs to `Diyarak.Market.Listing` while Platform Listing remains sector-agnostic; see `../adr/ADR-0008.md`. ADR-0010 defines the sector-agnostic `ListingSubjectReference` contract and explicitly approves the `Diyarak.Market.Listing` dependency on `Diyarak.Platform.Listing`. ADR-0011 keeps that subject reference immutable for the lifetime of a Listing. ADR-0012 assigns supported subject-type validation to the consuming business module. ADR-0013 defines the initial Market Listing lifecycle as `Draft` followed by an explicit transition to `Published`. ADR-0014 defines the core publication-readiness requirements. ADR-0015 restricts core Listing edits to the `Draft` state.
+A Property is a persistent domain asset; a Listing is a market publication with an independent lifecycle. See `../adr/ADR-0006.md`. Market-specific Listing behavior belongs to `Diyarak.Market.Listing` while Platform Listing remains sector-agnostic; see `../adr/ADR-0008.md`.
+
+ADR-0010 defines the sector-agnostic `ListingSubjectReference` contract and explicitly approves the `Diyarak.Market.Listing` dependency on `Diyarak.Platform.Listing`. ADR-0011 keeps that subject reference immutable for the lifetime of a Listing. ADR-0012 assigns supported subject-type validation to the consuming business module. ADR-0013 defines the initial Market Listing lifecycle as `Draft` followed by an explicit transition to `Published`. ADR-0014 defines the core publication-readiness requirements. ADR-0015 restricts core Listing edits to the `Draft` state.
+
+ADR-0016 requires application-level subject-availability validation before publication. ADR-0017 treats Property existence as availability until a Property lifecycle exists. ADR-0018 introduces the Application layer for cross-module orchestration. ADR-0019 defines the Application-owned `IPropertyExistenceChecker` port and keeps `Diyarak.Market.Application` independent of `Diyarak.Market.Property`.
 
 ## Current implementation status
 
@@ -42,7 +46,9 @@ A property is a persistent domain asset; a listing is a market publication with 
 - `Diyarak.Market.Listing.Tests` verifies Listing identity and required subject-reference assignment, rejection of unsupported Market subject types, initial `Draft` status, publication-readiness enforcement, the `Draft` to `Published` transition, rejection of repeated publication, rejection of core publication-data edits after publication, the confirmed publishing-role and transaction-intent value sets, `ListingContext` assignment and equality, rejection of unsupported enum values, `ListingPrice` known/on-request behavior and negative-price rejection, `ListingHeadline` assignment, equality, and blank-value rejection, optional `ListingAvailableFromDate` assignment and value equality, and the stable Property subject-type value.
 - `Diyarak.Platform.Listing` now provides the sector-agnostic `ListingSubjectReference` value object using a `Guid` subject identifier and a non-empty opaque subject-type string.
 - New Market Listings start as `Draft`. `ListingContext`, `ListingHeadline`, and `ListingPrice` are required before `Publish()` can transition the Listing to `Published`; `ListingAvailableFromDate` remains optional. These core publication values can be assigned or changed only while the Listing is `Draft`, and repeated publication is rejected.
-- Subject existence validation, subject resolution, behavior when a referenced subject becomes unavailable, additional publication-readiness requirements, additional Listing lifecycle states and transitions, transaction-specific commercial terms, published-Listing editing workflows, and publication workflow details remain deferred pending concrete requirements.
+- `Diyarak.Market.Application` provides the first cross-module orchestration baseline. `PublishListingUseCase` verifies through the Application-owned `IPropertyExistenceChecker` port that the referenced Property exists before calling `Listing.Publish()`.
+- `Diyarak.Market.Application.Tests` verifies both rejection when the Property does not exist and successful publication with the correct Property identifier when it does.
+- A concrete `IPropertyExistenceChecker` adapter, Property and Listing persistence representations, Listing loading and saving, transaction boundaries, behavior when a referenced subject later becomes unavailable, additional publication-readiness requirements, additional Listing lifecycle states and transitions, transaction-specific commercial terms, published-Listing editing workflows, and API composition remain deferred pending concrete requirements.
 - Public and administrative endpoint requirements are not yet defined.
 - Authentication and authorization requirements for administrative APIs are not yet defined.
 - Search behavior is not yet defined.
