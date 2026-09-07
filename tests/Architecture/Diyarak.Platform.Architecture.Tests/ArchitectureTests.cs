@@ -32,7 +32,7 @@ public sealed class ArchitectureTests
     [Fact]
     public void Foundation_does_not_reference_core_modules_integrations_or_hosts()
     {
-        string[] forbiddenSegments = ["/Core/", "/Modules/", "/Integrations/", "/Hosts/"];
+        string[] forbiddenSegments = ["/Core/", "/Modules/", "/Application/", "/Integrations/", "/Hosts/"];
         foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Foundation"), "*.csproj", SearchOption.AllDirectories))
             foreach (string reference in ReadProjectReferences(project))
             {
@@ -44,7 +44,7 @@ public sealed class ArchitectureTests
     [Fact]
     public void Core_does_not_reference_modules_integrations_or_hosts()
     {
-        string[] forbiddenSegments = ["/Modules/", "/Integrations/", "/Hosts/"];
+        string[] forbiddenSegments = ["/Modules/", "/Application/", "/Integrations/", "/Hosts/"];
         foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Core"), "*.csproj", SearchOption.AllDirectories))
             foreach (string reference in ReadProjectReferences(project))
             {
@@ -55,7 +55,7 @@ public sealed class ArchitectureTests
     [Fact]
     public void Modules_only_reference_foundation_or_explicitly_approved_core_projects()
     {
-        string[] forbiddenSegments = ["/Modules/", "/Integrations/", "/Hosts/"];
+        string[] forbiddenSegments = ["/Modules/", "/Application/", "/Integrations/", "/Hosts/"];
         string[] approvedCoreDependencies =
         [
             "Diyarak.Market.Listing.csproj->Diyarak.Platform.Listing.csproj",
@@ -75,6 +75,37 @@ public sealed class ArchitectureTests
                 }
             }
     }
+    [Fact]
+    public void Application_does_not_reference_integrations_or_hosts()
+    {
+        string[] forbiddenSegments = ["/Integrations/", "/Hosts/"];
+
+        foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Application"), "*.csproj", SearchOption.AllDirectories))
+            foreach (string reference in ReadProjectReferences(project))
+            {
+                string normalized = reference.Replace('\\', '/');
+                Assert.DoesNotContain(forbiddenSegments, segment => normalized.Contains(segment, StringComparison.OrdinalIgnoreCase));
+            }
+    }
+
+    [Fact]
+    public void Application_direct_core_dependencies_are_explicitly_approved()
+    {
+        string[] approvedCoreDependencies = [];
+
+        foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Application"), "*.csproj", SearchOption.AllDirectories))
+            foreach (string reference in ReadProjectReferences(project))
+            {
+                string normalized = reference.Replace('\\', '/');
+
+                if (normalized.Contains("/Core/", StringComparison.OrdinalIgnoreCase))
+                {
+                    string dependency = $"{Path.GetFileName(project)}->{Path.GetFileName(normalized)}";
+                    Assert.Contains(dependency, approvedCoreDependencies);
+                }
+            }
+    }
+
     private static string[] ReadProjectReferences(string project)
     {
         XDocument document = XDocument.Load(project);
@@ -92,6 +123,3 @@ public sealed class ArchitectureTests
         throw new DirectoryNotFoundException("Repository root was not found.");
     }
 }
-
-
-

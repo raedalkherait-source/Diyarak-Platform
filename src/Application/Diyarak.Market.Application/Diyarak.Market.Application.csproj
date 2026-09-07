@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\Diyarak.Market.Listing\Diyarak.Market.Listing.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Market.Application</AssemblyName>
+    <RootNamespace>Diyarak.Market.Application</RootNamespace>
+    <Description>Application orchestration for Diyarak Market use cases.</Description>
+  </PropertyGroup>
+</Project>

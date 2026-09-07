@@ -1,8 +1,8 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 205
-- C# source files: 95
-- Projects: 27
+- Files (excluding inventory and manifest): 216
+- C# source files: 98
+- Projects: 29
 
 ## Files
 
@@ -48,6 +48,10 @@
 - `docs/adr/ADR-0013.md`
 - `docs/adr/ADR-0014.md`
 - `docs/adr/ADR-0015.md`
+- `docs/adr/ADR-0016.md`
+- `docs/adr/ADR-0017.md`
+- `docs/adr/ADR-0018.md`
+- `docs/adr/ADR-0019.md`
 - `docs/architecture/dependency-rules.md`
 - `docs/architecture/overview.md`
 - `docs/market/listing-subject-reference-requirements.md`
@@ -75,6 +79,10 @@
 - `scripts/verify.ps1`
 - `scripts/verify.sh`
 - `SECURITY.md`
+- `src/Application/Diyarak.Market.Application/Diyarak.Market.Application.csproj`
+- `src/Application/Diyarak.Market.Application/IPropertyExistenceChecker.cs`
+- `src/Application/Diyarak.Market.Application/PublishListingUseCase.cs`
+- `src/Application/README.md`
 - `src/Core/Diyarak.Platform.Audit/Diyarak.Platform.Audit.csproj`
 - `src/Core/Diyarak.Platform.Authorization/Diyarak.Platform.Authorization.csproj`
 - `src/Core/Diyarak.Platform.Identity/Diyarak.Platform.Identity.csproj`
@@ -165,6 +173,9 @@
 - `src/Modules/Diyarak.Market.Property/PropertyFeature.cs`
 - `src/Modules/README.md`
 - `SUPPORT.md`
+- `tests/Application/Diyarak.Market.Application.Tests/Diyarak.Market.Application.Tests.csproj`
+- `tests/Application/Diyarak.Market.Application.Tests/PublishListingUseCaseTests.cs`
+- `tests/Application/README.md`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/ArchitectureTests.cs`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/Diyarak.Platform.Architecture.Tests.csproj`
 - `tests/Architecture/Diyarak.Platform.Architecture.Tests/GlobalUsings.cs`
