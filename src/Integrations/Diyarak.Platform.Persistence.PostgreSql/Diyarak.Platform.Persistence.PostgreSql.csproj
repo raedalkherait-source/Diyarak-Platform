@@ -17,4 +17,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\Diyarak.Market.Property\Diyarak.Market.Property.csproj" />
+    <ProjectReference Include="..\..\Application\Diyarak.Market.Application\Diyarak.Market.Application.csproj" />
+  </ItemGroup>
+
 </Project>

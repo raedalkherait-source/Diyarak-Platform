@@ -2,7 +2,7 @@
 
 This document records the confirmed requirements, implemented decisions, and remaining unresolved behavior for identifying and validating the subject published by a Listing.
 
-ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0019 define the initial subject-availability rule, its application-layer orchestration, and the port used to perform the check.
+ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0020 define the initial subject-availability rule, its application-layer orchestration, the port used to perform the check, and the infrastructure boundary for its persistence-backed implementation.
 
 ## Confirmed requirements
 
@@ -47,13 +47,16 @@ ADR-0019 defines the Application-owned `IPropertyExistenceChecker` port. `Diyara
 
 `PublishListingUseCase` implements the initial workflow: it rejects publication when the referenced Property does not exist and calls the Listing aggregate's `Publish()` behavior when the Property exists.
 
+ADR-0020 keeps EF Core persistence records and mappings inside Integrations and requires explicit translation through valid domain APIs.
+
+`Diyarak.Platform.Persistence.PostgreSql` implements `IPropertyExistenceChecker` with a no-tracking key query against the mapped `market.properties` table. The initial Property persistence representation stores the aggregate's complete current state and converts explicitly between the persistence record and the domain aggregate.
+
 ## Remaining open requirements
 
 The following behavior remains undefined and must not be invented:
 
-- The concrete persistence-backed implementation of `IPropertyExistenceChecker`.
-- Property and Listing persistence representations beyond the domain contracts.
-- Listing loading, saving, and transaction boundaries for the publication workflow.
+- Property creation, loading, update, and save workflows beyond the current full-state record, mapping, and existence query.
+- Listing persistence representation, loading, saving, and transaction boundaries for the publication workflow.
 - Transport representation and API behavior.
 - What happens to a Listing when its referenced subject is removed, archived, or otherwise becomes unavailable after publication.
 - Subject resolution beyond the current Property-existence check.

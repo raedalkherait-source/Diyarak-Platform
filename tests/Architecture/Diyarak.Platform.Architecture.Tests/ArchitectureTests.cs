@@ -106,6 +106,21 @@ public sealed class ArchitectureTests
             }
     }
 
+    [Fact]
+    public void Integrations_do_not_reference_hosts_or_other_integrations()
+    {
+        string[] forbiddenSegments = ["/Integrations/", "/Hosts/"];
+
+        foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Integrations"), "*.csproj", SearchOption.AllDirectories))
+            foreach (string reference in ReadProjectReferences(project))
+            {
+                string projectDirectory = Path.GetDirectoryName(project) ?? throw new InvalidOperationException("Integration project directory was not found.");
+                string normalized = Path.GetFullPath(Path.Combine(projectDirectory, reference)).Replace('\\', '/');
+
+                Assert.DoesNotContain(forbiddenSegments, segment => normalized.Contains(segment, StringComparison.OrdinalIgnoreCase));
+            }
+    }
+
     private static string[] ReadProjectReferences(string project)
     {
         XDocument document = XDocument.Load(project);

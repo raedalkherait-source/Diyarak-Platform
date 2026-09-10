@@ -1,3 +1,5 @@
+using Diyarak.Market.Application;
+using Diyarak.Platform.Persistence.PostgreSql.Market;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,6 +27,10 @@ public static class PersistenceServiceCollectionExtensions
                             errorCodesToAdd: null);
                     });
             });
+
+        services.AddScoped<
+            IPropertyExistenceChecker,
+            PostgreSqlPropertyExistenceChecker>();
 
         return services;
     }

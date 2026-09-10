@@ -81,6 +81,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Market.Application.Tests", "tests\Application\Diyarak.Market.Application.Tests\Diyarak.Market.Application.Tests.csproj", "{FAA9F481-A31B-444B-9488-E57A2B60767F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Integrations", "Integrations", "{D3422D82-0893-D6C0-E5E4-5203CE673B60}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Platform.Persistence.PostgreSql.Tests", "tests\Integrations\Diyarak.Platform.Persistence.PostgreSql.Tests\Diyarak.Platform.Persistence.PostgreSql.Tests.csproj", "{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -439,6 +443,18 @@ Global
 		{FAA9F481-A31B-444B-9488-E57A2B60767F}.Release|x64.Build.0 = Release|Any CPU
 		{FAA9F481-A31B-444B-9488-E57A2B60767F}.Release|x86.ActiveCfg = Release|Any CPU
 		{FAA9F481-A31B-444B-9488-E57A2B60767F}.Release|x86.Build.0 = Release|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Debug|x64.Build.0 = Debug|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Debug|x86.Build.0 = Debug|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|x64.ActiveCfg = Release|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|x64.Build.0 = Release|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|x86.ActiveCfg = Release|Any CPU
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -472,5 +488,7 @@ Global
 		{024FA3D7-FC1B-4915-BBA5-C4FF264DAE9C} = {22BAF98C-8415-17C4-B26A-D537657BC863}
 		{B611CC27-D592-8FDF-F9F1-D39D131BCC02} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{FAA9F481-A31B-444B-9488-E57A2B60767F} = {B611CC27-D592-8FDF-F9F1-D39D131BCC02}
+		{D3422D82-0893-D6C0-E5E4-5203CE673B60} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96} = {D3422D82-0893-D6C0-E5E4-5203CE673B60}
 	EndGlobalSection
 EndGlobal

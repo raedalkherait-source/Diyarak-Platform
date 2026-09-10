@@ -1,8 +1,8 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 216
-- C# source files: 98
-- Projects: 29
+- Files (excluding inventory and manifest): 230
+- C# source files: 109
+- Projects: 30
 
 ## Files
 
@@ -52,6 +52,7 @@
 - `docs/adr/ADR-0017.md`
 - `docs/adr/ADR-0018.md`
 - `docs/adr/ADR-0019.md`
+- `docs/adr/ADR-0020.md`
 - `docs/architecture/dependency-rules.md`
 - `docs/architecture/overview.md`
 - `docs/market/listing-subject-reference-requirements.md`
@@ -147,8 +148,15 @@
 - `src/Hosts/Diyarak.Api/Properties/launchSettings.json`
 - `src/Hosts/README.md`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Diyarak.Platform.Persistence.PostgreSql.csproj`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/InternalsVisibleTo.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketPropertyRecord.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketPropertyRecordConfiguration.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketPropertyRecordMapper.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/PostgreSqlPropertyExistenceChecker.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.Designer.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260909221256_MarketPropertyPersistenceBaseline.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260909221256_MarketPropertyPersistenceBaseline.Designer.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/PlatformDbContextModelSnapshot.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PersistenceServiceCollectionExtensions.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PlatformDbContext.cs`
@@ -204,6 +212,12 @@
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/EntityTests.cs`
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/GlobalUsings.cs`
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/SpecificationTests.cs`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/Diyarak.Platform.Persistence.PostgreSql.Tests.csproj`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/MarketPropertyRecordMapperTests.cs`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PersistenceServiceCollectionExtensionsTests.cs`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PlatformDbContextModelTests.cs`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PostgreSqlPropertyExistenceCheckerTests.cs`
+- `tests/Integrations/README.md`
 - `tests/Modules/Diyarak.Market.Listing.Tests/Diyarak.Market.Listing.Tests.csproj`
 - `tests/Modules/Diyarak.Market.Listing.Tests/ListingAvailableFromDateTests.cs`
 - `tests/Modules/Diyarak.Market.Listing.Tests/ListingContextTests.cs`
