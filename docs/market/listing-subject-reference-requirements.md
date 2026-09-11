@@ -2,7 +2,7 @@
 
 This document records the confirmed requirements, implemented decisions, and remaining unresolved behavior for identifying and validating the subject published by a Listing.
 
-ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0021 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, and the loading and saving boundary for publication.
+ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0022 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, and the future HTTP result contract for publication.
 
 ## Confirmed requirements
 
@@ -58,6 +58,12 @@ The PostgreSQL integration also maps the complete current Market Listing state t
 
 No explicit transaction, lock, or isolation guarantee currently spans the Property existence query and Listing save.
 
+ADR-0022 defines the future publication route as `POST /api/market/listings/{listingId}/publish`. Successful publication returns `204 No Content`; invalid identifiers return `400 Bad Request`; a missing Listing returns `404 Not Found`; and a missing Property or invalid publication state returns `409 Conflict`.
+
+`PublishListingUseCase` now returns a classified `Result` for these expected outcomes through stable `market.listing.*` error codes. Unexpected persistence and infrastructure exceptions continue to the Host exception boundary.
+
+The publication route remains unmapped and unexposed until an explicit authentication and authorization policy is accepted and configured.
+
 ## Remaining open requirements
 
 The following behavior remains undefined and must not be invented:
@@ -66,7 +72,9 @@ The following behavior remains undefined and must not be invented:
 - Listing creation persistence and its application workflow.
 - Explicit transaction, locking, and isolation guarantees spanning the Property existence check and Listing save.
 - Optimistic concurrency and behavior for competing publication attempts.
-- Transport representation, publication endpoints, and API error mapping.
+- Authentication, actor identity, ownership checks, publishing permissions, and the authorization policy required before publication can be exposed.
+- Authorized Host mapping and exposure of the defined publication endpoint.
+- Transport representation and API behavior for operations other than the defined publication contract.
 - What happens to a Listing when its referenced subject is removed, archived, or otherwise becomes unavailable after publication.
 - Subject resolution beyond the current Property-existence check.
 - Any additional lifecycle behavior associated with subject availability.

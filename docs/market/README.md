@@ -13,7 +13,7 @@ This area records concrete Diyarak Market product and domain requirements before
 ## Requirements
 
 - `property-listing-requirements.md` records the currently confirmed Property and Listing concepts derived from the supplied Market reference flow.
-- `listing-subject-reference-requirements.md` records the confirmed subject-reference and publication-availability requirements, the decisions implemented by ADR-0010 through ADR-0021, and the remaining unresolved transport, concurrency, Listing creation, and post-publication availability behavior.
+- `listing-subject-reference-requirements.md` records the confirmed subject-reference and publication-availability requirements, the decisions implemented by ADR-0010 through ADR-0022, and the remaining unresolved authorization, endpoint exposure, concurrency, Listing creation, and post-publication availability behavior.
 
 ## Architectural constraint
 
@@ -26,6 +26,8 @@ ADR-0016 requires application-level subject-availability validation before publi
 ADR-0020 keeps EF Core persistence records and mappings inside Integrations, requires explicit translation through valid domain APIs, and permits Integrations to implement Application-owned ports without introducing infrastructure concerns into business Modules.
 
 ADR-0021 places Listing loading and saving inside publication orchestration through the Application-owned `IMarketListingRepository` port. Repository save is the current persistence commit boundary; explicit transaction, locking, isolation, and optimistic-concurrency behavior remain undefined.
+
+ADR-0022 defines the future Listing publication HTTP contract and its stable validation, not-found, and conflict error codes. The route remains unmapped until an explicit authentication and authorization policy is accepted and configured.
 
 ## Current implementation status
 
@@ -50,17 +52,18 @@ ADR-0021 places Listing loading and saving inside publication orchestration thro
 - `Diyarak.Market.Listing.Tests` verifies Listing identity and required subject-reference assignment, rejection of unsupported Market subject types, initial `Draft` status, publication-readiness enforcement, the `Draft` to `Published` transition, rejection of repeated publication, rejection of core publication-data edits after publication, the confirmed publishing-role and transaction-intent value sets, `ListingContext` assignment and equality, rejection of unsupported enum values, `ListingPrice` known/on-request behavior and negative-price rejection, `ListingHeadline` assignment, equality, and blank-value rejection, optional `ListingAvailableFromDate` assignment and value equality, and the stable Property subject-type value.
 - `Diyarak.Platform.Listing` now provides the sector-agnostic `ListingSubjectReference` value object using a `Guid` subject identifier and a non-empty opaque subject-type string.
 - New Market Listings start as `Draft`. `ListingContext`, `ListingHeadline`, and `ListingPrice` are required before `Publish()` can transition the Listing to `Published`; `ListingAvailableFromDate` remains optional. These core publication values can be assigned or changed only while the Listing is `Draft`, and repeated publication is rejected.
-- `Diyarak.Market.Application` owns `IMarketListingRepository` and `IPropertyExistenceChecker`. `PublishListingUseCase` receives a Listing identifier, loads the aggregate, rejects a missing Listing or referenced Property, calls `Listing.Publish()`, and saves the resulting state.
-- `Diyarak.Market.Application.Tests` verifies rejection without a Property check or save when the Listing is missing, rejection without a save when the Property is missing, and successful publication and saving when both exist.
+- `Diyarak.Market.Application` owns `IMarketListingRepository` and `IPropertyExistenceChecker`. `PublishListingUseCase` receives a Listing identifier, loads the aggregate, verifies the referenced Property, calls `Listing.Publish()`, saves the resulting state, and returns a classified `Result` for expected failures.
+- `PublishListingErrors` defines the stable `market.listing.invalid_id`, `market.listing.not_found`, `market.listing.property_not_found`, and `market.listing.cannot_publish` errors.
+- `Diyarak.Market.Application.Tests` verifies invalid-identifier validation, missing-Listing behavior, missing-Property conflict, publication-state conflict, and successful publication and saving.
 - `Diyarak.Platform.Persistence.PostgreSql` contains the initial full-state `MarketPropertyRecord`, its explicit EF Core mapping to `market.properties`, conversion to and from `Diyarak.Market.Property.Property`, and the `MarketPropertyPersistenceBaseline` migration.
 - It also contains the full-state `MarketListingRecord`, its explicit EF Core mapping to `market.listings`, conversion to and from `Diyarak.Market.Listing.Listing`, and the `MarketListingPersistenceBaseline` migration.
 - `PostgreSqlPropertyExistenceChecker` implements `IPropertyExistenceChecker` with a no-tracking key-existence query.
 - `PostgreSqlMarketListingRepository` implements `IMarketListingRepository` and loads and saves Market Listing state through `PlatformDbContext`.
 - `AddPostgreSqlPersistence` registers both Application-port adapters as scoped services.
 - `Diyarak.Platform.Persistence.PostgreSql.Tests` verifies Property and Listing table mappings, complete domain-record round trips, found and missing Property checks, Listing repository loading and saving, and dependency-injection registration.
-- `Diyarak.Api` references the Application layer and registers `PublishListingUseCase` for Host composition. No publication endpoint or transport contract is defined yet.
-- Property creation, loading, update, and save workflows beyond existence checks; Listing creation persistence; explicit transaction, locking, and isolation guarantees; optimistic concurrency; behavior when a referenced subject later becomes unavailable; additional publication-readiness requirements; additional Listing lifecycle states and transitions; transaction-specific commercial terms; published-Listing editing workflows; and publication API transport and error mapping remain deferred pending concrete requirements.
-- Public and administrative endpoint requirements are not yet defined.
+- `Diyarak.Api` references the Application layer and registers `PublishListingUseCase` for Host composition. ADR-0022 defines the future publication HTTP contract, but the route is not mapped or exposed before authorization requirements are defined.
+- Property creation, loading, update, and save workflows beyond existence checks; Listing creation persistence; actor identity, ownership, and publishing permissions; publication endpoint exposure; explicit transaction, locking, and isolation guarantees; optimistic concurrency; behavior when a referenced subject later becomes unavailable; additional publication-readiness requirements; additional Listing lifecycle states and transitions; transaction-specific commercial terms; and published-Listing editing workflows remain deferred pending concrete requirements.
+- Other public and administrative endpoint requirements are not yet defined.
 - Authentication and authorization requirements for administrative APIs are not yet defined.
 - Search behavior is not yet defined.
 

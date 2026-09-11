@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\..\Modules\Diyarak.Market.Listing\Diyarak.Market.Listing.csproj" />
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.BuildingBlocks\Diyarak.Platform.BuildingBlocks.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <AssemblyName>Diyarak.Market.Application</AssemblyName>

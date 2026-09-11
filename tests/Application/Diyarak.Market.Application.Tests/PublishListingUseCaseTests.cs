@@ -1,4 +1,5 @@
 using Diyarak.Market.Listing;
+using Diyarak.Platform.BuildingBlocks;
 using Diyarak.Platform.Listing;
 using Xunit;
 using MarketListing = Diyarak.Market.Listing.Listing;
@@ -8,7 +9,31 @@ namespace Diyarak.Market.Application.Tests;
 public sealed class PublishListingUseCaseTests
 {
     [Fact]
-    public async Task ExecuteAsync_rejects_when_listing_does_not_exist()
+    public async Task ExecuteAsync_returns_validation_failure_for_empty_listing_identifier()
+    {
+        var repository =
+            new StubMarketListingRepository(storedListing: null);
+
+        var checker =
+            new StubPropertyExistenceChecker(exists: true);
+
+        var useCase =
+            new PublishListingUseCase(repository, checker);
+
+        Result result =
+            await useCase.ExecuteAsync(Guid.Empty);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(
+            PublishListingErrors.InvalidIdentifier,
+            result.Error);
+        Assert.Null(repository.LastRequestedId);
+        Assert.Null(repository.SavedListing);
+        Assert.Equal(0, checker.CallCount);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_returns_not_found_when_listing_does_not_exist()
     {
         var repository =
             new StubMarketListingRepository(storedListing: null);
@@ -21,16 +46,18 @@ public sealed class PublishListingUseCaseTests
 
         Guid listingId = Guid.NewGuid();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => useCase.ExecuteAsync(listingId));
+        Result result =
+            await useCase.ExecuteAsync(listingId);
 
+        Assert.True(result.IsFailure);
+        Assert.Equal(PublishListingErrors.NotFound, result.Error);
         Assert.Equal(listingId, repository.LastRequestedId);
         Assert.Null(repository.SavedListing);
         Assert.Equal(0, checker.CallCount);
     }
 
     [Fact]
-    public async Task ExecuteAsync_rejects_when_property_does_not_exist()
+    public async Task ExecuteAsync_returns_conflict_when_property_does_not_exist()
     {
         MarketListing listing = CreateReadyListing();
 
@@ -43,9 +70,41 @@ public sealed class PublishListingUseCaseTests
         var useCase =
             new PublishListingUseCase(repository, checker);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => useCase.ExecuteAsync(listing.Id));
+        Result result =
+            await useCase.ExecuteAsync(listing.Id);
 
+        Assert.True(result.IsFailure);
+        Assert.Equal(
+            PublishListingErrors.PropertyNotFound,
+            result.Error);
+        Assert.Equal(ListingStatus.Draft, listing.Status);
+        Assert.Equal(
+            listing.SubjectReference.SubjectId,
+            checker.LastPropertyId);
+        Assert.Null(repository.SavedListing);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_returns_conflict_when_listing_cannot_be_published()
+    {
+        MarketListing listing = CreateDraftListing();
+
+        var repository =
+            new StubMarketListingRepository(listing);
+
+        var checker =
+            new StubPropertyExistenceChecker(exists: true);
+
+        var useCase =
+            new PublishListingUseCase(repository, checker);
+
+        Result result =
+            await useCase.ExecuteAsync(listing.Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(
+            PublishListingErrors.CannotPublish,
+            result.Error);
         Assert.Equal(ListingStatus.Draft, listing.Status);
         Assert.Equal(
             listing.SubjectReference.SubjectId,
@@ -67,8 +126,10 @@ public sealed class PublishListingUseCaseTests
         var useCase =
             new PublishListingUseCase(repository, checker);
 
-        await useCase.ExecuteAsync(listing.Id);
+        Result result =
+            await useCase.ExecuteAsync(listing.Id);
 
+        Assert.True(result.IsSuccess);
         Assert.Equal(ListingStatus.Published, listing.Status);
         Assert.Equal(
             listing.SubjectReference.SubjectId,
@@ -76,14 +137,20 @@ public sealed class PublishListingUseCaseTests
         Assert.Same(listing, repository.SavedListing);
     }
 
-    private static MarketListing CreateReadyListing()
+    private static MarketListing CreateDraftListing()
     {
         var subjectReference = new ListingSubjectReference(
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing =
-            new MarketListing(Guid.NewGuid(), subjectReference);
+        return new MarketListing(
+            Guid.NewGuid(),
+            subjectReference);
+    }
+
+    private static MarketListing CreateReadyListing()
+    {
+        MarketListing listing = CreateDraftListing();
 
         listing.SetContext(
             new ListingContext(

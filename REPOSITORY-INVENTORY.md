@@ -1,7 +1,7 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 241
-- C# source files: 119
+- Files (excluding inventory and manifest): 243
+- C# source files: 120
 - Projects: 30
 
 ## Files
@@ -54,6 +54,7 @@
 - `docs/adr/ADR-0019.md`
 - `docs/adr/ADR-0020.md`
 - `docs/adr/ADR-0021.md`
+- `docs/adr/ADR-0022.md`
 - `docs/architecture/dependency-rules.md`
 - `docs/architecture/overview.md`
 - `docs/market/listing-subject-reference-requirements.md`
@@ -84,6 +85,7 @@
 - `src/Application/Diyarak.Market.Application/Diyarak.Market.Application.csproj`
 - `src/Application/Diyarak.Market.Application/IMarketListingRepository.cs`
 - `src/Application/Diyarak.Market.Application/IPropertyExistenceChecker.cs`
+- `src/Application/Diyarak.Market.Application/PublishListingErrors.cs`
 - `src/Application/Diyarak.Market.Application/PublishListingUseCase.cs`
 - `src/Application/README.md`
 - `src/Core/Diyarak.Platform.Audit/Diyarak.Platform.Audit.csproj`

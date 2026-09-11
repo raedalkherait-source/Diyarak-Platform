@@ -1,3 +1,4 @@
+using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
 namespace Diyarak.Market.Application;
@@ -18,14 +19,15 @@ public sealed class PublishListingUseCase
         _propertyExistenceChecker = propertyExistenceChecker;
     }
 
-    public async Task ExecuteAsync(
+    public async Task<Result> ExecuteAsync(
         Guid listingId,
         CancellationToken cancellationToken = default)
     {
         if (listingId == Guid.Empty)
-            throw new ArgumentException(
-                "Listing identifier cannot be empty.",
-                nameof(listingId));
+        {
+            return Result.Failure(
+                PublishListingErrors.InvalidIdentifier);
+        }
 
         MarketListing? listing =
             await _listingRepository.FindByIdAsync(
@@ -33,8 +35,10 @@ public sealed class PublishListingUseCase
                 cancellationToken);
 
         if (listing is null)
-            throw new InvalidOperationException(
-                "The Listing does not exist.");
+        {
+            return Result.Failure(
+                PublishListingErrors.NotFound);
+        }
 
         bool propertyExists =
             await _propertyExistenceChecker.ExistsAsync(
@@ -42,13 +46,25 @@ public sealed class PublishListingUseCase
                 cancellationToken);
 
         if (!propertyExists)
-            throw new InvalidOperationException(
-                "The referenced Property does not exist.");
+        {
+            return Result.Failure(
+                PublishListingErrors.PropertyNotFound);
+        }
 
-        listing.Publish();
+        try
+        {
+            listing.Publish();
+        }
+        catch (InvalidOperationException)
+        {
+            return Result.Failure(
+                PublishListingErrors.CannotPublish);
+        }
 
         await _listingRepository.SaveAsync(
             listing,
             cancellationToken);
+
+        return Result.Success();
     }
 }
