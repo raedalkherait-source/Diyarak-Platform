@@ -32,6 +32,7 @@ public sealed class MarketListingModelTests
             "PriceAmount",
             "PriceCurrency",
             "PriceIsOnRequest",
+            "PublisherUserId",
             "PublishingRole",
             "Status",
             "SubjectId",

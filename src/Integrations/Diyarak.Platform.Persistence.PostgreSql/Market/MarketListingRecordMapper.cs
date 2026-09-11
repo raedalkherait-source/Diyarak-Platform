@@ -17,6 +17,7 @@ internal static class MarketListingRecordMapper
         return new MarketListingRecord
         {
             Id = listing.Id,
+            PublisherUserId = listing.PublisherUserId,
             SubjectId = listing.SubjectReference.SubjectId,
             SubjectType = listing.SubjectReference.SubjectType,
             Status = (int)listing.Status,
@@ -44,6 +45,7 @@ internal static class MarketListingRecordMapper
 
         var listing = new MarketListing(
             record.Id,
+            record.PublisherUserId,
             new ListingSubjectReference(
                 record.SubjectId,
                 record.SubjectType));

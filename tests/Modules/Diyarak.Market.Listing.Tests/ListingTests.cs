@@ -7,16 +7,22 @@ namespace Diyarak.Market.Listing.Tests;
 public sealed class ListingTests
 {
     [Fact]
-    public void Constructor_sets_identity_and_subject_reference()
+    public void Constructor_sets_identity_publisher_and_subject_reference()
     {
         var id = Guid.NewGuid();
+        var publisherUserId = Guid.NewGuid();
         var subjectReference = new ListingSubjectReference(
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(id, subjectReference);
+        var listing =
+            new MarketListing(
+                id,
+                publisherUserId,
+                subjectReference);
 
         Assert.Equal(id, listing.Id);
+        Assert.Equal(publisherUserId, listing.PublisherUserId);
         Assert.Equal(subjectReference, listing.SubjectReference);
     }
 
@@ -27,7 +33,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
 
         Assert.Equal(ListingStatus.Draft, listing.Status);
     }
@@ -39,7 +45,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
         var availableFromDate =
             new ListingAvailableFromDate(new DateOnly(2026, 10, 1));
 
@@ -54,7 +60,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
 
         Assert.Throws<InvalidOperationException>(() => listing.Publish());
     }
@@ -65,7 +71,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
         listing.SetHeadline(new ListingHeadline("Property for sale"));
         listing.SetPrice(ListingPrice.OnRequest());
 
@@ -79,7 +85,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
         listing.SetContext(
             new ListingContext(PublishingRole.Owner, TransactionIntent.Sell));
         listing.SetPrice(ListingPrice.OnRequest());
@@ -94,7 +100,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
         listing.SetContext(
             new ListingContext(PublishingRole.Owner, TransactionIntent.Sell));
         listing.SetHeadline(new ListingHeadline("Property for sale"));
@@ -108,7 +114,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
         listing.SetContext(
             new ListingContext(PublishingRole.Owner, TransactionIntent.Sell));
         listing.SetHeadline(new ListingHeadline("Property for sale"));
@@ -125,7 +131,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
         listing.SetContext(
             new ListingContext(PublishingRole.Owner, TransactionIntent.Sell));
         listing.SetHeadline(new ListingHeadline("Property for sale"));
@@ -141,7 +147,7 @@ public sealed class ListingTests
             Guid.NewGuid(),
             MarketListingSubjectTypes.Property);
 
-        var listing = new MarketListing(Guid.NewGuid(), subjectReference);
+        var listing = new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference);
         listing.SetContext(
             new ListingContext(PublishingRole.Owner, TransactionIntent.Sell));
         listing.SetHeadline(new ListingHeadline("Property for sale"));
@@ -160,10 +166,23 @@ public sealed class ListingTests
                 new ListingAvailableFromDate(new DateOnly(2026, 11, 1))));
     }
     [Fact]
+    public void Constructor_rejects_empty_publisher_user_id()
+    {
+        var subjectReference = new ListingSubjectReference(
+            Guid.NewGuid(),
+            MarketListingSubjectTypes.Property);
+
+        Assert.Throws<ArgumentException>(
+            () => new MarketListing(
+                Guid.NewGuid(),
+                Guid.Empty,
+                subjectReference));
+    }
+    [Fact]
     public void Constructor_rejects_null_subject_reference()
     {
         Assert.Throws<ArgumentNullException>(
-            () => new MarketListing(Guid.NewGuid(), null!));
+            () => new MarketListing(Guid.NewGuid(), Guid.NewGuid(), null!));
     }
 
     [Fact]
@@ -174,6 +193,6 @@ public sealed class ListingTests
             "market.unsupported");
 
         Assert.Throws<ArgumentException>(
-            () => new MarketListing(Guid.NewGuid(), subjectReference));
+            () => new MarketListing(Guid.NewGuid(), Guid.NewGuid(), subjectReference));
     }
 }

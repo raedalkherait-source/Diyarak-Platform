@@ -18,6 +18,11 @@ internal sealed class MarketListingRecordConfiguration
             .HasColumnType("uuid")
             .ValueGeneratedNever();
 
+        builder.Property(record => record.PublisherUserId)
+            .HasColumnName("publisher_user_id")
+            .HasColumnType("uuid")
+            .IsRequired();
+
         builder.Property(record => record.SubjectId)
             .HasColumnName("subject_id")
             .HasColumnType("uuid");

@@ -7,9 +7,15 @@ public sealed class Listing : AggregateRoot<Guid>
 {
     public Listing(
         Guid id,
+        Guid publisherUserId,
         PlatformListing.ListingSubjectReference subjectReference)
         : base(id)
     {
+        if (publisherUserId == Guid.Empty)
+            throw new ArgumentException(
+                "Publisher user identifier cannot be empty.",
+                nameof(publisherUserId));
+
         ArgumentNullException.ThrowIfNull(subjectReference);
 
         if (subjectReference.SubjectType != MarketListingSubjectTypes.Property)
@@ -17,9 +23,12 @@ public sealed class Listing : AggregateRoot<Guid>
                 "Unsupported Market listing subject type.",
                 nameof(subjectReference));
 
+        PublisherUserId = publisherUserId;
         SubjectReference = subjectReference;
         Status = ListingStatus.Draft;
     }
+
+    public Guid PublisherUserId { get; }
 
     public PlatformListing.ListingSubjectReference SubjectReference { get; }
 

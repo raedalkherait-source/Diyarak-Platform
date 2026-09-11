@@ -4,6 +4,8 @@ internal sealed class MarketListingRecord
 {
     public Guid Id { get; set; }
 
+    public Guid PublisherUserId { get; set; }
+
     public Guid SubjectId { get; set; }
 
     public string SubjectType { get; set; } = string.Empty;

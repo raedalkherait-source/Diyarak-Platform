@@ -45,6 +45,9 @@ public sealed class PostgreSqlMarketListingRepositoryTests
         Assert.NotNull(restored);
         Assert.Equal(original.Id, restored!.Id);
         Assert.Equal(
+            original.PublisherUserId,
+            restored.PublisherUserId);
+        Assert.Equal(
             original.SubjectReference,
             restored.SubjectReference);
         Assert.Equal(ListingStatus.Draft, restored.Status);
@@ -102,6 +105,7 @@ public sealed class PostgreSqlMarketListingRepositoryTests
     private static MarketListing CreateReadyDraftListing()
     {
         var listing = new MarketListing(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             new ListingSubjectReference(
                 Guid.NewGuid(),

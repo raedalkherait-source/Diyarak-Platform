@@ -21,7 +21,7 @@ public sealed class PublishListingUseCaseTests
             new PublishListingUseCase(repository, checker);
 
         Result result =
-            await useCase.ExecuteAsync(Guid.Empty);
+            await useCase.ExecuteAsync(Guid.Empty, Guid.NewGuid());
 
         Assert.True(result.IsFailure);
         Assert.Equal(
@@ -32,6 +32,31 @@ public sealed class PublishListingUseCaseTests
         Assert.Equal(0, checker.CallCount);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_returns_validation_failure_for_empty_actor_identifier()
+    {
+        var repository =
+            new StubMarketListingRepository(storedListing: null);
+
+        var checker =
+            new StubPropertyExistenceChecker(exists: true);
+
+        var useCase =
+            new PublishListingUseCase(repository, checker);
+
+        Result result =
+            await useCase.ExecuteAsync(
+                Guid.NewGuid(),
+                Guid.Empty);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(
+            PublishListingErrors.InvalidActorIdentifier,
+            result.Error);
+        Assert.Null(repository.LastRequestedId);
+        Assert.Null(repository.SavedListing);
+        Assert.Equal(0, checker.CallCount);
+    }
     [Fact]
     public async Task ExecuteAsync_returns_not_found_when_listing_does_not_exist()
     {
@@ -45,9 +70,10 @@ public sealed class PublishListingUseCaseTests
             new PublishListingUseCase(repository, checker);
 
         Guid listingId = Guid.NewGuid();
+        Guid actorUserId = Guid.NewGuid();
 
         Result result =
-            await useCase.ExecuteAsync(listingId);
+            await useCase.ExecuteAsync(listingId, actorUserId);
 
         Assert.True(result.IsFailure);
         Assert.Equal(PublishListingErrors.NotFound, result.Error);
@@ -56,6 +82,39 @@ public sealed class PublishListingUseCaseTests
         Assert.Equal(0, checker.CallCount);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_returns_not_found_when_actor_does_not_own_listing()
+    {
+        MarketListing listing = CreateReadyListing();
+        Guid actorUserId = Guid.NewGuid();
+
+        Assert.NotEqual(
+            listing.PublisherUserId,
+            actorUserId);
+
+        var repository =
+            new StubMarketListingRepository(listing);
+
+        var checker =
+            new StubPropertyExistenceChecker(exists: true);
+
+        var useCase =
+            new PublishListingUseCase(repository, checker);
+
+        Result result =
+            await useCase.ExecuteAsync(
+                listing.Id,
+                actorUserId);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(
+            PublishListingErrors.NotFound,
+            result.Error);
+        Assert.Equal(ListingStatus.Draft, listing.Status);
+        Assert.Equal(listing.Id, repository.LastRequestedId);
+        Assert.Null(repository.SavedListing);
+        Assert.Equal(0, checker.CallCount);
+    }
     [Fact]
     public async Task ExecuteAsync_returns_conflict_when_property_does_not_exist()
     {
@@ -71,7 +130,9 @@ public sealed class PublishListingUseCaseTests
             new PublishListingUseCase(repository, checker);
 
         Result result =
-            await useCase.ExecuteAsync(listing.Id);
+            await useCase.ExecuteAsync(
+                listing.Id,
+                listing.PublisherUserId);
 
         Assert.True(result.IsFailure);
         Assert.Equal(
@@ -99,7 +160,9 @@ public sealed class PublishListingUseCaseTests
             new PublishListingUseCase(repository, checker);
 
         Result result =
-            await useCase.ExecuteAsync(listing.Id);
+            await useCase.ExecuteAsync(
+                listing.Id,
+                listing.PublisherUserId);
 
         Assert.True(result.IsFailure);
         Assert.Equal(
@@ -127,7 +190,9 @@ public sealed class PublishListingUseCaseTests
             new PublishListingUseCase(repository, checker);
 
         Result result =
-            await useCase.ExecuteAsync(listing.Id);
+            await useCase.ExecuteAsync(
+                listing.Id,
+                listing.PublisherUserId);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(ListingStatus.Published, listing.Status);
@@ -144,6 +209,7 @@ public sealed class PublishListingUseCaseTests
             MarketListingSubjectTypes.Property);
 
         return new MarketListing(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             subjectReference);
     }

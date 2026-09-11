@@ -2,7 +2,7 @@
 
 This document records the confirmed requirements, implemented decisions, and remaining unresolved behavior for identifying and validating the subject published by a Listing.
 
-ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0022 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, and the future HTTP result contract for publication.
+ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0024 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, the future HTTP result contract, creator ownership, and safe ownership persistence migration.
 
 ## Confirmed requirements
 
@@ -17,7 +17,9 @@ ADR-0010 through ADR-0012 define the subject-reference contract and its ownershi
 - Publishing a Listing requires its referenced subject to exist and be available for publication.
 - Until a Property lifecycle is defined, an existing Property is considered available for Listing publication.
 - Subject-availability validation occurs in application-level orchestration before the Listing aggregate is asked to publish itself.
-- Publication orchestration receives a Listing identifier and loads and saves the aggregate through an Application-owned repository port.
+- Publication orchestration receives Listing and authenticated actor user identifiers and loads and saves the aggregate through an Application-owned repository port.
+- Every Listing has a required immutable non-empty `PublisherUserId` that identifies its creator without depending on the Identity implementation.
+- Only the authenticated creator may publish a Listing; a non-owner receives the same not-found result as a missing Listing before Property existence, domain mutation, or persistence is attempted.
 
 ## Implemented contract
 
@@ -52,17 +54,21 @@ ADR-0021 defines the Application-owned `IMarketListingRepository` port and requi
 
 `Diyarak.Platform.Persistence.PostgreSql` implements `IPropertyExistenceChecker` with a no-tracking key query against the mapped `market.properties` table. The initial Property persistence representation stores the aggregate's complete current state and converts explicitly between the persistence record and the domain aggregate.
 
-The PostgreSQL integration also maps the complete current Market Listing state to `market.listings` through `MarketListingRecord`, explicit EF Core configuration, and explicit conversion through valid Listing domain APIs. `MarketListingPersistenceBaseline` creates the table.
+The PostgreSQL integration also maps the complete current Market Listing state, including `PublisherUserId`, to `market.listings` through `MarketListingRecord`, explicit EF Core configuration, and explicit conversion through valid Listing domain APIs. `MarketListingPersistenceBaseline` creates the table, and `MarketListingPublisherOwnership` adds the required owner column without a default.
 
 `PostgreSqlMarketListingRepository` implements `IMarketListingRepository` for existing Listing loading and saving. It and `PostgreSqlPropertyExistenceChecker` are registered as scoped services backed by the same `PlatformDbContext`.
 
 No explicit transaction, lock, or isolation guarantee currently spans the Property existence query and Listing save.
 
-ADR-0022 defines the future publication route as `POST /api/market/listings/{listingId}/publish`. Successful publication returns `204 No Content`; invalid identifiers return `400 Bad Request`; a missing Listing returns `404 Not Found`; and a missing Property or invalid publication state returns `409 Conflict`.
+ADR-0022 defines the future publication route as `POST /api/market/listings/{listingId}/publish`. Successful publication returns `204 No Content`; invalid Listing identifiers return `400 Bad Request`; a missing or non-owned Listing returns `404 Not Found`; and a missing Property or invalid publication state returns `409 Conflict`.
 
-`PublishListingUseCase` now returns a classified `Result` for these expected outcomes through stable `market.listing.*` error codes. Unexpected persistence and infrastructure exceptions continue to the Host exception boundary.
+ADR-0023 assigns each Listing an immutable `PublisherUserId` and restricts publication to that authenticated creator. `ListingContext.PublishingRole` remains commercial context and is not authorization proof.
 
-The publication route remains unmapped and unexposed until an explicit authentication and authorization policy is accepted and configured.
+ADR-0024 requires the ownership migration to stop before changing `market.listings` when legacy rows exist, rather than inventing an owner or using `Guid.Empty`.
+
+`PublishListingUseCase` receives Listing and actor user identifiers and returns a classified `Result` through stable `market.listing.*` error codes. It validates both identifiers, conceals missing and non-owned Listings with the same not-found result, and performs the ownership check before the Property query. Unexpected persistence and infrastructure exceptions continue to the Host exception boundary.
+
+The publication route remains unmapped and unexposed until an authentication mechanism and claims mapping are accepted and configured.
 
 ## Remaining open requirements
 
@@ -72,7 +78,9 @@ The following behavior remains undefined and must not be invented:
 - Listing creation persistence and its application workflow.
 - Explicit transaction, locking, and isolation guarantees spanning the Property existence check and Listing save.
 - Optimistic concurrency and behavior for competing publication attempts.
-- Authentication, actor identity, ownership checks, publishing permissions, and the authorization policy required before publication can be exposed.
+- Authentication implementation and claims mapping required before publication can be exposed.
+- Administrative publication overrides and Listing ownership transfer.
+- An authoritative ownership mapping and separately reviewed data migration for any environment containing legacy Listing rows.
 - Authorized Host mapping and exposure of the defined publication endpoint.
 - Transport representation and API behavior for operations other than the defined publication contract.
 - What happens to a Listing when its referenced subject is removed, archived, or otherwise becomes unavailable after publication.

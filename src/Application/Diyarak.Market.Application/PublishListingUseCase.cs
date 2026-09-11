@@ -21,6 +21,7 @@ public sealed class PublishListingUseCase
 
     public async Task<Result> ExecuteAsync(
         Guid listingId,
+        Guid actorUserId,
         CancellationToken cancellationToken = default)
     {
         if (listingId == Guid.Empty)
@@ -29,12 +30,24 @@ public sealed class PublishListingUseCase
                 PublishListingErrors.InvalidIdentifier);
         }
 
+        if (actorUserId == Guid.Empty)
+        {
+            return Result.Failure(
+                PublishListingErrors.InvalidActorIdentifier);
+        }
+
         MarketListing? listing =
             await _listingRepository.FindByIdAsync(
                 listingId,
                 cancellationToken);
 
         if (listing is null)
+        {
+            return Result.Failure(
+                PublishListingErrors.NotFound);
+        }
+
+        if (listing.PublisherUserId != actorUserId)
         {
             return Result.Failure(
                 PublishListingErrors.NotFound);

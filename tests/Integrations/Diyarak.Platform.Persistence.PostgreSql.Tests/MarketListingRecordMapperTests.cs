@@ -22,6 +22,12 @@ public sealed class MarketListingRecordMapperTests
 
         Assert.Equal(original.Id, restored.Id);
         Assert.Equal(
+            original.PublisherUserId,
+            record.PublisherUserId);
+        Assert.Equal(
+            original.PublisherUserId,
+            restored.PublisherUserId);
+        Assert.Equal(
             original.SubjectReference,
             restored.SubjectReference);
         Assert.Equal(ListingStatus.Draft, restored.Status);
@@ -110,6 +116,7 @@ public sealed class MarketListingRecordMapperTests
     private static MarketListing CreateListing()
     {
         return new MarketListing(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             new ListingSubjectReference(
                 Guid.NewGuid(),

@@ -1,7 +1,7 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 243
-- C# source files: 120
+- Files (excluding inventory and manifest): 248
+- C# source files: 123
 - Projects: 30
 
 ## Files
@@ -55,6 +55,8 @@
 - `docs/adr/ADR-0020.md`
 - `docs/adr/ADR-0021.md`
 - `docs/adr/ADR-0022.md`
+- `docs/adr/ADR-0023.md`
+- `docs/adr/ADR-0024.md`
 - `docs/architecture/dependency-rules.md`
 - `docs/architecture/overview.md`
 - `docs/market/listing-subject-reference-requirements.md`
@@ -167,6 +169,8 @@
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260909221256_MarketPropertyPersistenceBaseline.Designer.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260910231038_MarketListingPersistenceBaseline.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260910231038_MarketListingPersistenceBaseline.Designer.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260911175811_MarketListingPublisherOwnership.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260911175811_MarketListingPublisherOwnership.Designer.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/PlatformDbContextModelSnapshot.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PersistenceServiceCollectionExtensions.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PlatformDbContext.cs`
@@ -224,6 +228,7 @@
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/SpecificationTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/Diyarak.Platform.Persistence.PostgreSql.Tests.csproj`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/MarketListingModelTests.cs`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/MarketListingPublisherOwnershipMigrationTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/MarketListingRecordMapperTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/MarketPropertyRecordMapperTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PersistenceServiceCollectionExtensionsTests.cs`
