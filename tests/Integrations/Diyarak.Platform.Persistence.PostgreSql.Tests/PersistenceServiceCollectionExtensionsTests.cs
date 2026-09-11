@@ -8,7 +8,7 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Tests;
 public sealed class PersistenceServiceCollectionExtensionsTests
 {
     [Fact]
-    public void AddPostgreSqlPersistence_registers_property_existence_checker()
+    public void AddPostgreSqlPersistence_registers_application_ports()
     {
         var services = new ServiceCollection();
 
@@ -24,6 +24,14 @@ public sealed class PersistenceServiceCollectionExtensionsTests
             scope.ServiceProvider
                 .GetRequiredService<IPropertyExistenceChecker>();
 
-        Assert.IsType<PostgreSqlPropertyExistenceChecker>(checker);
+        IMarketListingRepository repository =
+            scope.ServiceProvider
+                .GetRequiredService<IMarketListingRepository>();
+
+        Assert.IsType<PostgreSqlPropertyExistenceChecker>(
+            checker);
+
+        Assert.IsType<PostgreSqlMarketListingRepository>(
+            repository);
     }
 }

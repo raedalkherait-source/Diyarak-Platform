@@ -2,7 +2,7 @@
 
 This document records the confirmed requirements, implemented decisions, and remaining unresolved behavior for identifying and validating the subject published by a Listing.
 
-ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0020 define the initial subject-availability rule, its application-layer orchestration, the port used to perform the check, and the infrastructure boundary for its persistence-backed implementation.
+ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0021 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, and the loading and saving boundary for publication.
 
 ## Confirmed requirements
 
@@ -17,6 +17,7 @@ ADR-0010 through ADR-0012 define the subject-reference contract and its ownershi
 - Publishing a Listing requires its referenced subject to exist and be available for publication.
 - Until a Property lifecycle is defined, an existing Property is considered available for Listing publication.
 - Subject-availability validation occurs in application-level orchestration before the Listing aggregate is asked to publish itself.
+- Publication orchestration receives a Listing identifier and loads and saves the aggregate through an Application-owned repository port.
 
 ## Implemented contract
 
@@ -45,19 +46,27 @@ ADR-0018 introduces the Application layer for cross-module use-case orchestratio
 
 ADR-0019 defines the Application-owned `IPropertyExistenceChecker` port. `Diyarak.Market.Application` uses this port without referencing `Diyarak.Market.Property` directly.
 
-`PublishListingUseCase` implements the initial workflow: it rejects publication when the referenced Property does not exist and calls the Listing aggregate's `Publish()` behavior when the Property exists.
-
 ADR-0020 keeps EF Core persistence records and mappings inside Integrations and requires explicit translation through valid domain APIs.
 
+ADR-0021 defines the Application-owned `IMarketListingRepository` port and requires `PublishListingUseCase` to receive a Listing identifier, load the aggregate, reject a missing Listing, verify the referenced Property, invoke `Listing.Publish()`, and save the resulting state. Repository save is the current persistence commit boundary.
+
 `Diyarak.Platform.Persistence.PostgreSql` implements `IPropertyExistenceChecker` with a no-tracking key query against the mapped `market.properties` table. The initial Property persistence representation stores the aggregate's complete current state and converts explicitly between the persistence record and the domain aggregate.
+
+The PostgreSQL integration also maps the complete current Market Listing state to `market.listings` through `MarketListingRecord`, explicit EF Core configuration, and explicit conversion through valid Listing domain APIs. `MarketListingPersistenceBaseline` creates the table.
+
+`PostgreSqlMarketListingRepository` implements `IMarketListingRepository` for existing Listing loading and saving. It and `PostgreSqlPropertyExistenceChecker` are registered as scoped services backed by the same `PlatformDbContext`.
+
+No explicit transaction, lock, or isolation guarantee currently spans the Property existence query and Listing save.
 
 ## Remaining open requirements
 
 The following behavior remains undefined and must not be invented:
 
 - Property creation, loading, update, and save workflows beyond the current full-state record, mapping, and existence query.
-- Listing persistence representation, loading, saving, and transaction boundaries for the publication workflow.
-- Transport representation and API behavior.
+- Listing creation persistence and its application workflow.
+- Explicit transaction, locking, and isolation guarantees spanning the Property existence check and Listing save.
+- Optimistic concurrency and behavior for competing publication attempts.
+- Transport representation, publication endpoints, and API error mapping.
 - What happens to a Listing when its referenced subject is removed, archived, or otherwise becomes unavailable after publication.
 - Subject resolution beyond the current Property-existence check.
 - Any additional lifecycle behavior associated with subject availability.

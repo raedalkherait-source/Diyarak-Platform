@@ -13,7 +13,7 @@ This area records concrete Diyarak Market product and domain requirements before
 ## Requirements
 
 - `property-listing-requirements.md` records the currently confirmed Property and Listing concepts derived from the supplied Market reference flow.
-- `listing-subject-reference-requirements.md` records the confirmed subject-reference and publication-availability requirements, the decisions implemented by ADR-0010 through ADR-0020, and the remaining unresolved transport, Listing persistence, transaction, and post-publication availability behavior.
+- `listing-subject-reference-requirements.md` records the confirmed subject-reference and publication-availability requirements, the decisions implemented by ADR-0010 through ADR-0021, and the remaining unresolved transport, concurrency, Listing creation, and post-publication availability behavior.
 
 ## Architectural constraint
 
@@ -24,6 +24,8 @@ ADR-0010 defines the sector-agnostic `ListingSubjectReference` contract and expl
 ADR-0016 requires application-level subject-availability validation before publication. ADR-0017 treats Property existence as availability until a Property lifecycle exists. ADR-0018 introduces the Application layer for cross-module orchestration. ADR-0019 defines the Application-owned `IPropertyExistenceChecker` port and keeps `Diyarak.Market.Application` independent of `Diyarak.Market.Property`.
 
 ADR-0020 keeps EF Core persistence records and mappings inside Integrations, requires explicit translation through valid domain APIs, and permits Integrations to implement Application-owned ports without introducing infrastructure concerns into business Modules.
+
+ADR-0021 places Listing loading and saving inside publication orchestration through the Application-owned `IMarketListingRepository` port. Repository save is the current persistence commit boundary; explicit transaction, locking, isolation, and optimistic-concurrency behavior remain undefined.
 
 ## Current implementation status
 
@@ -48,12 +50,16 @@ ADR-0020 keeps EF Core persistence records and mappings inside Integrations, req
 - `Diyarak.Market.Listing.Tests` verifies Listing identity and required subject-reference assignment, rejection of unsupported Market subject types, initial `Draft` status, publication-readiness enforcement, the `Draft` to `Published` transition, rejection of repeated publication, rejection of core publication-data edits after publication, the confirmed publishing-role and transaction-intent value sets, `ListingContext` assignment and equality, rejection of unsupported enum values, `ListingPrice` known/on-request behavior and negative-price rejection, `ListingHeadline` assignment, equality, and blank-value rejection, optional `ListingAvailableFromDate` assignment and value equality, and the stable Property subject-type value.
 - `Diyarak.Platform.Listing` now provides the sector-agnostic `ListingSubjectReference` value object using a `Guid` subject identifier and a non-empty opaque subject-type string.
 - New Market Listings start as `Draft`. `ListingContext`, `ListingHeadline`, and `ListingPrice` are required before `Publish()` can transition the Listing to `Published`; `ListingAvailableFromDate` remains optional. These core publication values can be assigned or changed only while the Listing is `Draft`, and repeated publication is rejected.
-- `Diyarak.Market.Application` provides the first cross-module orchestration baseline. `PublishListingUseCase` verifies through the Application-owned `IPropertyExistenceChecker` port that the referenced Property exists before calling `Listing.Publish()`.
-- `Diyarak.Market.Application.Tests` verifies both rejection when the Property does not exist and successful publication with the correct Property identifier when it does.
+- `Diyarak.Market.Application` owns `IMarketListingRepository` and `IPropertyExistenceChecker`. `PublishListingUseCase` receives a Listing identifier, loads the aggregate, rejects a missing Listing or referenced Property, calls `Listing.Publish()`, and saves the resulting state.
+- `Diyarak.Market.Application.Tests` verifies rejection without a Property check or save when the Listing is missing, rejection without a save when the Property is missing, and successful publication and saving when both exist.
 - `Diyarak.Platform.Persistence.PostgreSql` contains the initial full-state `MarketPropertyRecord`, its explicit EF Core mapping to `market.properties`, conversion to and from `Diyarak.Market.Property.Property`, and the `MarketPropertyPersistenceBaseline` migration.
-- `PostgreSqlPropertyExistenceChecker` implements the Application-owned `IPropertyExistenceChecker` port with a no-tracking key-existence query and is registered by `AddPostgreSqlPersistence`.
-- `Diyarak.Platform.Persistence.PostgreSql.Tests` verifies the Property table mapping and primary key, complete domain-record round trips, found and missing Property checks, and dependency-injection registration.
-- Property persistence operations beyond existence checks, Listing persistence representation, Listing loading and saving, transaction boundaries, behavior when a referenced subject later becomes unavailable, additional publication-readiness requirements, additional Listing lifecycle states and transitions, transaction-specific commercial terms, published-Listing editing workflows, and API composition remain deferred pending concrete requirements.
+- It also contains the full-state `MarketListingRecord`, its explicit EF Core mapping to `market.listings`, conversion to and from `Diyarak.Market.Listing.Listing`, and the `MarketListingPersistenceBaseline` migration.
+- `PostgreSqlPropertyExistenceChecker` implements `IPropertyExistenceChecker` with a no-tracking key-existence query.
+- `PostgreSqlMarketListingRepository` implements `IMarketListingRepository` and loads and saves Market Listing state through `PlatformDbContext`.
+- `AddPostgreSqlPersistence` registers both Application-port adapters as scoped services.
+- `Diyarak.Platform.Persistence.PostgreSql.Tests` verifies Property and Listing table mappings, complete domain-record round trips, found and missing Property checks, Listing repository loading and saving, and dependency-injection registration.
+- `Diyarak.Api` references the Application layer and registers `PublishListingUseCase` for Host composition. No publication endpoint or transport contract is defined yet.
+- Property creation, loading, update, and save workflows beyond existence checks; Listing creation persistence; explicit transaction, locking, and isolation guarantees; optimistic concurrency; behavior when a referenced subject later becomes unavailable; additional publication-readiness requirements; additional Listing lifecycle states and transitions; transaction-specific commercial terms; published-Listing editing workflows; and publication API transport and error mapping remain deferred pending concrete requirements.
 - Public and administrative endpoint requirements are not yet defined.
 - Authentication and authorization requirements for administrative APIs are not yet defined.
 - Search behavior is not yet defined.

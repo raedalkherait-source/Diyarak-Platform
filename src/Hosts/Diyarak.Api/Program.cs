@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Diyarak.Market.Application;
 using Diyarak.Platform.Persistence.PostgreSql;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Timeouts;
@@ -100,6 +101,8 @@ builder.Services.AddRequestTimeouts(options =>
 
 builder.Services.AddPostgreSqlPersistence(
     postgresConnectionString);
+
+builder.Services.AddScoped<PublishListingUseCase>();
 
 var app = builder.Build();
 

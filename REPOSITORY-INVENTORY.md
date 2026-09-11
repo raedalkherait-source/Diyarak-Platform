@@ -1,7 +1,7 @@
 # Repository Inventory
 
-- Files (excluding inventory and manifest): 230
-- C# source files: 109
+- Files (excluding inventory and manifest): 241
+- C# source files: 119
 - Projects: 30
 
 ## Files
@@ -53,6 +53,7 @@
 - `docs/adr/ADR-0018.md`
 - `docs/adr/ADR-0019.md`
 - `docs/adr/ADR-0020.md`
+- `docs/adr/ADR-0021.md`
 - `docs/architecture/dependency-rules.md`
 - `docs/architecture/overview.md`
 - `docs/market/listing-subject-reference-requirements.md`
@@ -81,6 +82,7 @@
 - `scripts/verify.sh`
 - `SECURITY.md`
 - `src/Application/Diyarak.Market.Application/Diyarak.Market.Application.csproj`
+- `src/Application/Diyarak.Market.Application/IMarketListingRepository.cs`
 - `src/Application/Diyarak.Market.Application/IPropertyExistenceChecker.cs`
 - `src/Application/Diyarak.Market.Application/PublishListingUseCase.cs`
 - `src/Application/README.md`
@@ -149,14 +151,20 @@
 - `src/Hosts/README.md`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Diyarak.Platform.Persistence.PostgreSql.csproj`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/InternalsVisibleTo.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketListingRecord.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketListingRecordConfiguration.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketListingRecordMapper.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketPropertyRecord.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketPropertyRecordConfiguration.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/MarketPropertyRecordMapper.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/PostgreSqlMarketListingRepository.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Market/PostgreSqlPropertyExistenceChecker.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260814153200_InitialPlatformBaseline.Designer.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260909221256_MarketPropertyPersistenceBaseline.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260909221256_MarketPropertyPersistenceBaseline.Designer.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260910231038_MarketListingPersistenceBaseline.cs`
+- `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260910231038_MarketListingPersistenceBaseline.Designer.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/PlatformDbContextModelSnapshot.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PersistenceServiceCollectionExtensions.cs`
 - `src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PlatformDbContext.cs`
@@ -213,9 +221,12 @@
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/GlobalUsings.cs`
 - `tests/Foundation/Diyarak.Platform.SharedKernel.Tests/SpecificationTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/Diyarak.Platform.Persistence.PostgreSql.Tests.csproj`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/MarketListingModelTests.cs`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/MarketListingRecordMapperTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/MarketPropertyRecordMapperTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PersistenceServiceCollectionExtensionsTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PlatformDbContextModelTests.cs`
+- `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PostgreSqlMarketListingRepositoryTests.cs`
 - `tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PostgreSqlPropertyExistenceCheckerTests.cs`
 - `tests/Integrations/README.md`
 - `tests/Modules/Diyarak.Market.Listing.Tests/Diyarak.Market.Listing.Tests.csproj`

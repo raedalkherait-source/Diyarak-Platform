@@ -7,6 +7,9 @@ public sealed class PlatformDbContext(
     DbContextOptions<PlatformDbContext> options)
     : DbContext(options)
 {
+    internal DbSet<MarketListingRecord> MarketListings =>
+        Set<MarketListingRecord>();
+
     internal DbSet<MarketPropertyRecord> MarketProperties =>
         Set<MarketPropertyRecord>();
 
@@ -14,6 +17,9 @@ public sealed class PlatformDbContext(
         ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfiguration(
+            new MarketListingRecordConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new MarketPropertyRecordConfiguration());
