@@ -55,5 +55,10 @@ public sealed class MarketListingModelTests
             entityType.FindPrimaryKey()!.Properties);
 
         Assert.Equal("Id", primaryKey.Name);
+
+        var statusProperty = entityType.FindProperty("Status");
+
+        Assert.NotNull(statusProperty);
+        Assert.True(statusProperty!.IsConcurrencyToken);
     }
 }

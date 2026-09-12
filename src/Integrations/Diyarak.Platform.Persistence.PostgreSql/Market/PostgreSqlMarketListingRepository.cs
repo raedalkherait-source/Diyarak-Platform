@@ -1,4 +1,5 @@
 using Diyarak.Market.Application;
+using Diyarak.Market.Listing;
 using Microsoft.EntityFrameworkCore;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
@@ -47,8 +48,9 @@ internal sealed class PostgreSqlMarketListingRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SaveAsync(
+    public async Task<bool> TrySaveAsync(
         MarketListing listing,
+        ListingStatus expectedStatus,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(listing);
@@ -56,8 +58,20 @@ internal sealed class PostgreSqlMarketListingRepository
         MarketListingRecord record =
             MarketListingRecordMapper.FromDomain(listing);
 
-        _context.MarketListings.Update(record);
+        var entry = _context.MarketListings.Attach(record);
+        entry.State = EntityState.Modified;
+        entry.Property(candidate => candidate.Status).OriginalValue =
+            (int)expectedStatus;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            entry.State = EntityState.Detached;
+            return false;
+        }
     }
 }

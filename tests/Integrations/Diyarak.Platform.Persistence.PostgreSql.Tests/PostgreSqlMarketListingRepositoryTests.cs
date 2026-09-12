@@ -95,7 +95,7 @@ public sealed class PostgreSqlMarketListingRepositoryTests
     }
 
     [Fact]
-    public async Task SaveAsync_persists_published_listing_state()
+    public async Task TrySaveAsync_persists_published_listing_state()
     {
         await using PlatformDbContext context = CreateContext();
 
@@ -117,12 +117,77 @@ public sealed class PostgreSqlMarketListingRepositoryTests
 
         loaded!.Publish();
 
-        await repository.SaveAsync(loaded);
+        bool saved = await repository.TrySaveAsync(
+            loaded,
+            ListingStatus.Draft);
+
+        Assert.True(saved);
 
         context.ChangeTracker.Clear();
 
         MarketListingRecord persisted =
             await context.MarketListings.SingleAsync(
+                record => record.Id == original.Id);
+
+        Assert.Equal(
+            (int)ListingStatus.Published,
+            persisted.Status);
+    }
+
+    [Fact]
+    public async Task TrySaveAsync_rejects_stale_competing_publication()
+    {
+        string databaseName = Guid.NewGuid().ToString("N");
+        var options =
+            new DbContextOptionsBuilder<PlatformDbContext>()
+                .UseInMemoryDatabase(databaseName)
+                .Options;
+
+        MarketListing original = CreateReadyDraftListing();
+
+        await using (var seedContext = new PlatformDbContext(options))
+        {
+            seedContext.MarketListings.Add(
+                MarketListingRecordMapper.FromDomain(original));
+            await seedContext.SaveChangesAsync();
+        }
+
+        await using var firstContext = new PlatformDbContext(options);
+        await using var secondContext = new PlatformDbContext(options);
+
+        var firstRepository =
+            new PostgreSqlMarketListingRepository(firstContext);
+        var secondRepository =
+            new PostgreSqlMarketListingRepository(secondContext);
+
+        MarketListing? first =
+            await firstRepository.FindByIdAsync(original.Id);
+        MarketListing? second =
+            await secondRepository.FindByIdAsync(original.Id);
+
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+
+        first!.Publish();
+        second!.Publish();
+
+        bool firstSaved =
+            await firstRepository.TrySaveAsync(
+                first,
+                ListingStatus.Draft);
+        bool secondSaved =
+            await secondRepository.TrySaveAsync(
+                second,
+                ListingStatus.Draft);
+
+        Assert.True(firstSaved);
+        Assert.False(secondSaved);
+
+        await using var verifyContext =
+            new PlatformDbContext(options);
+
+        MarketListingRecord persisted =
+            await verifyContext.MarketListings.SingleAsync(
                 record => record.Id == original.Id);
 
         Assert.Equal(

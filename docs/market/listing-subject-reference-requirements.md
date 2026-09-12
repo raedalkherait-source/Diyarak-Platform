@@ -72,7 +72,7 @@ ADR-0025 is implemented by the Host and PostgreSQL integration. `Diyarak.Api` va
 
 ADR-0026 defines and implements the initial Listing creation workflow. `POST /api/market/listings` accepts only a Property identifier, requires the ADR-0025 mapped-user policy, uses the mapped internal `User.Id` as the immutable `PublisherUserId`, verifies Property existence through `IPropertyExistenceChecker`, creates a new `Draft` Listing for the `market.property` subject type, and inserts it through `IMarketListingRepository.AddAsync`. Creation returns `201 Created` with the generated Listing identifier; invalid Property identifiers return `400 Bad Request`, missing Properties return `409 Conflict`, and authentication failures retain the ADR-0025 `401`/`403` behavior.
 
-ADR-0027 defines and implements the explicit transaction boundary for the existing creation and publication workflows through `IMarketTransactionRunner`. Required identifier validation remains outside the transaction; persistence-sensitive work executes inside one PostgreSQL `ReadCommitted` transaction. The decision intentionally does not add Property row locking, stronger isolation, or optimistic concurrency.
+ADR-0027 defines and implements the explicit transaction boundary for the existing creation and publication workflows through `IMarketTransactionRunner`. Required identifier validation remains outside the transaction; persistence-sensitive work executes inside one PostgreSQL `ReadCommitted` transaction. ADR-0028 adds optimistic status concurrency for publication: the repository saves only when the persisted Listing status is still the expected `Draft` value, stale competing publication returns `market.listing.concurrent_modification` as `409 Conflict`, and an attempt that begins after publication has already committed continues to return `market.listing.cannot_publish`.
 
 ## Remaining open requirements
 
@@ -80,7 +80,7 @@ The following behavior remains undefined and must not be invented:
 
 - Property creation, loading, update, and save workflows beyond the current full-state record, mapping, and existence query.
 - Property row-locking or stronger-than-`ReadCommitted` isolation guarantees spanning the Property existence check and Listing write.
-- Optimistic concurrency and behavior for competing publication attempts.
+- Optimistic concurrency rules for future draft editing and other Listing mutations beyond the defined publication transition.
 - Administrative publication overrides and Listing ownership transfer.
 - An authoritative ownership mapping and separately reviewed data migration for any environment containing legacy Listing rows.
 - Transport representation and API behavior for operations other than the defined creation and publication contracts.

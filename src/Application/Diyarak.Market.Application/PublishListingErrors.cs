@@ -24,6 +24,11 @@ public static class PublishListingErrors
             "market.listing.property_not_found",
             "The referenced Property does not exist.");
 
+    public static Error ConcurrentModification { get; } =
+        Error.Conflict(
+            "market.listing.concurrent_modification",
+            "The Listing changed while publication was being attempted.");
+
     public static Error CannotPublish { get; } =
         Error.Conflict(
             "market.listing.cannot_publish",

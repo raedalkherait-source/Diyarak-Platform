@@ -1,3 +1,4 @@
+using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
@@ -81,9 +82,17 @@ public sealed class PublishListingUseCase
                         PublishListingErrors.CannotPublish);
                 }
 
-                await _listingRepository.SaveAsync(
-                    listing,
-                    transactionalCancellationToken);
+                bool saved =
+                    await _listingRepository.TrySaveAsync(
+                        listing,
+                        ListingStatus.Draft,
+                        transactionalCancellationToken);
+
+                if (!saved)
+                {
+                    return Result.Failure(
+                        PublishListingErrors.ConcurrentModification);
+                }
 
                 return Result.Success();
             },

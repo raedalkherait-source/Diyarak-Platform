@@ -34,7 +34,8 @@ internal sealed class MarketListingRecordConfiguration
 
         builder.Property(record => record.Status)
             .HasColumnName("status")
-            .HasColumnType("integer");
+            .HasColumnType("integer")
+            .IsConcurrencyToken();
 
         builder.Property(record => record.PublishingRole)
             .HasColumnName("publishing_role")

@@ -463,6 +463,34 @@ public sealed class PublishListingEndpointTests
     }
 
     [Fact]
+    public async Task Publish_with_concurrent_modification_returns_409()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        factory.ListingRepository.SaveAccepted = false;
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            PublishListingErrors.ConcurrentModification.Code);
+        Assert.Equal(
+            ListingStatus.Draft,
+            factory.ListingRepository.LastExpectedStatus);
+        Assert.Equal(1, factory.PropertyChecker.CallCount);
+    }
+
+    [Fact]
     public async Task Publish_with_mapped_owner_returns_204_and_persists_publication()
     {
         MarketListing listing = CreateReadyListing();
@@ -484,6 +512,9 @@ public sealed class PublishListingEndpointTests
         Assert.Same(
             listing,
             factory.ListingRepository.SavedListing);
+        Assert.Equal(
+            ListingStatus.Draft,
+            factory.ListingRepository.LastExpectedStatus);
         Assert.Equal(1, factory.PropertyChecker.CallCount);
     }
 
@@ -737,12 +768,18 @@ public sealed class PublishListingEndpointTests
             return Task.CompletedTask;
         }
 
-        public Task SaveAsync(
+        public bool SaveAccepted { get; set; } = true;
+
+        public ListingStatus? LastExpectedStatus { get; private set; }
+
+        public Task<bool> TrySaveAsync(
             MarketListing listing,
+            ListingStatus expectedStatus,
             CancellationToken cancellationToken = default)
         {
             SavedListing = listing;
-            return Task.CompletedTask;
+            LastExpectedStatus = expectedStatus;
+            return Task.FromResult(SaveAccepted);
         }
     }
 

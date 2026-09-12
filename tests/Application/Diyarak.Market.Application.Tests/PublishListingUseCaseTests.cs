@@ -230,6 +230,43 @@ public sealed class PublishListingUseCaseTests
             listing.SubjectReference.SubjectId,
             checker.LastPropertyId);
         Assert.Same(listing, repository.SavedListing);
+        Assert.Equal(
+            ListingStatus.Draft,
+            repository.LastExpectedStatus);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_returns_conflict_when_listing_changes_before_save()
+    {
+        MarketListing listing = CreateReadyListing();
+
+        var repository =
+            new StubMarketListingRepository(
+                listing,
+                saveAccepted: false);
+
+        var checker =
+            new StubPropertyExistenceChecker(exists: true);
+
+        var useCase =
+            new PublishListingUseCase(
+                repository,
+                checker,
+                new StubMarketTransactionRunner());
+
+        Result result =
+            await useCase.ExecuteAsync(
+                listing.Id,
+                listing.PublisherUserId);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(
+            PublishListingErrors.ConcurrentModification,
+            result.Error);
+        Assert.Equal(
+            ListingStatus.Draft,
+            repository.LastExpectedStatus);
+        Assert.Same(listing, repository.SavedListing);
     }
 
     private static MarketListing CreateDraftListing()
@@ -262,7 +299,8 @@ public sealed class PublishListingUseCaseTests
     }
 
     private sealed class StubMarketListingRepository(
-        MarketListing? storedListing)
+        MarketListing? storedListing,
+        bool saveAccepted = true)
         : IMarketListingRepository
     {
         public Guid? LastRequestedId { get; private set; }
@@ -288,13 +326,17 @@ public sealed class PublishListingUseCaseTests
             CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
-        public Task SaveAsync(
+        public ListingStatus? LastExpectedStatus { get; private set; }
+
+        public Task<bool> TrySaveAsync(
             MarketListing listing,
+            ListingStatus expectedStatus,
             CancellationToken cancellationToken = default)
         {
             SavedListing = listing;
+            LastExpectedStatus = expectedStatus;
 
-            return Task.CompletedTask;
+            return Task.FromResult(saveAccepted);
         }
     }
 

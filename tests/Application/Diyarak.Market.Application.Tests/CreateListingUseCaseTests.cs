@@ -136,10 +136,11 @@ public sealed class CreateListingUseCaseTests
             return Task.CompletedTask;
         }
 
-        public Task SaveAsync(
+        public Task<bool> TrySaveAsync(
             MarketListing listing,
+            ListingStatus expectedStatus,
             CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
+            Task.FromResult(true);
     }
 
     private sealed class StubPropertyExistenceChecker(bool exists)
