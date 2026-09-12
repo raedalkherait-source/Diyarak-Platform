@@ -24,6 +24,7 @@ public sealed class ListingTests
         Assert.Equal(id, listing.Id);
         Assert.Equal(publisherUserId, listing.PublisherUserId);
         Assert.Equal(subjectReference, listing.SubjectReference);
+        Assert.Equal(1, listing.Version);
     }
 
     [Fact]
@@ -53,6 +54,51 @@ public sealed class ListingTests
 
         Assert.Equal(availableFromDate, listing.AvailableFromDate);
     }
+    [Fact]
+    public void ClearAvailableFromDate_removes_optional_date_while_draft()
+    {
+        var listing = new MarketListing(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new ListingSubjectReference(
+                Guid.NewGuid(),
+                MarketListingSubjectTypes.Property));
+
+        listing.SetAvailableFromDate(
+            new ListingAvailableFromDate(new DateOnly(2026, 10, 1)));
+
+        listing.ClearAvailableFromDate();
+
+        Assert.Null(listing.AvailableFromDate);
+    }
+
+    [Fact]
+    public void Restore_preserves_persisted_version()
+    {
+        var listing = MarketListing.Restore(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new ListingSubjectReference(
+                Guid.NewGuid(),
+                MarketListingSubjectTypes.Property),
+            version: 7);
+
+        Assert.Equal(7, listing.Version);
+    }
+
+    [Fact]
+    public void Restore_rejects_non_positive_version()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => MarketListing.Restore(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                new ListingSubjectReference(
+                    Guid.NewGuid(),
+                    MarketListingSubjectTypes.Property),
+                version: 0));
+    }
+
     [Fact]
     public void Publish_rejects_draft_without_required_publication_data()
     {
@@ -164,6 +210,8 @@ public sealed class ListingTests
         Assert.Throws<InvalidOperationException>(
             () => listing.SetAvailableFromDate(
                 new ListingAvailableFromDate(new DateOnly(2026, 11, 1))));
+        Assert.Throws<InvalidOperationException>(
+            listing.ClearAvailableFromDate);
     }
     [Fact]
     public void Constructor_rejects_empty_publisher_user_id()

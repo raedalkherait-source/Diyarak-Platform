@@ -12,6 +12,8 @@ internal sealed class MarketListingRecord
 
     public int Status { get; set; }
 
+    public long Version { get; set; }
+
     public int? PublishingRole { get; set; }
 
     public int? TransactionIntent { get; set; }

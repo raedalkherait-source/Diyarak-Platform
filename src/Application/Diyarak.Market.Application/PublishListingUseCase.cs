@@ -1,4 +1,3 @@
-using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
@@ -72,6 +71,8 @@ public sealed class PublishListingUseCase
                         PublishListingErrors.PropertyNotFound);
                 }
 
+                long expectedVersion = listing.Version;
+
                 try
                 {
                     listing.Publish();
@@ -85,7 +86,7 @@ public sealed class PublishListingUseCase
                 bool saved =
                     await _listingRepository.TrySaveAsync(
                         listing,
-                        ListingStatus.Draft,
+                        expectedVersion,
                         transactionalCancellationToken);
 
                 if (!saved)

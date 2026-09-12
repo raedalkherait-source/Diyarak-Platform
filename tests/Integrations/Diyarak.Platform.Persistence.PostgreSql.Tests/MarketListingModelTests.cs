@@ -38,6 +38,7 @@ public sealed class MarketListingModelTests
             "SubjectId",
             "SubjectType",
             "TransactionIntent",
+            "Version",
         ];
 
         string[] actualProperties =
@@ -57,8 +58,11 @@ public sealed class MarketListingModelTests
         Assert.Equal("Id", primaryKey.Name);
 
         var statusProperty = entityType.FindProperty("Status");
+        var versionProperty = entityType.FindProperty("Version");
 
         Assert.NotNull(statusProperty);
-        Assert.True(statusProperty!.IsConcurrencyToken);
+        Assert.False(statusProperty!.IsConcurrencyToken);
+        Assert.NotNull(versionProperty);
+        Assert.True(versionProperty!.IsConcurrencyToken);
     }
 }

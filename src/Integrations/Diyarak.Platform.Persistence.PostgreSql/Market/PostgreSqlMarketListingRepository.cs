@@ -1,5 +1,4 @@
 using Diyarak.Market.Application;
-using Diyarak.Market.Listing;
 using Microsoft.EntityFrameworkCore;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
@@ -50,18 +49,22 @@ internal sealed class PostgreSqlMarketListingRepository
 
     public async Task<bool> TrySaveAsync(
         MarketListing listing,
-        ListingStatus expectedStatus,
+        long expectedVersion,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(listing);
 
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(expectedVersion);
+
         MarketListingRecord record =
             MarketListingRecordMapper.FromDomain(listing);
 
+        record.Version = checked(expectedVersion + 1);
+
         var entry = _context.MarketListings.Attach(record);
         entry.State = EntityState.Modified;
-        entry.Property(candidate => candidate.Status).OriginalValue =
-            (int)expectedStatus;
+        entry.Property(candidate => candidate.Version).OriginalValue =
+            expectedVersion;
 
         try
         {

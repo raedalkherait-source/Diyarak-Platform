@@ -2,7 +2,7 @@
 
 This document records the confirmed requirements, implemented decisions, and remaining unresolved behavior for identifying and validating the subject published by a Listing.
 
-ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0027 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, the HTTP result contracts, creator ownership, safe ownership persistence migration, authenticated creation, and the explicit transaction boundary.
+ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0029 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, the HTTP result contracts, creator ownership, safe ownership persistence migration, authenticated creation, and the explicit transaction boundary.
 
 ## Confirmed requirements
 
@@ -72,7 +72,7 @@ ADR-0025 is implemented by the Host and PostgreSQL integration. `Diyarak.Api` va
 
 ADR-0026 defines and implements the initial Listing creation workflow. `POST /api/market/listings` accepts only a Property identifier, requires the ADR-0025 mapped-user policy, uses the mapped internal `User.Id` as the immutable `PublisherUserId`, verifies Property existence through `IPropertyExistenceChecker`, creates a new `Draft` Listing for the `market.property` subject type, and inserts it through `IMarketListingRepository.AddAsync`. Creation returns `201 Created` with the generated Listing identifier; invalid Property identifiers return `400 Bad Request`, missing Properties return `409 Conflict`, and authentication failures retain the ADR-0025 `401`/`403` behavior.
 
-ADR-0027 defines and implements the explicit transaction boundary for the existing creation and publication workflows through `IMarketTransactionRunner`. Required identifier validation remains outside the transaction; persistence-sensitive work executes inside one PostgreSQL `ReadCommitted` transaction. ADR-0028 adds optimistic status concurrency for publication: the repository saves only when the persisted Listing status is still the expected `Draft` value, stale competing publication returns `market.listing.concurrent_modification` as `409 Conflict`, and an attempt that begins after publication has already committed continues to return `market.listing.cannot_publish`.
+ADR-0027 defines and implements the explicit transaction boundary for the existing creation and publication workflows through `IMarketTransactionRunner`. Required identifier validation remains outside the transaction; persistence-sensitive work executes inside one PostgreSQL `ReadCommitted` transaction. ADR-0028 first adds optimistic concurrency for publication. ADR-0029 replaces the status-only token with a required positive numeric Listing version shared by publication and Draft editing. `PATCH /api/market/listings/{listingId}` allows only the mapped owner to partially replace context, headline, price, or the optional available-from date while the Listing is `Draft`; omitted fields remain unchanged, explicit `availableFromDate: null` clears that optional value, stale versions return `market.listing.concurrent_modification` as `409 Conflict`, and successful edits return the next version.
 
 ## Remaining open requirements
 
@@ -80,10 +80,9 @@ The following behavior remains undefined and must not be invented:
 
 - Property creation, loading, update, and save workflows beyond the current full-state record, mapping, and existence query.
 - Property row-locking or stronger-than-`ReadCommitted` isolation guarantees spanning the Property existence check and Listing write.
-- Optimistic concurrency rules for future draft editing and other Listing mutations beyond the defined publication transition.
 - Administrative publication overrides and Listing ownership transfer.
 - An authoritative ownership mapping and separately reviewed data migration for any environment containing legacy Listing rows.
-- Transport representation and API behavior for operations other than the defined creation and publication contracts.
+- Transport representation and API behavior for operations other than the defined creation, Draft editing, and publication contracts.
 - What happens to a Listing when its referenced subject is removed, archived, or otherwise becomes unavailable after publication.
 - Subject resolution beyond the current Property-existence check.
 - Any additional lifecycle behavior associated with subject availability.

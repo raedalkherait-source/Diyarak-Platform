@@ -21,6 +21,7 @@ internal static class MarketListingRecordMapper
             SubjectId = listing.SubjectReference.SubjectId,
             SubjectType = listing.SubjectReference.SubjectType,
             Status = (int)listing.Status,
+            Version = listing.Version,
             PublishingRole =
                 listing.Context is null
                     ? null
@@ -43,12 +44,13 @@ internal static class MarketListingRecordMapper
     {
         ArgumentNullException.ThrowIfNull(record);
 
-        var listing = new MarketListing(
+        var listing = MarketListing.Restore(
             record.Id,
             record.PublisherUserId,
             new ListingSubjectReference(
                 record.SubjectId,
-                record.SubjectType));
+                record.SubjectType),
+            record.Version);
 
         RestoreContext(record, listing);
 

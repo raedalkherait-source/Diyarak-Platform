@@ -231,8 +231,8 @@ public sealed class PublishListingUseCaseTests
             checker.LastPropertyId);
         Assert.Same(listing, repository.SavedListing);
         Assert.Equal(
-            ListingStatus.Draft,
-            repository.LastExpectedStatus);
+            listing.Version,
+            repository.LastExpectedVersion);
     }
 
     [Fact]
@@ -264,8 +264,8 @@ public sealed class PublishListingUseCaseTests
             PublishListingErrors.ConcurrentModification,
             result.Error);
         Assert.Equal(
-            ListingStatus.Draft,
-            repository.LastExpectedStatus);
+            listing.Version,
+            repository.LastExpectedVersion);
         Assert.Same(listing, repository.SavedListing);
     }
 
@@ -326,15 +326,15 @@ public sealed class PublishListingUseCaseTests
             CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
-        public ListingStatus? LastExpectedStatus { get; private set; }
+        public long? LastExpectedVersion { get; private set; }
 
         public Task<bool> TrySaveAsync(
             MarketListing listing,
-            ListingStatus expectedStatus,
+            long expectedVersion,
             CancellationToken cancellationToken = default)
         {
             SavedListing = listing;
-            LastExpectedStatus = expectedStatus;
+            LastExpectedVersion = expectedVersion;
 
             return Task.FromResult(saveAccepted);
         }

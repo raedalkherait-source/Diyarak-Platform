@@ -31,6 +31,8 @@ public sealed class MarketListingRecordMapperTests
             original.SubjectReference,
             restored.SubjectReference);
         Assert.Equal(ListingStatus.Draft, restored.Status);
+        Assert.Equal(original.Version, record.Version);
+        Assert.Equal(original.Version, restored.Version);
         Assert.Null(restored.Context);
         Assert.Null(restored.Headline);
         Assert.Null(restored.Price);

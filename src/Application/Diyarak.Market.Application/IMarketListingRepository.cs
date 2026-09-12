@@ -1,4 +1,3 @@
-using Diyarak.Market.Listing;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
 namespace Diyarak.Market.Application;
@@ -15,6 +14,6 @@ public interface IMarketListingRepository
 
     public Task<bool> TrySaveAsync(
         MarketListing listing,
-        ListingStatus expectedStatus,
+        long expectedVersion,
         CancellationToken cancellationToken = default);
 }

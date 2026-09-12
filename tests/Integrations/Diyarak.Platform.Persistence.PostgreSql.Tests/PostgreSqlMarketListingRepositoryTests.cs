@@ -51,6 +51,7 @@ public sealed class PostgreSqlMarketListingRepositoryTests
             original.SubjectReference,
             restored.SubjectReference);
         Assert.Equal(ListingStatus.Draft, restored.Status);
+        Assert.Equal(original.Version, restored.Version);
         Assert.Equal(original.Context, restored.Context);
         Assert.Equal(original.Headline, restored.Headline);
         Assert.Equal(original.Price, restored.Price);
@@ -92,6 +93,7 @@ public sealed class PostgreSqlMarketListingRepositoryTests
         Assert.Equal(
             (int)ListingStatus.Draft,
             persisted.Status);
+        Assert.Equal(1, persisted.Version);
     }
 
     [Fact]
@@ -117,9 +119,11 @@ public sealed class PostgreSqlMarketListingRepositoryTests
 
         loaded!.Publish();
 
+        long expectedVersion = loaded.Version;
+
         bool saved = await repository.TrySaveAsync(
             loaded,
-            ListingStatus.Draft);
+            expectedVersion);
 
         Assert.True(saved);
 
@@ -132,6 +136,7 @@ public sealed class PostgreSqlMarketListingRepositoryTests
         Assert.Equal(
             (int)ListingStatus.Published,
             persisted.Status);
+        Assert.Equal(expectedVersion + 1, persisted.Version);
     }
 
     [Fact]
@@ -171,14 +176,17 @@ public sealed class PostgreSqlMarketListingRepositoryTests
         first!.Publish();
         second!.Publish();
 
+        long expectedVersion = first.Version;
+        Assert.Equal(expectedVersion, second.Version);
+
         bool firstSaved =
             await firstRepository.TrySaveAsync(
                 first,
-                ListingStatus.Draft);
+                expectedVersion);
         bool secondSaved =
             await secondRepository.TrySaveAsync(
                 second,
-                ListingStatus.Draft);
+                expectedVersion);
 
         Assert.True(firstSaved);
         Assert.False(secondSaved);
@@ -193,6 +201,61 @@ public sealed class PostgreSqlMarketListingRepositoryTests
         Assert.Equal(
             (int)ListingStatus.Published,
             persisted.Status);
+        Assert.Equal(expectedVersion + 1, persisted.Version);
+    }
+
+    [Fact]
+    public async Task TrySaveAsync_rejects_stale_competing_draft_edit()
+    {
+        string databaseName = Guid.NewGuid().ToString("N");
+        var options =
+            new DbContextOptionsBuilder<PlatformDbContext>()
+                .UseInMemoryDatabase(databaseName)
+                .Options;
+
+        MarketListing original = CreateReadyDraftListing();
+
+        await using (var seedContext = new PlatformDbContext(options))
+        {
+            seedContext.MarketListings.Add(
+                MarketListingRecordMapper.FromDomain(original));
+            await seedContext.SaveChangesAsync();
+        }
+
+        await using var firstContext = new PlatformDbContext(options);
+        await using var secondContext = new PlatformDbContext(options);
+
+        var firstRepository =
+            new PostgreSqlMarketListingRepository(firstContext);
+        var secondRepository =
+            new PostgreSqlMarketListingRepository(secondContext);
+
+        MarketListing first = Assert.IsType<MarketListing>(
+            await firstRepository.FindByIdAsync(original.Id));
+        MarketListing second = Assert.IsType<MarketListing>(
+            await secondRepository.FindByIdAsync(original.Id));
+
+        long expectedVersion = first.Version;
+        Assert.Equal(expectedVersion, second.Version);
+
+        first.SetHeadline(new ListingHeadline("First edit"));
+        second.SetHeadline(new ListingHeadline("Second edit"));
+
+        bool firstSaved =
+            await firstRepository.TrySaveAsync(first, expectedVersion);
+        bool secondSaved =
+            await secondRepository.TrySaveAsync(second, expectedVersion);
+
+        Assert.True(firstSaved);
+        Assert.False(secondSaved);
+
+        await using var verifyContext = new PlatformDbContext(options);
+        MarketListingRecord persisted =
+            await verifyContext.MarketListings.SingleAsync(
+                record => record.Id == original.Id);
+
+        Assert.Equal("First edit", persisted.Headline);
+        Assert.Equal(expectedVersion + 1, persisted.Version);
     }
 
     private static PlatformDbContext CreateContext()

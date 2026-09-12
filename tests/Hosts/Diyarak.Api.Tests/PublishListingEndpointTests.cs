@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -197,6 +197,9 @@ public sealed class PublishListingEndpointTests
                 .GetGuid();
 
         Assert.Equal(listing.Id, responseListingId);
+        Assert.Equal(
+            listing.Version,
+            document.RootElement.GetProperty("version").GetInt64());
         Assert.Equal(
             $"/api/market/listings/{listing.Id}",
             response.Headers.Location?.OriginalString);
@@ -485,8 +488,8 @@ public sealed class PublishListingEndpointTests
             response,
             PublishListingErrors.ConcurrentModification.Code);
         Assert.Equal(
-            ListingStatus.Draft,
-            factory.ListingRepository.LastExpectedStatus);
+            listing.Version,
+            factory.ListingRepository.LastExpectedVersion);
         Assert.Equal(1, factory.PropertyChecker.CallCount);
     }
 
@@ -513,9 +516,229 @@ public sealed class PublishListingEndpointTests
             listing,
             factory.ListingRepository.SavedListing);
         Assert.Equal(
-            ListingStatus.Draft,
-            factory.ListingRepository.LastExpectedStatus);
+            listing.Version,
+            factory.ListingRepository.LastExpectedVersion);
         Assert.Equal(1, factory.PropertyChecker.CallCount);
+    }
+
+    [Fact]
+    public async Task Update_without_access_token_returns_401()
+    {
+        using var factory = new TestApiFactory(Guid.NewGuid());
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            Guid.NewGuid(),
+            """{"version":1,"headline":"Updated"}""");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Update_with_valid_unmapped_identity_returns_403()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "unmapped-user"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            Guid.NewGuid(),
+            """{"version":1,"headline":"Updated"}""");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Update_with_mapped_non_owner_returns_concealed_404()
+    {
+        MarketListing listing = CreateReadyListing();
+        Guid nonOwnerUserId = Guid.NewGuid();
+        using var factory = new TestApiFactory(nonOwnerUserId, listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "mapped-non-owner"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            listing.Id,
+            $$"""{"version":{{listing.Version}},"headline":"Updated"}""");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertProblemCodeAsync(response, UpdateListingErrors.NotFound.Code);
+        Assert.Null(factory.ListingRepository.SavedListing);
+    }
+
+    [Fact]
+    public async Task Update_with_invalid_patch_returns_400()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            listing.Id,
+            """{"headline":"Updated"}""");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            UpdateListingErrors.InvalidPatch.Code);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Update_with_stale_version_returns_409()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            listing.Id,
+            $$"""{"version":{{listing.Version + 1}},"headline":"Updated"}""");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            UpdateListingErrors.ConcurrentModification.Code);
+        Assert.Null(factory.ListingRepository.SavedListing);
+    }
+
+    [Fact]
+    public async Task Update_published_listing_returns_409()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.Publish();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            listing.Id,
+            $$"""{"version":{{listing.Version}},"headline":"Updated"}""");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await AssertProblemCodeAsync(response, UpdateListingErrors.CannotEdit.Code);
+        Assert.Null(factory.ListingRepository.SavedListing);
+    }
+
+    [Fact]
+    public async Task Update_with_mapped_owner_applies_partial_patch_and_returns_next_version()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            listing.Id,
+            $$"""{"version":{{listing.Version}},"headline":"Updated headline"}""");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Updated headline", listing.Headline!.Value);
+        Assert.Same(listing, factory.ListingRepository.SavedListing);
+        Assert.Equal(
+            listing.Version,
+            factory.ListingRepository.LastExpectedVersion);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.Equal(listing.Id, document.RootElement.GetProperty("listingId").GetGuid());
+        Assert.Equal(
+            listing.Version + 1,
+            document.RootElement.GetProperty("version").GetInt64());
+    }
+
+    [Fact]
+    public async Task Update_can_replace_context_and_known_price()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            listing.Id,
+            $$$"""{"version":{{{listing.Version}}},"context":{"publishingRole":"ProfessionalOrAgent","transactionIntent":"Sell"},"price":{"isOnRequest":false,"amount":250000,"currency":"EUR"}}""");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            PublishingRole.ProfessionalOrAgent,
+            listing.Context!.PublishingRole);
+        Assert.Equal(TransactionIntent.Sell, listing.Context.TransactionIntent);
+        Assert.False(listing.Price!.IsOnRequest);
+        Assert.Equal(250_000m, listing.Price.Amount!.Value.Amount);
+        Assert.Equal("EUR", listing.Price.Amount.Value.Currency.Code);
+    }
+
+    [Fact]
+    public async Task Update_with_version_only_returns_400_no_changes()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            listing.Id,
+            $$"""{"version":{{listing.Version}}}""");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(response, UpdateListingErrors.NoChanges.Code);
+        Assert.Null(factory.ListingRepository.SavedListing);
+    }
+
+    [Fact]
+    public async Task Update_can_clear_available_from_date_with_explicit_null()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.SetAvailableFromDate(
+            new ListingAvailableFromDate(new DateOnly(2026, 10, 1)));
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendUpdateAsync(
+            client,
+            listing.Id,
+            $$"""{"version":{{listing.Version}},"availableFromDate":null}""");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null(listing.AvailableFromDate);
     }
 
     private static Task<HttpResponseMessage> SendCreateAsync(
@@ -527,6 +750,24 @@ public sealed class PublishListingEndpointTests
             {
                 propertyId,
             });
+
+    private static async Task<HttpResponseMessage> SendUpdateAsync(
+        HttpClient client,
+        Guid listingId,
+        string json)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Patch,
+            $"/api/market/listings/{listingId}")
+        {
+            Content = new StringContent(
+                json,
+                Encoding.UTF8,
+                "application/json"),
+        };
+
+        return await client.SendAsync(request);
+    }
 
     private static async Task<HttpResponseMessage> SendPublishAsync(
         HttpClient client,
@@ -770,15 +1011,15 @@ public sealed class PublishListingEndpointTests
 
         public bool SaveAccepted { get; set; } = true;
 
-        public ListingStatus? LastExpectedStatus { get; private set; }
+        public long? LastExpectedVersion { get; private set; }
 
         public Task<bool> TrySaveAsync(
             MarketListing listing,
-            ListingStatus expectedStatus,
+            long expectedVersion,
             CancellationToken cancellationToken = default)
         {
             SavedListing = listing;
-            LastExpectedStatus = expectedStatus;
+            LastExpectedVersion = expectedVersion;
             return Task.FromResult(SaveAccepted);
         }
     }
@@ -798,3 +1039,4 @@ public sealed class PublishListingEndpointTests
         }
     }
 }
+

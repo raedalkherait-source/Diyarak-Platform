@@ -112,6 +112,7 @@ public sealed class CreateListingUseCaseTests
             MarketListingSubjectTypes.Property,
             listing.SubjectReference.SubjectType);
         Assert.Equal(ListingStatus.Draft, listing.Status);
+        Assert.Equal(1, listing.Version);
         Assert.Null(listing.Context);
         Assert.Null(listing.Headline);
         Assert.Null(listing.Price);
@@ -138,7 +139,7 @@ public sealed class CreateListingUseCaseTests
 
         public Task<bool> TrySaveAsync(
             MarketListing listing,
-            ListingStatus expectedStatus,
+            long expectedVersion,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(true);
     }

@@ -12,4 +12,6 @@ ADR-0023 permits publication only for the authenticated creator identified by th
 
 Market Listing routes are mapped only when `Authentication:Enabled` is `true`. They require the ADR-0025 `mapped-user` authorization policy, resolve the exact external `(iss, sub)` identity to an internal `User.Id`, and pass only that internal identifier into Application orchestration. The creation route never derives `PublisherUserId` from request data. Missing or invalid access tokens return `401`, valid but unmapped external identities return `403`, and mapped non-owners retain the concealed `404` required by ADR-0023 for publication.
 
+ADR-0029 adds authenticated owner-only `PATCH /api/market/listings/{listingId}` Draft editing with explicit Listing-version conflict handling.
+
 Other Diyarak Market public and administrative endpoints remain pending concrete endpoint and authorization requirements.

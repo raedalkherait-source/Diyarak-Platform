@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Diyarak.Api.Authentication;
 using Diyarak.Market.Application;
 using Diyarak.Platform.BuildingBlocks;
+using MarketListing = Diyarak.Market.Listing.Listing;
 
 namespace Diyarak.Api.Market;
 
@@ -15,6 +17,14 @@ public static class MarketListingEndpointRouteBuilderExtensions
             .MapPost(
                 "/api/market/listings",
                 CreateListingAsync)
+            .RequireAuthorization(
+                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+
+        endpoints
+            .MapMethods(
+                "/api/market/listings/{listingId}",
+                new[] { HttpMethods.Patch },
+                UpdateListingAsync)
             .RequireAuthorization(
                 Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
 
@@ -57,7 +67,53 @@ public static class MarketListingEndpointRouteBuilderExtensions
 
             return Results.Created(
                 $"/api/market/listings/{listingId}",
-                new CreateMarketListingResponse(listingId));
+                new CreateMarketListingResponse(
+                    listingId,
+                    MarketListing.InitialVersion));
+        }
+
+        return ToProblemDetails(result.Error, httpContext);
+    }
+
+    internal static async Task<IResult> UpdateListingAsync(
+        string listingId,
+        JsonElement request,
+        IAuthenticatedActorAccessor actorAccessor,
+        UpdateListingUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(listingId, out Guid parsedListingId) ||
+            parsedListingId == Guid.Empty)
+        {
+            return ToProblemDetails(
+                UpdateListingErrors.InvalidIdentifier,
+                httpContext);
+        }
+
+        if (!MarketListingUpdateRequestParser.TryParse(
+                request,
+                out UpdateListingPatch patch))
+        {
+            return ToProblemDetails(
+                UpdateListingErrors.InvalidPatch,
+                httpContext);
+        }
+
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
+        Result<long> result = await useCase.ExecuteAsync(
+            parsedListingId,
+            actorUserId,
+            patch,
+            cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            return Results.Ok(
+                new UpdateMarketListingResponse(
+                    parsedListingId,
+                    result.Value));
         }
 
         return ToProblemDetails(result.Error, httpContext);
@@ -147,5 +203,10 @@ public static class MarketListingEndpointRouteBuilderExtensions
         string? PropertyId);
 
     internal sealed record CreateMarketListingResponse(
-        Guid ListingId);
+        Guid ListingId,
+        long Version);
+
+    internal sealed record UpdateMarketListingResponse(
+        Guid ListingId,
+        long Version);
 }
