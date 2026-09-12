@@ -10,6 +10,7 @@ Current structure:
 - `MarketListingPublisherOwnership` adds the required `publisher_user_id` column without a default and stops before changing the table when existing Listings require an authoritative ownership migration.
 - `PostgreSqlPropertyExistenceChecker` implements the Application-owned `IPropertyExistenceChecker` port.
 - `PostgreSqlMarketListingRepository` implements the Application-owned `IMarketListingRepository` port for Listing insertion, loading, and saving.
-- `AddPostgreSqlPersistence` registers both Application-port adapters as scoped services backed by `PlatformDbContext`.
+- `PostgreSqlMarketTransactionRunner` implements the Application-owned `IMarketTransactionRunner` port with an explicit `ReadCommitted` EF Core transaction executed through the configured retry execution strategy.
+- `AddPostgreSqlPersistence` registers the Market Application-port adapters as scoped services backed by the same `PlatformDbContext`.
 
-Integrations may persist business Modules and implement Application-owned ports while keeping domain models independent of infrastructure concerns. See ADR-0020, ADR-0021, ADR-0024, and ADR-0026.
+Integrations may persist business Modules and implement Application-owned ports while keeping domain models independent of infrastructure concerns. See ADR-0020, ADR-0021, ADR-0024, ADR-0026, and ADR-0027.

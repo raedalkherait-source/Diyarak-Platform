@@ -12,7 +12,11 @@ public sealed class CreateListingUseCaseTests
     {
         var repository = new StubMarketListingRepository();
         var checker = new StubPropertyExistenceChecker(exists: true);
-        var useCase = new CreateListingUseCase(repository, checker);
+        var transactionRunner = new StubMarketTransactionRunner();
+        var useCase = new CreateListingUseCase(
+            repository,
+            checker,
+            transactionRunner);
 
         Result<Guid> result = await useCase.ExecuteAsync(
             Guid.Empty,
@@ -23,6 +27,7 @@ public sealed class CreateListingUseCaseTests
             CreateListingErrors.InvalidPropertyIdentifier,
             result.Error);
         Assert.Equal(0, checker.CallCount);
+        Assert.Equal(0, transactionRunner.CallCount);
         Assert.Null(repository.AddedListing);
     }
 
@@ -31,7 +36,11 @@ public sealed class CreateListingUseCaseTests
     {
         var repository = new StubMarketListingRepository();
         var checker = new StubPropertyExistenceChecker(exists: true);
-        var useCase = new CreateListingUseCase(repository, checker);
+        var transactionRunner = new StubMarketTransactionRunner();
+        var useCase = new CreateListingUseCase(
+            repository,
+            checker,
+            transactionRunner);
 
         Result<Guid> result = await useCase.ExecuteAsync(
             Guid.NewGuid(),
@@ -42,6 +51,7 @@ public sealed class CreateListingUseCaseTests
             CreateListingErrors.InvalidActorIdentifier,
             result.Error);
         Assert.Equal(0, checker.CallCount);
+        Assert.Equal(0, transactionRunner.CallCount);
         Assert.Null(repository.AddedListing);
     }
 
@@ -50,7 +60,11 @@ public sealed class CreateListingUseCaseTests
     {
         var repository = new StubMarketListingRepository();
         var checker = new StubPropertyExistenceChecker(exists: false);
-        var useCase = new CreateListingUseCase(repository, checker);
+        var transactionRunner = new StubMarketTransactionRunner();
+        var useCase = new CreateListingUseCase(
+            repository,
+            checker,
+            transactionRunner);
         Guid propertyId = Guid.NewGuid();
 
         Result<Guid> result = await useCase.ExecuteAsync(
@@ -62,6 +76,7 @@ public sealed class CreateListingUseCaseTests
             CreateListingErrors.PropertyNotFound,
             result.Error);
         Assert.Equal(propertyId, checker.LastPropertyId);
+        Assert.Equal(1, transactionRunner.CallCount);
         Assert.Null(repository.AddedListing);
     }
 
@@ -70,7 +85,11 @@ public sealed class CreateListingUseCaseTests
     {
         var repository = new StubMarketListingRepository();
         var checker = new StubPropertyExistenceChecker(exists: true);
-        var useCase = new CreateListingUseCase(repository, checker);
+        var transactionRunner = new StubMarketTransactionRunner();
+        var useCase = new CreateListingUseCase(
+            repository,
+            checker,
+            transactionRunner);
         Guid propertyId = Guid.NewGuid();
         Guid actorUserId = Guid.NewGuid();
 
@@ -81,6 +100,7 @@ public sealed class CreateListingUseCaseTests
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value);
         Assert.Equal(propertyId, checker.LastPropertyId);
+        Assert.Equal(1, transactionRunner.CallCount);
 
         MarketListing listing = Assert.IsType<MarketListing>(
             repository.AddedListing);

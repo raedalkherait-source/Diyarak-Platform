@@ -42,6 +42,10 @@ public static class PersistenceServiceCollectionExtensions
             IPropertyExistenceChecker,
             PostgreSqlPropertyExistenceChecker>();
 
+        services.AddScoped<
+            IMarketTransactionRunner,
+            PostgreSqlMarketTransactionRunner>();
+
         return services;
     }
 }

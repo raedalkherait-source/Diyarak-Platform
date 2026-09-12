@@ -2,7 +2,7 @@
 
 This document records the confirmed requirements, implemented decisions, and remaining unresolved behavior for identifying and validating the subject published by a Listing.
 
-ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0026 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, the future HTTP result contract, creator ownership, and safe ownership persistence migration.
+ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0027 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, the HTTP result contracts, creator ownership, safe ownership persistence migration, authenticated creation, and the explicit transaction boundary.
 
 ## Confirmed requirements
 
@@ -58,7 +58,7 @@ The PostgreSQL integration also maps the complete current Market Listing state, 
 
 `PostgreSqlMarketListingRepository` implements `IMarketListingRepository` for Listing insertion plus existing Listing loading and saving. It and `PostgreSqlPropertyExistenceChecker` are registered as scoped services backed by the same `PlatformDbContext`.
 
-No explicit transaction, lock, or isolation guarantee currently spans a Property existence query and subsequent Listing insert or save.
+ADR-0027 introduces an explicit Application-owned transaction boundary for Listing creation and publication. The PostgreSQL adapter executes the persistence-sensitive workflow in one `ReadCommitted` transaction using the same scoped `PlatformDbContext`; successful Results commit, while expected failures and unexpected exceptions roll back. No explicit Property row lock or stronger isolation guarantee is introduced.
 
 ADR-0022 defines the future publication route as `POST /api/market/listings/{listingId}/publish`. Successful publication returns `204 No Content`; invalid Listing identifiers return `400 Bad Request`; a missing or non-owned Listing returns `404 Not Found`; and a missing Property or invalid publication state returns `409 Conflict`.
 
@@ -72,12 +72,14 @@ ADR-0025 is implemented by the Host and PostgreSQL integration. `Diyarak.Api` va
 
 ADR-0026 defines and implements the initial Listing creation workflow. `POST /api/market/listings` accepts only a Property identifier, requires the ADR-0025 mapped-user policy, uses the mapped internal `User.Id` as the immutable `PublisherUserId`, verifies Property existence through `IPropertyExistenceChecker`, creates a new `Draft` Listing for the `market.property` subject type, and inserts it through `IMarketListingRepository.AddAsync`. Creation returns `201 Created` with the generated Listing identifier; invalid Property identifiers return `400 Bad Request`, missing Properties return `409 Conflict`, and authentication failures retain the ADR-0025 `401`/`403` behavior.
 
+ADR-0027 defines and implements the explicit transaction boundary for the existing creation and publication workflows through `IMarketTransactionRunner`. Required identifier validation remains outside the transaction; persistence-sensitive work executes inside one PostgreSQL `ReadCommitted` transaction. The decision intentionally does not add Property row locking, stronger isolation, or optimistic concurrency.
+
 ## Remaining open requirements
 
 The following behavior remains undefined and must not be invented:
 
 - Property creation, loading, update, and save workflows beyond the current full-state record, mapping, and existence query.
-- Explicit transaction, locking, and isolation guarantees spanning the Property existence check and Listing save.
+- Property row-locking or stronger-than-`ReadCommitted` isolation guarantees spanning the Property existence check and Listing write.
 - Optimistic concurrency and behavior for competing publication attempts.
 - Administrative publication overrides and Listing ownership transfer.
 - An authoritative ownership mapping and separately reviewed data migration for any environment containing legacy Listing rows.

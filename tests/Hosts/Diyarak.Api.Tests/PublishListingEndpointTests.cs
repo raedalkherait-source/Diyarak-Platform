@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using Diyarak.Market.Application;
 using Diyarak.Market.Listing;
+using Diyarak.Platform.BuildingBlocks;
 using Diyarak.Platform.Identity;
 using Diyarak.Platform.Listing;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -647,6 +648,10 @@ public sealed class PublishListingEndpointTests
                     services.AddSingleton<IPropertyExistenceChecker>(
                         PropertyChecker);
 
+                    services.RemoveAll<IMarketTransactionRunner>();
+                    services.AddSingleton<IMarketTransactionRunner>(
+                        new StubMarketTransactionRunner());
+
                     services.PostConfigure<JwtBearerOptions>(
                         JwtBearerDefaults.AuthenticationScheme,
                         options =>
@@ -665,6 +670,28 @@ public sealed class PublishListingEndpointTests
                                     configuration);
                         });
                 });
+        }
+    }
+
+    private sealed class StubMarketTransactionRunner
+        : IMarketTransactionRunner
+    {
+        public async Task<Result> ExecuteAsync(
+            Func<CancellationToken, Task<Result>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(operation);
+
+            return await operation(cancellationToken);
+        }
+
+        public async Task<Result<T>> ExecuteAsync<T>(
+            Func<CancellationToken, Task<Result<T>>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(operation);
+
+            return await operation(cancellationToken);
         }
     }
 

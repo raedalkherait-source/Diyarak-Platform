@@ -17,8 +17,14 @@ public sealed class PublishListingUseCaseTests
         var checker =
             new StubPropertyExistenceChecker(exists: true);
 
+        var transactionRunner =
+            new StubMarketTransactionRunner();
+
         var useCase =
-            new PublishListingUseCase(repository, checker);
+            new PublishListingUseCase(
+                repository,
+                checker,
+                transactionRunner);
 
         Result result =
             await useCase.ExecuteAsync(Guid.Empty, Guid.NewGuid());
@@ -30,6 +36,7 @@ public sealed class PublishListingUseCaseTests
         Assert.Null(repository.LastRequestedId);
         Assert.Null(repository.SavedListing);
         Assert.Equal(0, checker.CallCount);
+        Assert.Equal(0, transactionRunner.CallCount);
     }
 
     [Fact]
@@ -41,8 +48,14 @@ public sealed class PublishListingUseCaseTests
         var checker =
             new StubPropertyExistenceChecker(exists: true);
 
+        var transactionRunner =
+            new StubMarketTransactionRunner();
+
         var useCase =
-            new PublishListingUseCase(repository, checker);
+            new PublishListingUseCase(
+                repository,
+                checker,
+                transactionRunner);
 
         Result result =
             await useCase.ExecuteAsync(
@@ -56,7 +69,9 @@ public sealed class PublishListingUseCaseTests
         Assert.Null(repository.LastRequestedId);
         Assert.Null(repository.SavedListing);
         Assert.Equal(0, checker.CallCount);
+        Assert.Equal(0, transactionRunner.CallCount);
     }
+
     [Fact]
     public async Task ExecuteAsync_returns_not_found_when_listing_does_not_exist()
     {
@@ -67,7 +82,10 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(repository, checker);
+            new PublishListingUseCase(
+                repository,
+                checker,
+                new StubMarketTransactionRunner());
 
         Guid listingId = Guid.NewGuid();
         Guid actorUserId = Guid.NewGuid();
@@ -99,7 +117,10 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(repository, checker);
+            new PublishListingUseCase(
+                repository,
+                checker,
+                new StubMarketTransactionRunner());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -127,7 +148,10 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: false);
 
         var useCase =
-            new PublishListingUseCase(repository, checker);
+            new PublishListingUseCase(
+                repository,
+                checker,
+                new StubMarketTransactionRunner());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -157,7 +181,10 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(repository, checker);
+            new PublishListingUseCase(
+                repository,
+                checker,
+                new StubMarketTransactionRunner());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -187,7 +214,10 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(repository, checker);
+            new PublishListingUseCase(
+                repository,
+                checker,
+                new StubMarketTransactionRunner());
 
         Result result =
             await useCase.ExecuteAsync(

@@ -11,6 +11,7 @@ Current Diyarak Market application structure:
 - `PublishListingErrors` defines stable validation, not-found, and conflict errors for expected publication outcomes.
 - `IMarketListingRepository` is the Application-owned port used to add, load, and save Market Listings.
 - `IPropertyExistenceChecker` is the Application-owned port used for the Property existence check.
+- `IMarketTransactionRunner` is the Application-owned port that wraps persistence-sensitive Listing creation and publication work in an explicit transaction.
 
 Application code may coordinate business modules but does not contain persistence implementations or Host composition logic.
 
@@ -18,6 +19,6 @@ The Host authenticates the caller and supplies a non-empty actor user identifier
 
 Expected creation and publication failures are returned as classified errors. Unexpected persistence or infrastructure exceptions continue to the Host's exception-handling boundary.
 
-The repository add or save operation is the current persistence commit boundary. No explicit transaction, lock, or isolation guarantee currently spans the Property existence check and subsequent Listing insert or save.
+ADR-0027 makes the transaction boundary explicit. After required identifier validation, `CreateListingUseCase` and `PublishListingUseCase` execute their persistence-sensitive work through `IMarketTransactionRunner`. The PostgreSQL implementation commits successful results and rolls back expected failures or exceptions. Row locking, stronger isolation, and optimistic concurrency remain separate requirements.
 
 The current Property publication-availability rule is existence only. Additional Property lifecycle or availability rules are not introduced until concrete requirements define them.
