@@ -13,12 +13,54 @@ public static class MarketListingEndpointRouteBuilderExtensions
 
         endpoints
             .MapPost(
+                "/api/market/listings",
+                CreateListingAsync)
+            .RequireAuthorization(
+                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+
+        endpoints
+            .MapPost(
                 "/api/market/listings/{listingId}/publish",
                 PublishListingAsync)
             .RequireAuthorization(
                 Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
 
         return endpoints;
+    }
+
+    internal static async Task<IResult> CreateListingAsync(
+        CreateMarketListingRequest request,
+        IAuthenticatedActorAccessor actorAccessor,
+        CreateListingUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (request is null ||
+            !Guid.TryParse(request.PropertyId, out Guid propertyId) ||
+            propertyId == Guid.Empty)
+        {
+            return ToProblemDetails(
+                CreateListingErrors.InvalidPropertyIdentifier,
+                httpContext);
+        }
+
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
+        Result<Guid> result = await useCase.ExecuteAsync(
+            propertyId,
+            actorUserId,
+            cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            Guid listingId = result.Value;
+
+            return Results.Created(
+                $"/api/market/listings/{listingId}",
+                new CreateMarketListingResponse(listingId));
+        }
+
+        return ToProblemDetails(result.Error, httpContext);
     }
 
     internal static async Task<IResult> PublishListingAsync(
@@ -36,6 +78,24 @@ public static class MarketListingEndpointRouteBuilderExtensions
                 httpContext);
         }
 
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
+        Result result = await useCase.ExecuteAsync(
+            parsedListingId,
+            actorUserId,
+            cancellationToken);
+
+        if (result.IsSuccess)
+            return Results.NoContent();
+
+        return ToProblemDetails(result.Error, httpContext);
+    }
+
+    private static Guid GetRequiredActorUserId(
+        IAuthenticatedActorAccessor actorAccessor)
+    {
+        ArgumentNullException.ThrowIfNull(actorAccessor);
+
         Guid? actorUserId = actorAccessor.UserId;
 
         if (actorUserId is null || actorUserId == Guid.Empty)
@@ -44,15 +104,7 @@ public static class MarketListingEndpointRouteBuilderExtensions
                 "The mapped-user authorization policy succeeded without supplying a non-empty internal user identifier.");
         }
 
-        Result result = await useCase.ExecuteAsync(
-            parsedListingId,
-            actorUserId.Value,
-            cancellationToken);
-
-        if (result.IsSuccess)
-            return Results.NoContent();
-
-        return ToProblemDetails(result.Error, httpContext);
+        return actorUserId.Value;
     }
 
     private static IResult ToProblemDetails(
@@ -68,7 +120,7 @@ public static class MarketListingEndpointRouteBuilderExtensions
             ErrorType.NotFound => StatusCodes.Status404NotFound,
             ErrorType.Conflict => StatusCodes.Status409Conflict,
             _ => throw new InvalidOperationException(
-                $"Unsupported expected publication error type '{error.Type}'."),
+                $"Unsupported expected Market Listing error type '{error.Type}'."),
         };
 
         string title = statusCode switch
@@ -77,7 +129,7 @@ public static class MarketListingEndpointRouteBuilderExtensions
             StatusCodes.Status404NotFound => "Not Found",
             StatusCodes.Status409Conflict => "Conflict",
             _ => throw new InvalidOperationException(
-                "Unsupported publication HTTP status code."),
+                "Unsupported Market Listing HTTP status code."),
         };
 
         return Results.Problem(
@@ -90,4 +142,10 @@ public static class MarketListingEndpointRouteBuilderExtensions
                 ["traceId"] = httpContext.TraceIdentifier,
             });
     }
+
+    internal sealed record CreateMarketListingRequest(
+        string? PropertyId);
+
+    internal sealed record CreateMarketListingResponse(
+        Guid ListingId);
 }

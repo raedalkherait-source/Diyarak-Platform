@@ -57,6 +57,44 @@ public sealed class PostgreSqlMarketListingRepositoryTests
     }
 
     [Fact]
+    public async Task AddAsync_inserts_new_draft_listing()
+    {
+        await using PlatformDbContext context = CreateContext();
+
+        var listing = new MarketListing(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new ListingSubjectReference(
+                Guid.NewGuid(),
+                MarketListingSubjectTypes.Property));
+
+        var repository =
+            new PostgreSqlMarketListingRepository(context);
+
+        await repository.AddAsync(listing);
+
+        context.ChangeTracker.Clear();
+
+        MarketListingRecord persisted =
+            await context.MarketListings.SingleAsync(
+                record => record.Id == listing.Id);
+
+        Assert.Equal(listing.Id, persisted.Id);
+        Assert.Equal(
+            listing.PublisherUserId,
+            persisted.PublisherUserId);
+        Assert.Equal(
+            listing.SubjectReference.SubjectId,
+            persisted.SubjectId);
+        Assert.Equal(
+            MarketListingSubjectTypes.Property,
+            persisted.SubjectType);
+        Assert.Equal(
+            (int)ListingStatus.Draft,
+            persisted.Status);
+    }
+
+    [Fact]
     public async Task SaveAsync_persists_published_listing_state()
     {
         await using PlatformDbContext context = CreateContext();

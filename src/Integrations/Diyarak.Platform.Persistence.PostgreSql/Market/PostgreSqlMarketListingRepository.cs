@@ -33,6 +33,20 @@ internal sealed class PostgreSqlMarketListingRepository
             : MarketListingRecordMapper.ToDomain(record);
     }
 
+    public async Task AddAsync(
+        MarketListing listing,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(listing);
+
+        MarketListingRecord record =
+            MarketListingRecordMapper.FromDomain(listing);
+
+        _context.MarketListings.Add(record);
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task SaveAsync(
         MarketListing listing,
         CancellationToken cancellationToken = default)

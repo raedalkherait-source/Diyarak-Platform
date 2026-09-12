@@ -107,6 +107,7 @@ builder.Services.AddRequestTimeouts(options =>
 builder.Services.AddPostgreSqlPersistence(
     postgresConnectionString);
 
+builder.Services.AddScoped<CreateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
 
 var app = builder.Build();

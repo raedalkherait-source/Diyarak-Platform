@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -50,6 +51,154 @@ public sealed class PublishListingEndpointTests
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Creation_route_is_not_mapped_when_authentication_is_disabled()
+    {
+        using var factory = new TestApiFactory(
+            userId: null,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendCreateAsync(
+            client,
+            Guid.NewGuid().ToString());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Null(factory.ListingRepository.AddedListing);
+    }
+
+    [Fact]
+    public async Task Create_without_access_token_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendCreateAsync(
+            client,
+            Guid.NewGuid().ToString());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Null(factory.ListingRepository.AddedListing);
+    }
+
+    [Fact]
+    public async Task Create_with_valid_unmapped_identity_returns_403()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "unmapped-user"));
+
+        HttpResponseMessage response = await SendCreateAsync(
+            client,
+            Guid.NewGuid().ToString());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Null(factory.ListingRepository.AddedListing);
+    }
+
+    [Fact]
+    public async Task Create_with_malformed_property_identifier_returns_400()
+    {
+        using var factory = new TestApiFactory(Guid.NewGuid());
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response = await SendCreateAsync(
+            client,
+            "not-a-guid");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            CreateListingErrors.InvalidPropertyIdentifier.Code);
+        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Null(factory.ListingRepository.AddedListing);
+    }
+
+    [Fact]
+    public async Task Create_with_missing_property_returns_409()
+    {
+        using var factory = new TestApiFactory(
+            Guid.NewGuid(),
+            propertyExists: false);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response = await SendCreateAsync(
+            client,
+            Guid.NewGuid().ToString());
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            CreateListingErrors.PropertyNotFound.Code);
+        Assert.Equal(1, factory.PropertyChecker.CallCount);
+        Assert.Null(factory.ListingRepository.AddedListing);
+    }
+
+    [Fact]
+    public async Task Create_with_mapped_user_returns_201_and_persists_owned_draft()
+    {
+        Guid userId = Guid.NewGuid();
+        Guid propertyId = Guid.NewGuid();
+        using var factory = new TestApiFactory(userId);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        Guid forgedPublisherUserId = Guid.NewGuid();
+        Assert.NotEqual(userId, forgedPublisherUserId);
+
+        HttpResponseMessage response = await client.PostAsJsonAsync(
+            "/api/market/listings",
+            new
+            {
+                propertyId = propertyId.ToString(),
+                publisherUserId = forgedPublisherUserId,
+            });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(1, factory.PropertyChecker.CallCount);
+
+        MarketListing listing = Assert.IsType<MarketListing>(
+            factory.ListingRepository.AddedListing);
+
+        Assert.Equal(userId, listing.PublisherUserId);
+        Assert.Equal(propertyId, listing.SubjectReference.SubjectId);
+        Assert.Equal(
+            MarketListingSubjectTypes.Property,
+            listing.SubjectReference.SubjectType);
+        Assert.Equal(ListingStatus.Draft, listing.Status);
+        Assert.Null(factory.ListingRepository.SavedListing);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        Guid responseListingId =
+            document.RootElement
+                .GetProperty("listingId")
+                .GetGuid();
+
+        Assert.Equal(listing.Id, responseListingId);
+        Assert.Equal(
+            $"/api/market/listings/{listing.Id}",
+            response.Headers.Location?.OriginalString);
     }
 
     [Fact]
@@ -337,6 +486,16 @@ public sealed class PublishListingEndpointTests
         Assert.Equal(1, factory.PropertyChecker.CallCount);
     }
 
+    private static Task<HttpResponseMessage> SendCreateAsync(
+        HttpClient client,
+        string propertyId) =>
+        client.PostAsJsonAsync(
+            "/api/market/listings",
+            new
+            {
+                propertyId,
+            });
+
     private static async Task<HttpResponseMessage> SendPublishAsync(
         HttpClient client,
         Guid listingId)
@@ -539,6 +698,16 @@ public sealed class PublishListingEndpointTests
                     : null;
 
             return Task.FromResult(result);
+        }
+
+        public MarketListing? AddedListing { get; private set; }
+
+        public Task AddAsync(
+            MarketListing listing,
+            CancellationToken cancellationToken = default)
+        {
+            AddedListing = listing;
+            return Task.CompletedTask;
         }
 
         public Task SaveAsync(

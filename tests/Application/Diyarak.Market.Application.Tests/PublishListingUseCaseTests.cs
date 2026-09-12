@@ -253,6 +253,11 @@ public sealed class PublishListingUseCaseTests
             return Task.FromResult(result);
         }
 
+        public Task AddAsync(
+            MarketListing listing,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public Task SaveAsync(
             MarketListing listing,
             CancellationToken cancellationToken = default)
