@@ -23,5 +23,6 @@
   <ItemGroup>
     <ProjectReference Include="../../../src/Application/Diyarak.Market.Application/Diyarak.Market.Application.csproj" />
     <ProjectReference Include="../../../src/Modules/Diyarak.Market.Listing/Diyarak.Market.Listing.csproj" />
+    <ProjectReference Include="../../../src/Modules/Diyarak.Market.Property/Diyarak.Market.Property.csproj" />
   </ItemGroup>
 </Project>

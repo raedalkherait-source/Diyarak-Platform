@@ -212,6 +212,10 @@ Diyarak should preserve the same architectural principle: creating a new listing
 
 The listing therefore needs an architectural way to identify its published subject without making Platform Core depend on a Market module. ADR-0010 defines that relationship through the sector-agnostic `ListingSubjectReference` contract, ADR-0011 keeps the reference immutable for the lifetime of a Listing, and ADR-0012 assigns supported subject-type validation to the consuming business module. Subject existence validation and behavior when a referenced subject becomes unavailable remain unresolved.
 
+## Implemented Property creation boundary
+
+ADR-0030 defines the first Property application and HTTP creation workflow. `POST /api/market/properties` requires the ADR-0025 mapped-user policy, accepts only fields already represented by the current Property aggregate, generates the Property identifier server-side, and inserts the aggregate through an Application-owned repository implemented by PostgreSQL persistence. Authentication gates creation but does not define or persist Property ownership. Property loading, update, removal, ownership, lifecycle, and concurrency behavior remain unresolved.
+
 ## Company
 
 The supplied reference confirms that a Professional/Agent publisher may have a person identity, company presentation, business address, branding, verification indicator, ratings, followers, external links, and contact actions.

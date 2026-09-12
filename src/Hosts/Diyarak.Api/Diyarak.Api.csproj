@@ -14,7 +14,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-  
+
   <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
 </ItemGroup>
 
@@ -22,6 +22,8 @@
     <ProjectReference Include="..\..\Integrations\Diyarak.Platform.Persistence.PostgreSql\Diyarak.Platform.Persistence.PostgreSql.csproj" />
     <ProjectReference Include="..\..\Application\Diyarak.Market.Application\Diyarak.Market.Application.csproj" />
     <ProjectReference Include="..\..\Core\Diyarak.Platform.Identity\Diyarak.Platform.Identity.csproj" />
+    <ProjectReference Include="..\..\Modules\Diyarak.Market.Property\Diyarak.Market.Property.csproj" />
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.Domain.Primitives\Diyarak.Platform.Domain.Primitives.csproj" />
   </ItemGroup>
 
 </Project>

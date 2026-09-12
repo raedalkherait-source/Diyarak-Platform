@@ -2,7 +2,7 @@
 
 This document records the confirmed requirements, implemented decisions, and remaining unresolved behavior for identifying and validating the subject published by a Listing.
 
-ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0029 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, the HTTP result contracts, creator ownership, safe ownership persistence migration, authenticated creation, and the explicit transaction boundary.
+ADR-0010 through ADR-0012 define the subject-reference contract and its ownership. ADR-0016 through ADR-0030 define the initial subject-availability rule, its application-layer orchestration, its Application-owned ports, the infrastructure boundary for persistence-backed implementations, the loading and saving boundary, the HTTP result contracts, creator ownership, safe ownership persistence migration, authenticated creation, and the explicit transaction boundary.
 
 ## Confirmed requirements
 
@@ -74,11 +74,13 @@ ADR-0026 defines and implements the initial Listing creation workflow. `POST /ap
 
 ADR-0027 defines and implements the explicit transaction boundary for the existing creation and publication workflows through `IMarketTransactionRunner`. Required identifier validation remains outside the transaction; persistence-sensitive work executes inside one PostgreSQL `ReadCommitted` transaction. ADR-0028 first adds optimistic concurrency for publication. ADR-0029 replaces the status-only token with a required positive numeric Listing version shared by publication and Draft editing. `PATCH /api/market/listings/{listingId}` allows only the mapped owner to partially replace context, headline, price, or the optional available-from date while the Listing is `Draft`; omitted fields remain unchanged, explicit `availableFromDate: null` clears that optional value, stale versions return `market.listing.concurrent_modification` as `409 Conflict`, and successful edits return the next version.
 
+ADR-0030 adds authenticated Property asset creation through `POST /api/market/properties`. The Host accepts only fields already modeled by the current Property aggregate, the server generates the Property identifier, `CreatePropertyUseCase` inserts through the Application-owned `IMarketPropertyRepository`, and the PostgreSQL adapter reuses the existing full-state Property record and table. Authentication gates the mutation but does not introduce Property ownership.
+
 ## Remaining open requirements
 
 The following behavior remains undefined and must not be invented:
 
-- Property creation, loading, update, and save workflows beyond the current full-state record, mapping, and existence query.
+- Property loading, update, and removal workflows beyond the defined authenticated creation flow, current full-state record/mapping, and existence query.
 - Property row-locking or stronger-than-`ReadCommitted` isolation guarantees spanning the Property existence check and Listing write.
 - Administrative publication overrides and Listing ownership transfer.
 - An authoritative ownership mapping and separately reviewed data migration for any environment containing legacy Listing rows.

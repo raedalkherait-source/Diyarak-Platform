@@ -107,6 +107,7 @@ builder.Services.AddRequestTimeouts(options =>
 builder.Services.AddPostgreSqlPersistence(
     postgresConnectionString);
 
+builder.Services.AddScoped<CreatePropertyUseCase>();
 builder.Services.AddScoped<CreateListingUseCase>();
 builder.Services.AddScoped<UpdateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
@@ -212,6 +213,7 @@ app.MapGet(
 if (builder.Configuration.GetValue<bool>(
         $"{OidcAuthenticationOptions.SectionName}:Enabled"))
 {
+    app.MapMarketPropertyEndpoints();
     app.MapMarketListingEndpoints();
 }
 
