@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Modules\Diyarak.Market.Property\Diyarak.Market.Property.csproj" />
     <ProjectReference Include="..\..\Application\Diyarak.Market.Application\Diyarak.Market.Application.csproj" />
+    <ProjectReference Include="..\..\Core\Diyarak.Platform.Identity\Diyarak.Platform.Identity.csproj" />
   </ItemGroup>
 
 </Project>

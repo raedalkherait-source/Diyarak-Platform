@@ -10,6 +10,6 @@ ADR-0022 defines the future Market Listing publication contract as `POST /api/ma
 
 ADR-0023 permits publication only for the authenticated creator identified by the Listing's immutable `PublisherUserId`. A non-owner receives the same `404 Not Found` response as a missing Listing.
 
-The publication route is not currently mapped or exposed. It remains blocked until an explicit authentication mechanism and claims mapping are accepted and configured.
+The publication route is mapped only when `Authentication:Enabled` is `true`. It requires the ADR-0025 `mapped-user` authorization policy, resolves the exact external `(iss, sub)` identity to an internal `User.Id`, and passes only that internal identifier into `PublishListingUseCase`. Missing or invalid access tokens return `401`, valid but unmapped external identities return `403`, and mapped non-owners retain the concealed `404` required by ADR-0023.
 
 Other Diyarak Market public and administrative endpoints remain pending concrete endpoint and authorization requirements.

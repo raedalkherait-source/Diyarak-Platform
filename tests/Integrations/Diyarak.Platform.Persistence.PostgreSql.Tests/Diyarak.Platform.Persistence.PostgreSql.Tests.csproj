@@ -25,5 +25,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Diyarak.Platform.Persistence.PostgreSql.csproj" />
+    <ProjectReference Include="../../../src/Core/Diyarak.Platform.Identity/Diyarak.Platform.Identity.csproj" />
   </ItemGroup>
 </Project>

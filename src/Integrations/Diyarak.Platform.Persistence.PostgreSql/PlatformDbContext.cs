@@ -1,3 +1,4 @@
+using Diyarak.Platform.Persistence.PostgreSql.Identity;
 using Diyarak.Platform.Persistence.PostgreSql.Market;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,9 @@ public sealed class PlatformDbContext(
     DbContextOptions<PlatformDbContext> options)
     : DbContext(options)
 {
+    internal DbSet<ExternalIdentityMappingRecord> ExternalIdentityMappings =>
+        Set<ExternalIdentityMappingRecord>();
+
     internal DbSet<MarketListingRecord> MarketListings =>
         Set<MarketListingRecord>();
 
@@ -17,6 +21,9 @@ public sealed class PlatformDbContext(
         ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfiguration(
+            new ExternalIdentityMappingRecordConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new MarketListingRecordConfiguration());

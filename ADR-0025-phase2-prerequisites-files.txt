@@ -1,0 +1,17 @@
+src/Core/Diyarak.Platform.Identity/ExternalIdentity.cs
+src/Core/Diyarak.Platform.Identity/IExternalIdentityResolver.cs
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Diyarak.Platform.Persistence.PostgreSql.csproj
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PlatformDbContext.cs
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/PersistenceServiceCollectionExtensions.cs
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Identity/ExternalIdentityMappingRecord.cs
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Identity/ExternalIdentityMappingRecordConfiguration.cs
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Identity/PostgreSqlExternalIdentityResolver.cs
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260912020000_ExternalIdentityMappings.cs
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/20260912020000_ExternalIdentityMappings.Designer.cs
+src/Integrations/Diyarak.Platform.Persistence.PostgreSql/Migrations/PlatformDbContextModelSnapshot.cs
+tests/Core/Diyarak.Platform.Identity.Tests/ExternalIdentityTests.cs
+tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/Diyarak.Platform.Persistence.PostgreSql.Tests.csproj
+tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/ExternalIdentityMappingModelTests.cs
+tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/ExternalIdentityMappingsMigrationTests.cs
+tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PostgreSqlExternalIdentityResolverTests.cs
+tests/Integrations/Diyarak.Platform.Persistence.PostgreSql.Tests/PersistenceServiceCollectionExtensionsTests.cs

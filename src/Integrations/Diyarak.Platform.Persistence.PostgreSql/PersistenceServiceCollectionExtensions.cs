@@ -1,4 +1,6 @@
 using Diyarak.Market.Application;
+using Diyarak.Platform.Identity;
+using Diyarak.Platform.Persistence.PostgreSql.Identity;
 using Diyarak.Platform.Persistence.PostgreSql.Market;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +29,10 @@ public static class PersistenceServiceCollectionExtensions
                             errorCodesToAdd: null);
                     });
             });
+
+        services.AddScoped<
+            IExternalIdentityResolver,
+            PostgreSqlExternalIdentityResolver>();
 
         services.AddScoped<
             IMarketListingRepository,

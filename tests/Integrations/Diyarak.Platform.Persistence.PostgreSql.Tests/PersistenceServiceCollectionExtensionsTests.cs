@@ -1,4 +1,6 @@
 using Diyarak.Market.Application;
+using Diyarak.Platform.Identity;
+using Diyarak.Platform.Persistence.PostgreSql.Identity;
 using Diyarak.Platform.Persistence.PostgreSql.Market;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -20,6 +22,10 @@ public sealed class PersistenceServiceCollectionExtensionsTests
 
         using IServiceScope scope = provider.CreateScope();
 
+        IExternalIdentityResolver resolver =
+            scope.ServiceProvider
+                .GetRequiredService<IExternalIdentityResolver>();
+
         IPropertyExistenceChecker checker =
             scope.ServiceProvider
                 .GetRequiredService<IPropertyExistenceChecker>();
@@ -27,6 +33,9 @@ public sealed class PersistenceServiceCollectionExtensionsTests
         IMarketListingRepository repository =
             scope.ServiceProvider
                 .GetRequiredService<IMarketListingRepository>();
+
+        Assert.IsType<PostgreSqlExternalIdentityResolver>(
+            resolver);
 
         Assert.IsType<PostgreSqlPropertyExistenceChecker>(
             checker);

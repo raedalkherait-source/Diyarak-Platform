@@ -1,5 +1,7 @@
 using System.Threading.RateLimiting;
+using Diyarak.Api.Authentication;
 using Diyarak.Market.Application;
+using Diyarak.Api.Market;
 using Diyarak.Platform.Persistence.PostgreSql;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Timeouts;
@@ -25,6 +27,9 @@ var allowedOrigins =
     ?? [];
 
 builder.Services.AddOpenApi();
+
+builder.Services.AddDiyarakAuthentication(
+    builder.Configuration);
 
 builder.Services.AddProblemDetails(options =>
 {
@@ -161,6 +166,9 @@ app.UseRouting();
 
 app.UseCors(CorsPolicy);
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseRequestTimeouts();
 app.UseRateLimiter();
 
@@ -199,4 +207,12 @@ app.MapGet(
             }))
     .RequireRateLimiting(ApiRateLimitPolicy);
 
+if (builder.Configuration.GetValue<bool>(
+        $"{OidcAuthenticationOptions.SectionName}:Enabled"))
+{
+    app.MapMarketListingEndpoints();
+}
+
 app.Run();
+
+public partial class Program { }

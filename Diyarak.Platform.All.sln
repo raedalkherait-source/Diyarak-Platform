@@ -85,6 +85,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Integrations", "Integration
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Platform.Persistence.PostgreSql.Tests", "tests\Integrations\Diyarak.Platform.Persistence.PostgreSql.Tests\Diyarak.Platform.Persistence.PostgreSql.Tests.csproj", "{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hosts", "Hosts", "{01151216-D94E-2A6F-3010-3E89474806D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diyarak.Api.Tests", "tests\Hosts\Diyarak.Api.Tests\Diyarak.Api.Tests.csproj", "{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -455,6 +459,18 @@ Global
 		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|x64.Build.0 = Release|Any CPU
 		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|x86.ActiveCfg = Release|Any CPU
 		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96}.Release|x86.Build.0 = Release|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Debug|x64.Build.0 = Debug|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Debug|x86.Build.0 = Debug|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Release|x64.ActiveCfg = Release|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Release|x64.Build.0 = Release|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Release|x86.ActiveCfg = Release|Any CPU
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -490,5 +506,7 @@ Global
 		{FAA9F481-A31B-444B-9488-E57A2B60767F} = {B611CC27-D592-8FDF-F9F1-D39D131BCC02}
 		{D3422D82-0893-D6C0-E5E4-5203CE673B60} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{17AD5370-46AC-43AC-AA23-0EB1AD8B7C96} = {D3422D82-0893-D6C0-E5E4-5203CE673B60}
+		{01151216-D94E-2A6F-3010-3E89474806D3} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{BA80FDCE-2A9D-4AEC-9DE2-3F89B6EDB829} = {01151216-D94E-2A6F-3010-3E89474806D3}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,567 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using Diyarak.Market.Application;
+using Diyarak.Market.Listing;
+using Diyarak.Platform.Identity;
+using Diyarak.Platform.Listing;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
+using Xunit;
+using MarketListing = Diyarak.Market.Listing.Listing;
+
+namespace Diyarak.Api.Tests;
+
+public sealed class PublishListingEndpointTests
+{
+    private const string Issuer = "https://idp.example.test/";
+    private const string Audience = "diyarak-api";
+
+    private static readonly SymmetricSecurityKey SigningKey =
+        new(
+            Encoding.UTF8.GetBytes(
+                "diyarak-api-tests-signing-key-32-bytes-minimum-2026"))
+        {
+            KeyId = "diyarak-api-tests",
+        };
+
+    [Fact]
+    public async Task Publication_route_is_not_mapped_when_authentication_is_disabled()
+    {
+        using var factory = new TestApiFactory(
+            userId: null,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_without_access_token_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_invalid_access_token_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(
+                JwtBearerDefaults.AuthenticationScheme,
+                "not-a-jwt");
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_wrong_signature_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        var untrustedKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(
+                "untrusted-tests-signing-key-32-bytes-minimum-2026"))
+        {
+            KeyId = "untrusted-tests",
+        };
+
+        AddBearerToken(
+            client,
+            CreateToken(
+                subject: "external-user",
+                signingKey: untrustedKey));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_untrusted_issuer_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(
+                subject: "external-user",
+                issuer: "https://untrusted.example.test/"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_wrong_audience_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(
+                subject: "external-user",
+                audience: "some-other-api"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_expired_access_token_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(
+                subject: "external-user",
+                expires: DateTime.UtcNow.AddMinutes(-2)));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_id_token_shape_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(
+                subject: "external-user",
+                tokenType: "JWT"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_valid_unmapped_identity_returns_403()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "unmapped-user"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_mapped_non_owner_returns_concealed_404()
+    {
+        MarketListing listing = CreateReadyListing();
+        Guid nonOwnerUserId = Guid.NewGuid();
+        Assert.NotEqual(listing.PublisherUserId, nonOwnerUserId);
+
+        using var factory = new TestApiFactory(
+            nonOwnerUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-non-owner"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            PublishListingErrors.NotFound.Code);
+        Assert.Equal(1, factory.ListingRepository.FindCallCount);
+        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Null(factory.ListingRepository.SavedListing);
+    }
+
+    [Fact]
+    public async Task Publish_with_mapped_user_and_missing_listing_returns_same_404_code()
+    {
+        using var factory = new TestApiFactory(
+            Guid.NewGuid(),
+            listing: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            PublishListingErrors.NotFound.Code);
+        Assert.Equal(1, factory.ListingRepository.FindCallCount);
+        Assert.Equal(0, factory.PropertyChecker.CallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_malformed_listing_identifier_returns_400()
+    {
+        Guid userId = Guid.NewGuid();
+        using var factory = new TestApiFactory(userId);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/market/listings/not-a-guid/publish");
+        HttpResponseMessage response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            PublishListingErrors.InvalidIdentifier.Code);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Publish_with_missing_property_returns_409()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing,
+            propertyExists: false);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            PublishListingErrors.PropertyNotFound.Code);
+        Assert.Equal(1, factory.PropertyChecker.CallCount);
+        Assert.Null(factory.ListingRepository.SavedListing);
+    }
+
+    [Fact]
+    public async Task Publish_with_mapped_owner_returns_204_and_persists_publication()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendPublishAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(ListingStatus.Published, listing.Status);
+        Assert.Same(
+            listing,
+            factory.ListingRepository.SavedListing);
+        Assert.Equal(1, factory.PropertyChecker.CallCount);
+    }
+
+    private static async Task<HttpResponseMessage> SendPublishAsync(
+        HttpClient client,
+        Guid listingId)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"/api/market/listings/{listingId}/publish");
+
+        return await client.SendAsync(request);
+    }
+
+    private static void AddBearerToken(
+        HttpClient client,
+        string token)
+    {
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(
+                JwtBearerDefaults.AuthenticationScheme,
+                token);
+    }
+
+    private static string CreateToken(
+        string subject,
+        string issuer = Issuer,
+        string audience = Audience,
+        string tokenType = "at+jwt",
+        SecurityKey? signingKey = null,
+        DateTime? expires = null)
+    {
+        DateTime now = DateTime.UtcNow;
+        var credentials = new SigningCredentials(
+            signingKey ?? SigningKey,
+            SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims:
+            [
+                new Claim("sub", subject),
+            ],
+            notBefore: now.AddMinutes(-10),
+            expires: expires ?? now.AddMinutes(5),
+            signingCredentials: credentials);
+
+        token.Header["typ"] = tokenType;
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static async Task AssertProblemCodeAsync(
+        HttpResponseMessage response,
+        string expectedCode)
+    {
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        JsonElement root = document.RootElement;
+
+        Assert.Equal(
+            expectedCode,
+            root.GetProperty("code").GetString());
+        Assert.False(
+            string.IsNullOrWhiteSpace(
+                root.GetProperty("traceId").GetString()));
+    }
+
+    private static MarketListing CreateReadyListing()
+    {
+        var listing = new MarketListing(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new ListingSubjectReference(
+                Guid.NewGuid(),
+                MarketListingSubjectTypes.Property));
+
+        listing.SetContext(
+            new ListingContext(
+                PublishingRole.Owner,
+                TransactionIntent.Sell));
+        listing.SetHeadline(
+            new ListingHeadline("Property for sale"));
+        listing.SetPrice(ListingPrice.OnRequest());
+
+        return listing;
+    }
+
+    private sealed class TestApiFactory : WebApplicationFactory<Program>
+    {
+        private readonly Guid? _userId;
+
+        private readonly bool _authenticationEnabled;
+
+        public TestApiFactory(
+            Guid? userId,
+            MarketListing? listing = null,
+            bool propertyExists = true,
+            bool authenticationEnabled = true)
+        {
+            _userId = userId;
+            _authenticationEnabled = authenticationEnabled;
+            ListingRepository =
+                new StubMarketListingRepository(listing);
+            PropertyChecker =
+                new StubPropertyExistenceChecker(propertyExists);
+        }
+
+        public StubMarketListingRepository ListingRepository { get; }
+
+        public StubPropertyExistenceChecker PropertyChecker { get; }
+
+        protected override IHost CreateHost(IHostBuilder builder)
+        {
+            builder.ConfigureHostConfiguration(
+                configuration =>
+                {
+                    configuration.AddInMemoryCollection(
+                        new Dictionary<string, string?>
+                        {
+                            ["ConnectionStrings:Postgres"] =
+                                "Host=localhost;Port=5432;Database=diyarak_tests;Username=test;Password=test",
+                            ["Authentication:Enabled"] =
+                                _authenticationEnabled.ToString(),
+                            ["Authentication:Issuer"] = Issuer,
+                            ["Authentication:Audience"] = Audience,
+                            ["Authentication:RequireHttpsMetadata"] = "true",
+                            ["Cors:AllowedOrigins:0"] =
+                                "http://localhost:5173",
+                        });
+                });
+
+            return base.CreateHost(builder);
+        }
+
+        protected override void ConfigureWebHost(
+            IWebHostBuilder builder)
+        {
+            builder.ConfigureServices(
+                services =>
+                {
+                    services.RemoveAll<IExternalIdentityResolver>();
+                    services.AddSingleton<IExternalIdentityResolver>(
+                        new StubExternalIdentityResolver(_userId));
+
+                    services.RemoveAll<IMarketListingRepository>();
+                    services.AddSingleton<IMarketListingRepository>(
+                        ListingRepository);
+
+                    services.RemoveAll<IPropertyExistenceChecker>();
+                    services.AddSingleton<IPropertyExistenceChecker>(
+                        PropertyChecker);
+
+                    services.PostConfigure<JwtBearerOptions>(
+                        JwtBearerDefaults.AuthenticationScheme,
+                        options =>
+                        {
+                            var configuration =
+                                new OpenIdConnectConfiguration
+                                {
+                                    Issuer = Issuer,
+                                };
+
+                            configuration.SigningKeys.Add(SigningKey);
+                            options.Configuration = configuration;
+                            options.ConfigurationManager =
+                                new StaticConfigurationManager<
+                                    OpenIdConnectConfiguration>(
+                                    configuration);
+                        });
+                });
+        }
+    }
+
+    private sealed class StubExternalIdentityResolver(
+        Guid? userId)
+        : IExternalIdentityResolver
+    {
+        public Task<Guid?> ResolveUserIdAsync(
+            ExternalIdentity identity,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(userId);
+    }
+
+    public sealed class StubMarketListingRepository(
+        MarketListing? listing)
+        : IMarketListingRepository
+    {
+        public int FindCallCount { get; private set; }
+
+        public MarketListing? SavedListing { get; private set; }
+
+        public Task<MarketListing?> FindByIdAsync(
+            Guid listingId,
+            CancellationToken cancellationToken = default)
+        {
+            FindCallCount++;
+
+            MarketListing? result =
+                listing?.Id == listingId
+                    ? listing
+                    : null;
+
+            return Task.FromResult(result);
+        }
+
+        public Task SaveAsync(
+            MarketListing listing,
+            CancellationToken cancellationToken = default)
+        {
+            SavedListing = listing;
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class StubPropertyExistenceChecker(
+        bool exists)
+        : IPropertyExistenceChecker
+    {
+        public int CallCount { get; private set; }
+
+        public Task<bool> ExistsAsync(
+            Guid propertyId,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            return Task.FromResult(exists);
+        }
+    }
+}
