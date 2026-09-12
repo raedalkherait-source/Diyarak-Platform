@@ -13,7 +13,7 @@ This area records concrete Diyarak Market product and domain requirements before
 ## Requirements
 
 - `property-listing-requirements.md` records the currently confirmed Property and Listing concepts derived from the supplied Market reference flow.
-- `listing-subject-reference-requirements.md` records the confirmed subject-reference and publication-availability requirements, the decisions implemented by ADR-0010 through ADR-0024, and the remaining unresolved authentication implementation, claims mapping, endpoint exposure, concurrency, Listing creation, ownership transfer, and post-publication availability behavior.
+- `listing-subject-reference-requirements.md` records the confirmed subject-reference and publication-availability requirements, the decisions implemented by ADR-0010 through ADR-0025, and the remaining unresolved concurrency, Listing creation, external-identity provisioning transport, ownership transfer, and post-publication availability behavior.
 
 ## Architectural constraint
 

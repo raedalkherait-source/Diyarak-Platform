@@ -68,7 +68,7 @@ ADR-0024 requires the ownership migration to stop before changing `market.listin
 
 `PublishListingUseCase` receives Listing and actor user identifiers and returns a classified `Result` through stable `market.listing.*` error codes. It validates both identifiers, conceals missing and non-owned Listings with the same not-found result, and performs the ownership check before the Property query. Unexpected persistence and infrastructure exceptions continue to the Host exception boundary.
 
-The publication route remains unmapped and unexposed until an authentication mechanism and claims mapping are accepted and configured.
+ADR-0025 is implemented by the Host and PostgreSQL integration. `Diyarak.Api` validates explicitly configured JWT bearer access tokens, preserves exact `iss` and `sub` claims, resolves them through persistent external-identity mappings to an internal `User.Id`, returns `401 Unauthorized` for missing or invalid access tokens and `403 Forbidden` for valid but unmapped identities, and conditionally maps the publication route only when authentication is enabled. The mapped internal `User.Id` is passed to `PublishListingUseCase`, while mapped non-owners continue to receive the same concealed `404 Not Found` result as missing Listings.
 
 ## Remaining open requirements
 
@@ -78,10 +78,8 @@ The following behavior remains undefined and must not be invented:
 - Listing creation persistence and its application workflow.
 - Explicit transaction, locking, and isolation guarantees spanning the Property existence check and Listing save.
 - Optimistic concurrency and behavior for competing publication attempts.
-- Authentication implementation and claims mapping required before publication can be exposed.
 - Administrative publication overrides and Listing ownership transfer.
 - An authoritative ownership mapping and separately reviewed data migration for any environment containing legacy Listing rows.
-- Authorized Host mapping and exposure of the defined publication endpoint.
 - Transport representation and API behavior for operations other than the defined publication contract.
 - What happens to a Listing when its referenced subject is removed, archived, or otherwise becomes unavailable after publication.
 - Subject resolution beyond the current Property-existence check.
