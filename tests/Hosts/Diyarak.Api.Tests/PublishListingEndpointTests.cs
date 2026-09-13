@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -203,6 +203,216 @@ public sealed class PublishListingEndpointTests
         Assert.Equal(
             $"/api/market/listings/{listing.Id}",
             response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
+    public async Task Direct_loading_route_is_not_mapped_when_authentication_is_disabled()
+    {
+        using var factory = new TestApiFactory(
+            userId: null,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Get_without_access_token_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Get_with_valid_unmapped_identity_returns_403()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "unmapped-user"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Get_with_malformed_listing_identifier_returns_400()
+    {
+        using var factory = new TestApiFactory(Guid.NewGuid());
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/listings/not-a-guid");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            GetListingErrors.InvalidIdentifier.Code);
+        Assert.Equal(0, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Get_missing_listing_returns_404()
+    {
+        using var factory = new TestApiFactory(Guid.NewGuid());
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            GetListingErrors.NotFound.Code);
+        Assert.Equal(1, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Get_with_mapped_non_owner_returns_concealed_404()
+    {
+        MarketListing listing = CreateReadyListing();
+        using var factory = new TestApiFactory(
+            Guid.NewGuid(),
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-non-owner"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            GetListingErrors.NotFound.Code);
+        Assert.Equal(1, factory.ListingRepository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Get_with_mapped_owner_returns_current_listing_state()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.SetAvailableFromDate(
+            new ListingAvailableFromDate(
+                new DateOnly(2026, 10, 1)));
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.ListingRepository.FindCallCount);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        JsonElement root = document.RootElement;
+
+        Assert.Equal(
+            listing.Id,
+            root.GetProperty("listingId").GetGuid());
+        Assert.Equal(
+            listing.Version,
+            root.GetProperty("version").GetInt64());
+        Assert.Equal(
+            "Draft",
+            root.GetProperty("status").GetString());
+        Assert.Equal(
+            listing.SubjectReference.SubjectId,
+            root.GetProperty("subject")
+                .GetProperty("subjectId")
+                .GetGuid());
+        Assert.Equal(
+            MarketListingSubjectTypes.Property,
+            root.GetProperty("subject")
+                .GetProperty("subjectType")
+                .GetString());
+        Assert.Equal(
+            "Owner",
+            root.GetProperty("context")
+                .GetProperty("publishingRole")
+                .GetString());
+        Assert.Equal(
+            "Sell",
+            root.GetProperty("context")
+                .GetProperty("transactionIntent")
+                .GetString());
+        Assert.Equal(
+            "Property for sale",
+            root.GetProperty("headline").GetString());
+        Assert.True(
+            root.GetProperty("price")
+                .GetProperty("isOnRequest")
+                .GetBoolean());
+        Assert.Equal(
+            "2026-10-01",
+            root.GetProperty("availableFromDate").GetString());
+        Assert.False(
+            root.TryGetProperty("publisherUserId", out _));
+    }
+
+    [Fact]
+    public async Task Get_with_mapped_owner_can_load_published_listing()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.Publish();
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.Equal(
+            "Published",
+            document.RootElement.GetProperty("status").GetString());
     }
 
     [Fact]
@@ -751,6 +961,12 @@ public sealed class PublishListingEndpointTests
                 propertyId,
             });
 
+    private static Task<HttpResponseMessage> SendGetAsync(
+        HttpClient client,
+        Guid listingId) =>
+        client.GetAsync(
+            $"/api/market/listings/{listingId}");
+
     private static async Task<HttpResponseMessage> SendUpdateAsync(
         HttpClient client,
         Guid listingId,
@@ -1039,4 +1255,3 @@ public sealed class PublishListingEndpointTests
         }
     }
 }
-

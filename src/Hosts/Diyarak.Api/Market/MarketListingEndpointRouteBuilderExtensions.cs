@@ -21,6 +21,13 @@ public static class MarketListingEndpointRouteBuilderExtensions
                 Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
 
         endpoints
+            .MapGet(
+                "/api/market/listings/{listingId}",
+                GetListingAsync)
+            .RequireAuthorization(
+                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+
+        endpoints
             .MapMethods(
                 "/api/market/listings/{listingId}",
                 new[] { HttpMethods.Patch },
@@ -73,6 +80,33 @@ public static class MarketListingEndpointRouteBuilderExtensions
         }
 
         return ToProblemDetails(result.Error, httpContext);
+    }
+
+    internal static async Task<IResult> GetListingAsync(
+        string listingId,
+        IAuthenticatedActorAccessor actorAccessor,
+        GetListingUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(listingId, out Guid parsedListingId) ||
+            parsedListingId == Guid.Empty)
+        {
+            return ToProblemDetails(
+                GetListingErrors.InvalidIdentifier,
+                httpContext);
+        }
+
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
+        Result<MarketListing> result = await useCase.ExecuteAsync(
+            parsedListingId,
+            actorUserId,
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Results.Ok(ToResponse(result.Value))
+            : ToProblemDetails(result.Error, httpContext);
     }
 
     internal static async Task<IResult> UpdateListingAsync(
@@ -147,6 +181,33 @@ public static class MarketListingEndpointRouteBuilderExtensions
         return ToProblemDetails(result.Error, httpContext);
     }
 
+    private static MarketListingResponse ToResponse(
+        MarketListing listing)
+    {
+        ArgumentNullException.ThrowIfNull(listing);
+
+        return new MarketListingResponse(
+            listing.Id,
+            listing.Version,
+            listing.Status.ToString(),
+            new MarketListingSubjectResponse(
+                listing.SubjectReference.SubjectId,
+                listing.SubjectReference.SubjectType),
+            listing.Context is { } context
+                ? new MarketListingContextResponse(
+                    context.PublishingRole.ToString(),
+                    context.TransactionIntent.ToString())
+                : null,
+            listing.Headline?.Value,
+            listing.Price is { } price
+                ? new MarketListingPriceResponse(
+                    price.IsOnRequest,
+                    price.Amount?.Amount,
+                    price.Amount?.Currency.Code)
+                : null,
+            listing.AvailableFromDate?.Value);
+    }
+
     private static Guid GetRequiredActorUserId(
         IAuthenticatedActorAccessor actorAccessor)
     {
@@ -205,6 +266,29 @@ public static class MarketListingEndpointRouteBuilderExtensions
     internal sealed record CreateMarketListingResponse(
         Guid ListingId,
         long Version);
+
+    internal sealed record MarketListingResponse(
+        Guid ListingId,
+        long Version,
+        string Status,
+        MarketListingSubjectResponse Subject,
+        MarketListingContextResponse? Context,
+        string? Headline,
+        MarketListingPriceResponse? Price,
+        DateOnly? AvailableFromDate);
+
+    internal sealed record MarketListingSubjectResponse(
+        Guid SubjectId,
+        string SubjectType);
+
+    internal sealed record MarketListingContextResponse(
+        string PublishingRole,
+        string TransactionIntent);
+
+    internal sealed record MarketListingPriceResponse(
+        bool IsOnRequest,
+        decimal? Amount,
+        string? Currency);
 
     internal sealed record UpdateMarketListingResponse(
         Guid ListingId,
