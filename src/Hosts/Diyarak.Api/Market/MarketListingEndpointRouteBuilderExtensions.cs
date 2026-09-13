@@ -22,6 +22,13 @@ public static class MarketListingEndpointRouteBuilderExtensions
 
         endpoints
             .MapGet(
+                "/api/market/listings",
+                ListOwnedListingsAsync)
+            .RequireAuthorization(
+                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+
+        endpoints
+            .MapGet(
                 "/api/market/listings/{listingId}",
                 GetListingAsync)
             .RequireAuthorization(
@@ -80,6 +87,29 @@ public static class MarketListingEndpointRouteBuilderExtensions
         }
 
         return ToProblemDetails(result.Error, httpContext);
+    }
+
+    internal static async Task<IResult> ListOwnedListingsAsync(
+        IAuthenticatedActorAccessor actorAccessor,
+        ListOwnedListingsUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
+        Result<IReadOnlyList<MarketListing>> result =
+            await useCase.ExecuteAsync(
+                actorUserId,
+                cancellationToken);
+
+        if (!result.IsSuccess)
+            return ToProblemDetails(result.Error, httpContext);
+
+        MarketListingResponse[] response = result.Value
+            .Select(ToResponse)
+            .ToArray();
+
+        return Results.Ok(response);
     }
 
     internal static async Task<IResult> GetListingAsync(

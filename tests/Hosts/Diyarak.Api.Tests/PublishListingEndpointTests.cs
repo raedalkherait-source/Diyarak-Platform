@@ -206,6 +206,163 @@ public sealed class PublishListingEndpointTests
     }
 
     [Fact]
+    public async Task Management_collection_route_is_not_mapped_when_authentication_is_disabled()
+    {
+        using var factory = new TestApiFactory(
+            userId: null,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendListAsync(client);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(
+            0,
+            factory.ListingRepository.FindByPublisherCallCount);
+    }
+
+    [Fact]
+    public async Task List_without_access_token_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendListAsync(client);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(
+            0,
+            factory.ListingRepository.FindByPublisherCallCount);
+    }
+
+    [Fact]
+    public async Task List_with_valid_unmapped_identity_returns_403()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "unmapped-user"));
+
+        HttpResponseMessage response = await SendListAsync(client);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(
+            0,
+            factory.ListingRepository.FindByPublisherCallCount);
+    }
+
+    [Fact]
+    public async Task List_with_mapped_user_returns_empty_array_when_no_listing_exists()
+    {
+        Guid userId = Guid.NewGuid();
+        using var factory = new TestApiFactory(userId);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response = await SendListAsync(client);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            1,
+            factory.ListingRepository.FindByPublisherCallCount);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.Equal(
+            JsonValueKind.Array,
+            document.RootElement.ValueKind);
+        Assert.Equal(0, document.RootElement.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task List_with_mapped_non_owner_does_not_expose_listing()
+    {
+        MarketListing listing = CreateReadyListing();
+        Guid otherUserId = Guid.NewGuid();
+        Assert.NotEqual(
+            listing.PublisherUserId,
+            otherUserId);
+
+        using var factory = new TestApiFactory(
+            otherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response = await SendListAsync(client);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.Equal(0, document.RootElement.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task List_with_mapped_owner_returns_management_representation()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.SetAvailableFromDate(
+            new ListingAvailableFromDate(
+                new DateOnly(2026, 10, 1)));
+
+        using var factory = new TestApiFactory(
+            listing.PublisherUserId,
+            listing);
+        using HttpClient client = factory.CreateClient();
+
+        AddBearerToken(
+            client,
+            CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response = await SendListAsync(client);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            1,
+            factory.ListingRepository.FindByPublisherCallCount);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        JsonElement root = document.RootElement;
+        Assert.Equal(1, root.GetArrayLength());
+
+        JsonElement item = root[0];
+        Assert.Equal(
+            listing.Id,
+            item.GetProperty("listingId").GetGuid());
+        Assert.Equal(
+            listing.Version,
+            item.GetProperty("version").GetInt64());
+        Assert.Equal(
+            ListingStatus.Draft.ToString(),
+            item.GetProperty("status").GetString());
+        Assert.Equal(
+            listing.SubjectReference.SubjectId,
+            item.GetProperty("subject")
+                .GetProperty("subjectId")
+                .GetGuid());
+        Assert.Equal(
+            "Property for sale",
+            item.GetProperty("headline").GetString());
+        Assert.Equal(
+            "2026-10-01",
+            item.GetProperty("availableFromDate").GetString());
+        Assert.False(
+            item.TryGetProperty(
+                "publisherUserId",
+                out _));
+    }
+
+    [Fact]
     public async Task Direct_loading_route_is_not_mapped_when_authentication_is_disabled()
     {
         using var factory = new TestApiFactory(
@@ -961,6 +1118,10 @@ public sealed class PublishListingEndpointTests
                 propertyId,
             });
 
+    private static Task<HttpResponseMessage> SendListAsync(
+        HttpClient client) =>
+        client.GetAsync("/api/market/listings");
+
     private static Task<HttpResponseMessage> SendGetAsync(
         HttpClient client,
         Guid listingId) =>
@@ -1211,6 +1372,23 @@ public sealed class PublishListingEndpointTests
                 listing?.Id == listingId
                     ? listing
                     : null;
+
+            return Task.FromResult(result);
+        }
+
+        public int FindByPublisherCallCount { get; private set; }
+
+        public Task<IReadOnlyList<MarketListing>> FindByPublisherUserIdAsync(
+            Guid publisherUserId,
+            CancellationToken cancellationToken = default)
+        {
+            FindByPublisherCallCount++;
+
+            IReadOnlyList<MarketListing> result =
+                listing is not null &&
+                listing.PublisherUserId == publisherUserId
+                    ? [listing]
+                    : Array.Empty<MarketListing>();
 
             return Task.FromResult(result);
         }

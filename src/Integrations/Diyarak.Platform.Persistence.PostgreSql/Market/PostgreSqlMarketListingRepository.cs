@@ -33,6 +33,23 @@ internal sealed class PostgreSqlMarketListingRepository
             : MarketListingRecordMapper.ToDomain(record);
     }
 
+    public async Task<IReadOnlyList<MarketListing>> FindByPublisherUserIdAsync(
+        Guid publisherUserId,
+        CancellationToken cancellationToken = default)
+    {
+        List<MarketListingRecord> records =
+            await _context.MarketListings
+                .AsNoTracking()
+                .Where(
+                    listing =>
+                        listing.PublisherUserId == publisherUserId)
+                .ToListAsync(cancellationToken);
+
+        return records
+            .Select(MarketListingRecordMapper.ToDomain)
+            .ToArray();
+    }
+
     public async Task AddAsync(
         MarketListing listing,
         CancellationToken cancellationToken = default)

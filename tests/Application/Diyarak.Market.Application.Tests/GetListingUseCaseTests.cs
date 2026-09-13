@@ -113,6 +113,12 @@ public sealed class GetListingUseCaseTests
                     : null);
         }
 
+        public Task<IReadOnlyList<MarketListing>> FindByPublisherUserIdAsync(
+            Guid publisherUserId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<MarketListing>>(
+                Array.Empty<MarketListing>());
+
         public Task AddAsync(
             MarketListing listing,
             CancellationToken cancellationToken = default) =>

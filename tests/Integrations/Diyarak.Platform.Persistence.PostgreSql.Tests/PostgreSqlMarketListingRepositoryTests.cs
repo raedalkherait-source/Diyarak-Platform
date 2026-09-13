@@ -58,6 +58,63 @@ public sealed class PostgreSqlMarketListingRepositoryTests
     }
 
     [Fact]
+    public async Task FindByPublisherUserIdAsync_returns_empty_when_owner_has_no_listings()
+    {
+        await using PlatformDbContext context = CreateContext();
+
+        var repository =
+            new PostgreSqlMarketListingRepository(context);
+
+        IReadOnlyList<MarketListing> listings =
+            await repository.FindByPublisherUserIdAsync(
+                Guid.NewGuid());
+
+        Assert.Empty(listings);
+    }
+
+    [Fact]
+    public async Task FindByPublisherUserIdAsync_returns_only_owned_listings()
+    {
+        await using PlatformDbContext context = CreateContext();
+
+        Guid ownerUserId = Guid.NewGuid();
+        MarketListing first = CreateListing(ownerUserId);
+        MarketListing second = CreateListing(ownerUserId);
+        MarketListing other = CreateListing(Guid.NewGuid());
+
+        context.MarketListings.AddRange(
+            MarketListingRecordMapper.FromDomain(first),
+            MarketListingRecordMapper.FromDomain(second),
+            MarketListingRecordMapper.FromDomain(other));
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var repository =
+            new PostgreSqlMarketListingRepository(context);
+
+        IReadOnlyList<MarketListing> listings =
+            await repository.FindByPublisherUserIdAsync(ownerUserId);
+
+        Assert.Equal(2, listings.Count);
+        Assert.Contains(
+            listings,
+            listing => listing.Id == first.Id);
+        Assert.Contains(
+            listings,
+            listing => listing.Id == second.Id);
+        Assert.DoesNotContain(
+            listings,
+            listing => listing.Id == other.Id);
+        Assert.All(
+            listings,
+            listing =>
+                Assert.Equal(
+                    ownerUserId,
+                    listing.PublisherUserId));
+    }
+
+    [Fact]
     public async Task AddAsync_inserts_new_draft_listing()
     {
         await using PlatformDbContext context = CreateContext();
@@ -267,6 +324,15 @@ public sealed class PostgreSqlMarketListingRepositoryTests
 
         return new PlatformDbContext(options);
     }
+
+    private static MarketListing CreateListing(
+        Guid publisherUserId) =>
+        new(
+            Guid.NewGuid(),
+            publisherUserId,
+            new ListingSubjectReference(
+                Guid.NewGuid(),
+                MarketListingSubjectTypes.Property));
 
     private static MarketListing CreateReadyDraftListing()
     {

@@ -8,6 +8,10 @@ public interface IMarketListingRepository
         Guid listingId,
         CancellationToken cancellationToken = default);
 
+    public Task<IReadOnlyList<MarketListing>> FindByPublisherUserIdAsync(
+        Guid publisherUserId,
+        CancellationToken cancellationToken = default);
+
     public Task AddAsync(
         MarketListing listing,
         CancellationToken cancellationToken = default);
