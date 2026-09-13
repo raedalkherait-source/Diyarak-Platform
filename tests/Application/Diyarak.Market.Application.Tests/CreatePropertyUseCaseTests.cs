@@ -9,8 +9,9 @@ namespace Diyarak.Market.Application.Tests;
 public sealed class CreatePropertyUseCaseTests
 {
     [Fact]
-    public async Task ExecuteAsync_creates_and_persists_property()
+    public async Task ExecuteAsync_creates_actor_owned_property_and_persists_it()
     {
+        Guid actorUserId = Guid.NewGuid();
         var repository = new StubMarketPropertyRepository();
         var useCase = new CreatePropertyUseCase(repository);
 
@@ -37,7 +38,9 @@ public sealed class CreatePropertyUseCaseTests
             LastModernizationYear: 2024,
             ParkingSpaceCount: 1);
 
-        Result<Guid> result = await useCase.ExecuteAsync(command);
+        Result<Guid> result = await useCase.ExecuteAsync(
+            command,
+            actorUserId);
 
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value);
@@ -46,6 +49,7 @@ public sealed class CreatePropertyUseCaseTests
             repository.AddedProperty);
 
         Assert.Equal(result.Value, property.Id);
+        Assert.Equal(actorUserId, property.OwnerUserId);
         Assert.Equal(PropertyCategory.Apartment, property.Category);
         Assert.Equal("Market Street", property.Address.Street);
         Assert.Equal("Luebeck", property.Address.City);
@@ -54,6 +58,31 @@ public sealed class CreatePropertyUseCaseTests
         Assert.Contains(
             PropertyFeature.BalconyOrTerrace,
             property.Features);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_returns_validation_failure_for_empty_actor_identifier()
+    {
+        var repository = new StubMarketPropertyRepository();
+        var useCase = new CreatePropertyUseCase(repository);
+
+        var command = new CreatePropertyCommand(
+            PropertyCategory.House,
+            new PropertyAddress(
+                "Market Street",
+                "12A",
+                "23552",
+                "Luebeck"));
+
+        Result<Guid> result = await useCase.ExecuteAsync(
+            command,
+            Guid.Empty);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(
+            CreatePropertyErrors.InvalidActorIdentifier.Code,
+            result.Error.Code);
+        Assert.Null(repository.AddedProperty);
     }
 
     [Fact]
@@ -71,7 +100,9 @@ public sealed class CreatePropertyUseCaseTests
                 "Luebeck"),
             CommercialSubtype: CommercialPropertySubtype.OfficeOrPractice);
 
-        Result<Guid> result = await useCase.ExecuteAsync(command);
+        Result<Guid> result = await useCase.ExecuteAsync(
+            command,
+            Guid.NewGuid());
 
         Assert.True(result.IsFailure);
         Assert.Equal(

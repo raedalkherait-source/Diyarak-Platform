@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Diyarak.Api.Authentication;
 using Diyarak.Market.Application;
 using Diyarak.Platform.BuildingBlocks;
 using Diyarak.Platform.Domain.Primitives;
@@ -32,6 +33,7 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
 
     internal static async Task<IResult> CreatePropertyAsync(
         JsonElement request,
+        IAuthenticatedActorAccessor actorAccessor,
         CreatePropertyUseCase useCase,
         HttpContext httpContext,
         CancellationToken cancellationToken)
@@ -45,8 +47,11 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
                 httpContext);
         }
 
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
         Result<Guid> result = await useCase.ExecuteAsync(
             command,
+            actorUserId,
             cancellationToken);
 
         if (result.IsSuccess)
@@ -63,6 +68,7 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
 
     internal static async Task<IResult> GetPropertyAsync(
         string propertyId,
+        IAuthenticatedActorAccessor actorAccessor,
         GetPropertyUseCase useCase,
         HttpContext httpContext,
         CancellationToken cancellationToken)
@@ -75,13 +81,32 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
                 httpContext);
         }
 
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
         Result<MarketProperty> result = await useCase.ExecuteAsync(
             parsedPropertyId,
+            actorUserId,
             cancellationToken);
 
         return result.IsSuccess
             ? Results.Ok(ToResponse(result.Value))
             : ToProblemDetails(result.Error, httpContext);
+    }
+
+    private static Guid GetRequiredActorUserId(
+        IAuthenticatedActorAccessor actorAccessor)
+    {
+        ArgumentNullException.ThrowIfNull(actorAccessor);
+
+        Guid? actorUserId = actorAccessor.UserId;
+
+        if (actorUserId is null || actorUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "The mapped-user authorization policy succeeded without supplying a non-empty internal user identifier.");
+        }
+
+        return actorUserId.Value;
     }
 
     private static MarketPropertyResponse ToResponse(

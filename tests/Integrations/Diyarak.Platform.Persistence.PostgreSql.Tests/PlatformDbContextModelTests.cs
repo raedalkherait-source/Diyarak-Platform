@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace Diyarak.Platform.Persistence.PostgreSql.Tests;
@@ -16,8 +16,19 @@ public sealed class PlatformDbContextModelTests
 
         using var context = new PlatformDbContext(options);
 
+        var serviceProvider =
+            ((Microsoft.EntityFrameworkCore.Infrastructure.IInfrastructure<IServiceProvider>)context)
+            .Instance;
+
+        var designTimeModel =
+            (Microsoft.EntityFrameworkCore.Metadata.IDesignTimeModel)
+            serviceProvider.GetService(
+                typeof(Microsoft.EntityFrameworkCore.Metadata.IDesignTimeModel))!;
+
+        var model = designTimeModel.Model;
+
         var entityType = Assert.Single(
-            context.Model.GetEntityTypes(),
+            model.GetEntityTypes(),
             candidate =>
                 candidate.ClrType.Name ==
                 "MarketPropertyRecord");
@@ -51,6 +62,7 @@ public sealed class PlatformDbContextModelTests
             "SalesAreaUnit",
             "TotalAreaValue",
             "TotalAreaUnit",
+            "OwnerUserId",
             "ParkingSpaceCount",
         ];
 
@@ -74,5 +86,24 @@ public sealed class PlatformDbContextModelTests
             ["Id"],
             primaryKey.Properties.Select(
                 property => property.Name));
+
+        var ownerProperty = entityType.FindProperty("OwnerUserId");
+        Assert.NotNull(ownerProperty);
+        Assert.True(ownerProperty!.IsNullable);
+        Assert.Equal(
+            "owner_user_id",
+            ownerProperty.GetColumnName());
+
+        var ownerConstraint = Assert.Single(
+            entityType.GetCheckConstraints(),
+            constraint =>
+                constraint.Name ==
+                "ck_market_properties_owner_user_id_non_empty");
+
+        Assert.Contains(
+            "owner_user_id IS NULL",
+            ownerConstraint.Sql);
     }
 }
+
+

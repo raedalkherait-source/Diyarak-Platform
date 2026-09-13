@@ -16,8 +16,15 @@ public sealed class CreatePropertyUseCase
 
     public async Task<Result<Guid>> ExecuteAsync(
         CreatePropertyCommand command,
+        Guid actorUserId,
         CancellationToken cancellationToken = default)
     {
+        if (actorUserId == Guid.Empty)
+        {
+            return Result.Failure<Guid>(
+                CreatePropertyErrors.InvalidActorIdentifier);
+        }
+
         if (command is null)
         {
             return Result.Failure<Guid>(
@@ -44,7 +51,8 @@ public sealed class CreatePropertyUseCase
                 command.CommercialSubtype,
                 command.SalesArea,
                 command.TotalArea,
-                command.ParkingSpaceCount);
+                command.ParkingSpaceCount,
+                actorUserId);
         }
         catch (ArgumentException)
         {

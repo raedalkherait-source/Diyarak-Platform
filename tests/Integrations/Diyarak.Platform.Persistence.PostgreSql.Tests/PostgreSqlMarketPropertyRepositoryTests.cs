@@ -14,6 +14,7 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
     {
         await using PlatformDbContext context = CreateContext();
 
+        Guid ownerUserId = Guid.NewGuid();
         var property = new MarketProperty(
             Guid.NewGuid(),
             PropertyCategory.CommercialProperty,
@@ -39,7 +40,8 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
             commercialSubtype: CommercialPropertySubtype.OfficeOrPractice,
             salesArea: new Area(75m, AreaUnit.SquareMeter),
             totalArea: new Area(140m, AreaUnit.SquareMeter),
-            parkingSpaceCount: 3);
+            parkingSpaceCount: 3,
+            ownerUserId: ownerUserId);
 
         var repository =
             new PostgreSqlMarketPropertyRepository(context);
@@ -53,6 +55,7 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
                 record => record.Id == property.Id);
 
         Assert.Equal(property.Id, persisted.Id);
+        Assert.Equal(ownerUserId, persisted.OwnerUserId);
         Assert.Equal((int)PropertyCategory.CommercialProperty, persisted.Category);
         Assert.Equal("Harbor Road", persisted.Street);
         Assert.Equal("5", persisted.HouseNumber);
@@ -86,6 +89,7 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
     {
         await using PlatformDbContext context = CreateContext();
 
+        Guid ownerUserId = Guid.NewGuid();
         var property = new MarketProperty(
             Guid.NewGuid(),
             PropertyCategory.Apartment,
@@ -108,7 +112,8 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
             ],
             constructionYear: 2010,
             lastModernizationYear: 2023,
-            parkingSpaceCount: 1);
+            parkingSpaceCount: 1,
+            ownerUserId: ownerUserId);
 
         var repository =
             new PostgreSqlMarketPropertyRepository(context);
@@ -121,6 +126,7 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
 
         MarketProperty existing = Assert.IsType<MarketProperty>(loaded);
         Assert.Equal(property.Id, existing.Id);
+        Assert.Equal(ownerUserId, existing.OwnerUserId);
         Assert.Equal(PropertyCategory.Apartment, existing.Category);
         Assert.Equal("River Street", existing.Address.Street);
         Assert.Equal("Bremen", existing.Address.City);

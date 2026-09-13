@@ -21,13 +21,17 @@ public sealed class Property : AggregateRoot<Guid>
         CommercialPropertySubtype? commercialSubtype = null,
         Area? salesArea = null,
         Area? totalArea = null,
-        int? parkingSpaceCount = null)
+        int? parkingSpaceCount = null,
+        Guid? ownerUserId = null)
         : base(id)
     {
         if (!Enum.IsDefined(category))
             throw new ArgumentOutOfRangeException(nameof(category), category, "Unsupported property category.");
 
         ArgumentNullException.ThrowIfNull(address);
+
+        if (ownerUserId == Guid.Empty)
+            throw new ArgumentException("Property owner user identifier must be non-empty when assigned.", nameof(ownerUserId));
 
         if (totalRooms is < 0m)
             throw new ArgumentOutOfRangeException(nameof(totalRooms));
@@ -81,7 +85,10 @@ public sealed class Property : AggregateRoot<Guid>
         SalesArea = salesArea;
         TotalArea = totalArea;
         ParkingSpaceCount = parkingSpaceCount;
+        OwnerUserId = ownerUserId;
     }
+
+    public Guid? OwnerUserId { get; }
 
     public PropertyCategory Category { get; }
 

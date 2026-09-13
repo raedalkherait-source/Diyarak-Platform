@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -45,7 +45,7 @@ public sealed class GetPropertyEndpointTests
     [Fact]
     public async Task Route_is_not_mapped_when_authentication_is_disabled()
     {
-        MarketProperty property = CreateProperty();
+        MarketProperty property = CreateProperty(Guid.NewGuid());
         using var factory = new TestApiFactory(
             property,
             userId: null,
@@ -62,7 +62,7 @@ public sealed class GetPropertyEndpointTests
     [Fact]
     public async Task Get_without_access_token_returns_401()
     {
-        MarketProperty property = CreateProperty();
+        MarketProperty property = CreateProperty(Guid.NewGuid());
         using var factory = new TestApiFactory(property, userId: null);
         using HttpClient client = factory.CreateClient();
 
@@ -76,7 +76,7 @@ public sealed class GetPropertyEndpointTests
     [Fact]
     public async Task Get_with_valid_unmapped_identity_returns_403()
     {
-        MarketProperty property = CreateProperty();
+        MarketProperty property = CreateProperty(Guid.NewGuid());
         using var factory = new TestApiFactory(property, userId: null);
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("unmapped-user"));
@@ -91,8 +91,9 @@ public sealed class GetPropertyEndpointTests
     [Fact]
     public async Task Get_with_invalid_identifier_returns_400()
     {
-        MarketProperty property = CreateProperty();
-        using var factory = new TestApiFactory(property, Guid.NewGuid());
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty property = CreateProperty(actorUserId);
+        using var factory = new TestApiFactory(property, actorUserId);
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("mapped-user"));
 
@@ -109,8 +110,9 @@ public sealed class GetPropertyEndpointTests
     [Fact]
     public async Task Get_with_missing_property_returns_404()
     {
-        MarketProperty property = CreateProperty();
-        using var factory = new TestApiFactory(property, Guid.NewGuid());
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty property = CreateProperty(actorUserId);
+        using var factory = new TestApiFactory(property, actorUserId);
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("mapped-user"));
 
@@ -125,10 +127,47 @@ public sealed class GetPropertyEndpointTests
     }
 
     [Fact]
-    public async Task Get_with_mapped_user_returns_complete_property_state()
+    public async Task Get_with_mapped_non_owner_returns_concealed_404()
     {
-        MarketProperty property = CreateProperty();
+        MarketProperty property = CreateProperty(Guid.NewGuid());
         using var factory = new TestApiFactory(property, Guid.NewGuid());
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-non-owner"));
+
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{property.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            GetPropertyErrors.NotFound.Code);
+        Assert.Equal(1, factory.Repository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Get_with_legacy_unowned_property_returns_concealed_404()
+    {
+        MarketProperty property = CreateProperty(ownerUserId: null);
+        using var factory = new TestApiFactory(property, Guid.NewGuid());
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{property.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            GetPropertyErrors.NotFound.Code);
+        Assert.Equal(1, factory.Repository.FindCallCount);
+    }
+
+    [Fact]
+    public async Task Get_with_owner_returns_complete_property_state()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty property = CreateProperty(actorUserId);
+        using var factory = new TestApiFactory(property, actorUserId);
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("mapped-user"));
 
@@ -145,6 +184,10 @@ public sealed class GetPropertyEndpointTests
         Assert.Equal(
             property.Id,
             root.GetProperty("propertyId").GetGuid());
+        Assert.False(
+            root.TryGetProperty(
+                "ownerUserId",
+                out _));
         Assert.Equal(
             "Apartment",
             root.GetProperty("category").GetString());
@@ -192,7 +235,8 @@ public sealed class GetPropertyEndpointTests
             root.GetProperty("parkingSpaceCount").GetInt32());
     }
 
-    private static MarketProperty CreateProperty()
+    private static MarketProperty CreateProperty(
+        Guid? ownerUserId)
     {
         return new MarketProperty(
             Guid.NewGuid(),
@@ -212,7 +256,8 @@ public sealed class GetPropertyEndpointTests
             features: ExistingFeatures,
             constructionYear: 1998,
             lastModernizationYear: 2024,
-            parkingSpaceCount: 1);
+            parkingSpaceCount: 1,
+            ownerUserId: ownerUserId);
     }
 
     private static void AddBearerToken(
@@ -367,4 +412,3 @@ public sealed class GetPropertyEndpointTests
             Task.CompletedTask;
     }
 }
-

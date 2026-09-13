@@ -14,6 +14,7 @@ internal static class MarketPropertyRecordMapper
         return new MarketPropertyRecord
         {
             Id = property.Id,
+            OwnerUserId = property.OwnerUserId,
             Category = (int)property.Category,
             Street = property.Address.Street,
             HouseNumber = property.Address.HouseNumber,
@@ -105,7 +106,8 @@ internal static class MarketPropertyRecordMapper
                 record.TotalAreaValue,
                 record.TotalAreaUnit,
                 "total area"),
-            parkingSpaceCount: record.ParkingSpaceCount);
+            parkingSpaceCount: record.ParkingSpaceCount,
+            ownerUserId: record.OwnerUserId);
     }
 
     private static GeoCoordinate? CreateLocation(

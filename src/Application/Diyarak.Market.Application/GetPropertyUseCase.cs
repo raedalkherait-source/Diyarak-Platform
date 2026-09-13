@@ -16,6 +16,7 @@ public sealed class GetPropertyUseCase
 
     public async Task<Result<MarketProperty>> ExecuteAsync(
         Guid propertyId,
+        Guid actorUserId,
         CancellationToken cancellationToken = default)
     {
         if (propertyId == Guid.Empty)
@@ -24,14 +25,24 @@ public sealed class GetPropertyUseCase
                 GetPropertyErrors.InvalidIdentifier);
         }
 
+        if (actorUserId == Guid.Empty)
+        {
+            return Result.Failure<MarketProperty>(
+                GetPropertyErrors.InvalidActorIdentifier);
+        }
+
         MarketProperty? property =
             await _propertyRepository.FindByIdAsync(
                 propertyId,
                 cancellationToken);
 
-        return property is null
-            ? Result.Failure<MarketProperty>(
-                GetPropertyErrors.NotFound)
-            : Result.Success(property);
+        if (property is null ||
+            property.OwnerUserId != actorUserId)
+        {
+            return Result.Failure<MarketProperty>(
+                GetPropertyErrors.NotFound);
+        }
+
+        return Result.Success(property);
     }
 }

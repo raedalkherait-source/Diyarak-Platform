@@ -9,7 +9,15 @@ internal sealed class MarketPropertyRecordConfiguration
     public void Configure(
         EntityTypeBuilder<MarketPropertyRecord> builder)
     {
-        builder.ToTable("properties", "market");
+        builder.ToTable(
+            "properties",
+            "market",
+            tableBuilder =>
+            {
+                tableBuilder.HasCheckConstraint(
+                    "ck_market_properties_owner_user_id_non_empty",
+                    "owner_user_id IS NULL OR owner_user_id <> '00000000-0000-0000-0000-000000000000'::uuid");
+            });
 
         builder.HasKey(record => record.Id);
 
@@ -17,6 +25,10 @@ internal sealed class MarketPropertyRecordConfiguration
             .HasColumnName("id")
             .HasColumnType("uuid")
             .ValueGeneratedNever();
+
+        builder.Property(record => record.OwnerUserId)
+            .HasColumnName("owner_user_id")
+            .HasColumnType("uuid");
 
         builder.Property(record => record.Category)
             .HasColumnName("category")

@@ -90,6 +90,42 @@ public sealed class PropertyTests
     }
 
     [Fact]
+    public void Constructor_sets_optional_management_owner()
+    {
+        Guid ownerUserId = Guid.NewGuid();
+
+        var property = new Property(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            CreateAddress(),
+            ownerUserId: ownerUserId);
+
+        Assert.Equal(ownerUserId, property.OwnerUserId);
+    }
+
+    [Fact]
+    public void Constructor_allows_unowned_legacy_property_state()
+    {
+        var property = new Property(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            CreateAddress());
+
+        Assert.Null(property.OwnerUserId);
+    }
+
+    [Fact]
+    public void Constructor_rejects_empty_management_owner_identifier()
+    {
+        Assert.Throws<ArgumentException>(
+            () => new Property(
+                Guid.NewGuid(),
+                PropertyCategory.Apartment,
+                CreateAddress(),
+                ownerUserId: Guid.Empty));
+    }
+
+    [Fact]
     public void Constructor_rejects_empty_id()
     {
         Assert.Throws<ArgumentException>(

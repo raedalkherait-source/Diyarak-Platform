@@ -110,9 +110,10 @@ public sealed class CreatePropertyEndpointTests
     }
 
     [Fact]
-    public async Task Create_with_mapped_user_returns_201_and_persists_property()
+    public async Task Create_with_mapped_user_returns_201_and_persists_actor_owned_property()
     {
-        using var factory = new TestApiFactory(Guid.NewGuid());
+        Guid actorUserId = Guid.NewGuid();
+        using var factory = new TestApiFactory(actorUserId);
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("mapped-user"));
 
@@ -123,6 +124,7 @@ public sealed class CreatePropertyEndpointTests
         MarketProperty property = Assert.IsType<MarketProperty>(
             factory.Repository.AddedProperty);
 
+        Assert.Equal(actorUserId, property.OwnerUserId);
         Assert.Equal(PropertyCategory.Apartment, property.Category);
         Assert.Equal("Market Street", property.Address.Street);
         Assert.Equal("12A", property.Address.HouseNumber);
@@ -142,6 +144,10 @@ public sealed class CreatePropertyEndpointTests
         Guid responsePropertyId =
             document.RootElement.GetProperty("propertyId").GetGuid();
 
+        Assert.False(
+            document.RootElement.TryGetProperty(
+                "ownerUserId",
+                out _));
         Assert.Equal(property.Id, responsePropertyId);
         Assert.Equal(
             $"/api/market/properties/{property.Id}",

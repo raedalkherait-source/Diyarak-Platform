@@ -11,6 +11,7 @@ public sealed class MarketPropertyRecordMapperTests
     [Fact]
     public void Round_trip_preserves_complete_market_property_state()
     {
+        Guid ownerUserId = Guid.NewGuid();
         var original = new MarketProperty(
             Guid.NewGuid(),
             PropertyCategory.CommercialProperty,
@@ -38,7 +39,8 @@ public sealed class MarketPropertyRecordMapperTests
                 CommercialPropertySubtype.OfficeOrPractice,
             salesArea: new Area(150m, AreaUnit.SquareMeter),
             totalArea: new Area(180m, AreaUnit.SquareMeter),
-            parkingSpaceCount: 3);
+            parkingSpaceCount: 3,
+            ownerUserId: ownerUserId);
 
         var record =
             MarketPropertyRecordMapper.FromDomain(original);
@@ -47,6 +49,8 @@ public sealed class MarketPropertyRecordMapperTests
             MarketPropertyRecordMapper.ToDomain(record);
 
         Assert.Equal(original.Id, restored.Id);
+        Assert.Equal(ownerUserId, record.OwnerUserId);
+        Assert.Equal(ownerUserId, restored.OwnerUserId);
         Assert.Equal(original.Category, restored.Category);
         Assert.Equal(original.Address, restored.Address);
         Assert.Equal(original.LivingArea, restored.LivingArea);
@@ -74,5 +78,27 @@ public sealed class MarketPropertyRecordMapperTests
         Assert.Equal(
             original.ParkingSpaceCount,
             restored.ParkingSpaceCount);
+    }
+
+    [Fact]
+    public void Round_trip_preserves_legacy_unowned_property_state()
+    {
+        var original = new MarketProperty(
+            Guid.NewGuid(),
+            PropertyCategory.House,
+            new PropertyAddress(
+                "Legacy Road",
+                "1",
+                "20095",
+                "Hamburg"));
+
+        MarketPropertyRecord record =
+            MarketPropertyRecordMapper.FromDomain(original);
+
+        MarketProperty restored =
+            MarketPropertyRecordMapper.ToDomain(record);
+
+        Assert.Null(record.OwnerUserId);
+        Assert.Null(restored.OwnerUserId);
     }
 }

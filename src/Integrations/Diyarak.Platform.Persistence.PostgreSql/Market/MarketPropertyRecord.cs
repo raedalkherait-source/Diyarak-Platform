@@ -4,6 +4,8 @@ internal sealed class MarketPropertyRecord
 {
     public Guid Id { get; set; }
 
+    public Guid? OwnerUserId { get; set; }
+
     public int Category { get; set; }
 
     public string Street { get; set; } = string.Empty;
