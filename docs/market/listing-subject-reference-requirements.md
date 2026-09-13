@@ -74,13 +74,13 @@ ADR-0026 defines and implements the initial Listing creation workflow. `POST /ap
 
 ADR-0027 defines and implements the explicit transaction boundary for the existing creation and publication workflows through `IMarketTransactionRunner`. Required identifier validation remains outside the transaction; persistence-sensitive work executes inside one PostgreSQL `ReadCommitted` transaction. ADR-0028 first adds optimistic concurrency for publication. ADR-0029 replaces the status-only token with a required positive numeric Listing version shared by publication and Draft editing. `PATCH /api/market/listings/{listingId}` allows only the mapped owner to partially replace context, headline, price, or the optional available-from date while the Listing is `Draft`; omitted fields remain unchanged, explicit `availableFromDate: null` clears that optional value, stale versions return `market.listing.concurrent_modification` as `409 Conflict`, and successful edits return the next version.
 
-ADR-0030 adds authenticated Property asset creation through `POST /api/market/properties`. The Host accepts only fields already modeled by the current Property aggregate, the server generates the Property identifier, `CreatePropertyUseCase` inserts through the Application-owned `IMarketPropertyRepository`, and the PostgreSQL adapter reuses the existing full-state Property record and table. Authentication gates the mutation but does not introduce Property ownership.
+ADR-0030 adds authenticated Property asset creation through `POST /api/market/properties`. The Host accepts only fields already modeled by the current Property aggregate, the server generates the Property identifier, `CreatePropertyUseCase` inserts through the Application-owned `IMarketPropertyRepository`, and the PostgreSQL adapter reuses the existing full-state Property record and table. Authentication gates the mutation but does not introduce Property ownership. ADR-0031 adds mapped-user-only direct loading through `GET /api/market/properties/{propertyId}` using a no-tracking repository read and the same full-state mapping; this remains an authenticated asset workflow rather than a public address-presentation contract.
 
 ## Remaining open requirements
 
 The following behavior remains undefined and must not be invented:
 
-- Property loading, update, and removal workflows beyond the defined authenticated creation flow, current full-state record/mapping, and existence query.
+- Property search, update, and removal workflows beyond the defined authenticated creation and direct-by-id loading flows, current full-state record/mapping, and existence query.
 - Property row-locking or stronger-than-`ReadCommitted` isolation guarantees spanning the Property existence check and Listing write.
 - Administrative publication overrides and Listing ownership transfer.
 - An authoritative ownership mapping and separately reviewed data migration for any environment containing legacy Listing rows.

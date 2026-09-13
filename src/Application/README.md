@@ -6,7 +6,8 @@ Current Diyarak Market application structure:
 
 - `Diyarak.Market.Application` — application orchestration for Market use cases.
 - `CreatePropertyUseCase` validates and constructs the existing Market Property aggregate and inserts it through `IMarketPropertyRepository`; it does not introduce Property ownership semantics.
-- `IMarketPropertyRepository` is the Application-owned write port for initial Property creation.
+- `GetPropertyUseCase` validates a Property identifier and returns the persisted aggregate or a stable not-found result.
+- `IMarketPropertyRepository` is the Application-owned Property persistence port for direct loading and initial creation.
 - `CreateListingUseCase` receives a Property identifier and authenticated actor user identifier, verifies that the Property exists, creates an actor-owned `Draft` Listing, adds it through the repository, and returns the generated Listing identifier.
 - `CreateListingErrors` defines stable validation and Property-existence errors for expected creation outcomes.
 - `PublishListingUseCase` receives Listing and authenticated actor user identifiers, loads the Listing, verifies creator ownership, verifies that the referenced Property exists, invokes `Listing.Publish()`, and conditionally saves the resulting state only when the persisted status is still `Draft`.
@@ -23,4 +24,4 @@ Expected Property creation, Listing creation/editing, and publication failures a
 
 ADR-0027 makes the transaction boundary explicit. After required identifier validation, `CreateListingUseCase` and `PublishListingUseCase` execute their persistence-sensitive work through `IMarketTransactionRunner`. The PostgreSQL implementation commits successful results and rolls back expected failures or exceptions. ADR-0028 first adds optimistic publication concurrency. ADR-0029 introduces `UpdateListingUseCase` for authenticated owner-only Draft editing and replaces the status-only token with an explicit numeric Listing version used by both editing and publication. Stale writes return `market.listing.concurrent_modification`. Row locking and stronger isolation remain separate requirements.
 
-ADR-0030 adds authenticated Property creation through the existing aggregate and full-state persistence model. The current Property publication-availability rule remains existence only. Additional Property lifecycle or availability rules are not introduced until concrete requirements define them.
+ADR-0030 adds authenticated Property creation through the existing aggregate and full-state persistence model. ADR-0031 adds mapped-user-only direct Property loading by identifier through `GetPropertyUseCase`; the read does not add ownership or public-presentation semantics. The current Property publication-availability rule remains existence only. Additional Property lifecycle or availability rules are not introduced until concrete requirements define them.

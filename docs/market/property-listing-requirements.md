@@ -214,7 +214,7 @@ The listing therefore needs an architectural way to identify its published subje
 
 ## Implemented Property creation boundary
 
-ADR-0030 defines the first Property application and HTTP creation workflow. `POST /api/market/properties` requires the ADR-0025 mapped-user policy, accepts only fields already represented by the current Property aggregate, generates the Property identifier server-side, and inserts the aggregate through an Application-owned repository implemented by PostgreSQL persistence. Authentication gates creation but does not define or persist Property ownership. Property loading, update, removal, ownership, lifecycle, and concurrency behavior remain unresolved.
+ADR-0030 defines the first Property application and HTTP creation workflow. `POST /api/market/properties` requires the ADR-0025 mapped-user policy, accepts only fields already represented by the current Property aggregate, generates the Property identifier server-side, and inserts the aggregate through an Application-owned repository implemented by PostgreSQL persistence. Authentication gates creation but does not define or persist Property ownership. ADR-0031 adds mapped-user-only direct loading of a known Property identifier through `GET /api/market/properties/{propertyId}` and returns the currently modeled full asset state. This authenticated asset read does not define public Listing address visibility or Property ownership. Property search, update, removal, ownership, lifecycle, and concurrency behavior remain unresolved.
 
 ## Company
 

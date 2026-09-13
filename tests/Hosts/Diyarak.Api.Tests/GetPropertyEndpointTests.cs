@@ -1,12 +1,12 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Diyarak.Market.Application;
 using Diyarak.Market.Property;
+using Diyarak.Platform.Domain.Primitives;
 using Diyarak.Platform.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
@@ -23,165 +23,196 @@ using MarketProperty = Diyarak.Market.Property.Property;
 
 namespace Diyarak.Api.Tests;
 
-public sealed class CreatePropertyEndpointTests
+public sealed class GetPropertyEndpointTests
 {
-    private const string Issuer = "https://idp.example.test/";
+    private const string Issuer = "https://issuer.example.test";
     private const string Audience = "diyarak-api";
-
-    private static readonly string[] PropertyFeatures =
-    [
-        "FittedKitchen",
-        "BalconyOrTerrace",
-    ];
 
     private static readonly SymmetricSecurityKey SigningKey =
         new(
             Encoding.UTF8.GetBytes(
-                "diyarak-api-tests-signing-key-32-bytes-minimum-2026"))
+                "diyarak-api-tests-signing-key-which-is-long-enough-123456"))
         {
             KeyId = "diyarak-api-tests",
         };
 
+    private static readonly PropertyFeature[] ExistingFeatures =
+    [
+        PropertyFeature.FittedKitchen,
+        PropertyFeature.BalconyOrTerrace,
+    ];
+
     [Fact]
     public async Task Route_is_not_mapped_when_authentication_is_disabled()
     {
+        MarketProperty property = CreateProperty();
         using var factory = new TestApiFactory(
+            property,
             userId: null,
             authenticationEnabled: false);
         using HttpClient client = factory.CreateClient();
 
-        HttpResponseMessage response = await SendValidCreateAsync(client);
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{property.Id}");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Null(factory.Repository.AddedProperty);
+        Assert.Equal(0, factory.Repository.FindCallCount);
     }
 
     [Fact]
-    public async Task Create_without_access_token_returns_401()
+    public async Task Get_without_access_token_returns_401()
     {
-        using var factory = new TestApiFactory(userId: null);
+        MarketProperty property = CreateProperty();
+        using var factory = new TestApiFactory(property, userId: null);
         using HttpClient client = factory.CreateClient();
 
-        HttpResponseMessage response = await SendValidCreateAsync(client);
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{property.Id}");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Null(factory.Repository.AddedProperty);
+        Assert.Equal(0, factory.Repository.FindCallCount);
     }
 
     [Fact]
-    public async Task Create_with_valid_unmapped_identity_returns_403()
+    public async Task Get_with_valid_unmapped_identity_returns_403()
     {
-        using var factory = new TestApiFactory(userId: null);
+        MarketProperty property = CreateProperty();
+        using var factory = new TestApiFactory(property, userId: null);
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("unmapped-user"));
 
-        HttpResponseMessage response = await SendValidCreateAsync(client);
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{property.Id}");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Null(factory.Repository.AddedProperty);
+        Assert.Equal(0, factory.Repository.FindCallCount);
     }
 
     [Fact]
-    public async Task Create_with_invalid_request_returns_400()
+    public async Task Get_with_invalid_identifier_returns_400()
     {
-        using var factory = new TestApiFactory(Guid.NewGuid());
+        MarketProperty property = CreateProperty();
+        using var factory = new TestApiFactory(property, Guid.NewGuid());
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("mapped-user"));
 
-        HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/market/properties",
-            new
-            {
-                category = "UnknownCategory",
-                address = new
-                {
-                    street = "Market Street",
-                    houseNumber = "12A",
-                    postalCode = "23552",
-                    city = "Luebeck",
-                },
-            });
+        HttpResponseMessage response =
+            await client.GetAsync("/api/market/properties/not-a-guid");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         await AssertProblemCodeAsync(
             response,
-            CreatePropertyErrors.InvalidRequest.Code);
-        Assert.Null(factory.Repository.AddedProperty);
+            GetPropertyErrors.InvalidIdentifier.Code);
+        Assert.Equal(0, factory.Repository.FindCallCount);
     }
 
     [Fact]
-    public async Task Create_with_mapped_user_returns_201_and_persists_property()
+    public async Task Get_with_missing_property_returns_404()
     {
-        using var factory = new TestApiFactory(Guid.NewGuid());
+        MarketProperty property = CreateProperty();
+        using var factory = new TestApiFactory(property, Guid.NewGuid());
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("mapped-user"));
 
-        HttpResponseMessage response = await SendValidCreateAsync(client);
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{Guid.NewGuid()}");
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            GetPropertyErrors.NotFound.Code);
+        Assert.Equal(1, factory.Repository.FindCallCount);
+    }
 
-        MarketProperty property = Assert.IsType<MarketProperty>(
-            factory.Repository.AddedProperty);
+    [Fact]
+    public async Task Get_with_mapped_user_returns_complete_property_state()
+    {
+        MarketProperty property = CreateProperty();
+        using var factory = new TestApiFactory(property, Guid.NewGuid());
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
 
-        Assert.Equal(PropertyCategory.Apartment, property.Category);
-        Assert.Equal("Market Street", property.Address.Street);
-        Assert.Equal("12A", property.Address.HouseNumber);
-        Assert.Equal("23552", property.Address.PostalCode);
-        Assert.Equal("Luebeck", property.Address.City);
-        Assert.Equal(53.8655, property.Address.Location?.Latitude);
-        Assert.Equal(10.6866, property.Address.Location?.Longitude);
-        Assert.Equal(82.5m, property.LivingArea?.Value);
-        Assert.Equal(3.5m, property.TotalRooms);
-        Assert.Equal(FurnishingQuality.Upscale, property.FurnishingQuality);
-        Assert.Contains(
-            PropertyFeature.BalconyOrTerrace,
-            property.Features);
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{property.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Repository.FindCallCount);
 
         string body = await response.Content.ReadAsStringAsync();
         using JsonDocument document = JsonDocument.Parse(body);
-        Guid responsePropertyId =
-            document.RootElement.GetProperty("propertyId").GetGuid();
+        JsonElement root = document.RootElement;
 
-        Assert.Equal(property.Id, responsePropertyId);
         Assert.Equal(
-            $"/api/market/properties/{property.Id}",
-            response.Headers.Location?.OriginalString);
+            property.Id,
+            root.GetProperty("propertyId").GetGuid());
+        Assert.Equal(
+            "Apartment",
+            root.GetProperty("category").GetString());
+
+        JsonElement address = root.GetProperty("address");
+        Assert.Equal(
+            "Market Street",
+            address.GetProperty("street").GetString());
+        Assert.Equal(
+            "12A",
+            address.GetProperty("houseNumber").GetString());
+        Assert.Equal(
+            "23552",
+            address.GetProperty("postalCode").GetString());
+        Assert.Equal(
+            "Luebeck",
+            address.GetProperty("city").GetString());
+        Assert.Equal(
+            53.8655,
+            address.GetProperty("location")
+                .GetProperty("latitude")
+                .GetDouble());
+
+        Assert.Equal(
+            82.5m,
+            root.GetProperty("livingArea")
+                .GetProperty("value")
+                .GetDecimal());
+        Assert.Equal(
+            "SquareMeter",
+            root.GetProperty("livingArea")
+                .GetProperty("unit")
+                .GetString());
+        Assert.Equal(
+            3.5m,
+            root.GetProperty("totalRooms").GetDecimal());
+        Assert.Equal(
+            "Upscale",
+            root.GetProperty("furnishingQuality").GetString());
+        Assert.Contains(
+            root.GetProperty("features").EnumerateArray(),
+            feature => feature.GetString() == "BalconyOrTerrace");
+        Assert.Equal(
+            1,
+            root.GetProperty("parkingSpaceCount").GetInt32());
     }
 
-    private static Task<HttpResponseMessage> SendValidCreateAsync(
-        HttpClient client)
+    private static MarketProperty CreateProperty()
     {
-        return client.PostAsJsonAsync(
-            "/api/market/properties",
-            new
-            {
-                category = "Apartment",
-                address = new
-                {
-                    street = "Market Street",
-                    houseNumber = "12A",
-                    postalCode = "23552",
-                    city = "Luebeck",
-                    location = new
-                    {
-                        latitude = 53.8655,
-                        longitude = 10.6866,
-                    },
-                },
-                livingArea = new
-                {
-                    value = 82.5m,
-                    unit = "SquareMeter",
-                },
-                totalRooms = 3.5m,
-                bedroomCount = 2,
-                bathroomCount = 1,
-                furnishingQuality = "Upscale",
-                features = PropertyFeatures,
-                constructionYear = 1998,
-                lastModernizationYear = 2024,
-                parkingSpaceCount = 1,
-            });
+        return new MarketProperty(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            new PropertyAddress(
+                "Market Street",
+                "12A",
+                "23552",
+                "Luebeck",
+                new GeoCoordinate(53.8655, 10.6866)),
+            livingArea: new Area(82.5m, AreaUnit.SquareMeter),
+            usableArea: new Area(91m, AreaUnit.SquareMeter),
+            totalRooms: 3.5m,
+            bedroomCount: 2,
+            bathroomCount: 1,
+            furnishingQuality: FurnishingQuality.Upscale,
+            features: ExistingFeatures,
+            constructionYear: 1998,
+            lastModernizationYear: 2024,
+            parkingSpaceCount: 1);
     }
 
     private static void AddBearerToken(
@@ -235,12 +266,13 @@ public sealed class CreatePropertyEndpointTests
         private readonly bool _authenticationEnabled;
 
         public TestApiFactory(
+            MarketProperty property,
             Guid? userId,
             bool authenticationEnabled = true)
         {
             _userId = userId;
             _authenticationEnabled = authenticationEnabled;
-            Repository = new StubMarketPropertyRepository();
+            Repository = new StubMarketPropertyRepository(property);
         }
 
         public StubMarketPropertyRepository Repository { get; }
@@ -312,22 +344,27 @@ public sealed class CreatePropertyEndpointTests
             Task.FromResult(userId);
     }
 
-    public sealed class StubMarketPropertyRepository
+    public sealed class StubMarketPropertyRepository(
+        MarketProperty existingProperty)
         : IMarketPropertyRepository
     {
-        public MarketProperty? AddedProperty { get; private set; }
+        public int FindCallCount { get; private set; }
 
         public Task<MarketProperty?> FindByIdAsync(
             Guid propertyId,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult<MarketProperty?>(null);
+            CancellationToken cancellationToken = default)
+        {
+            FindCallCount++;
+            return Task.FromResult(
+                existingProperty.Id == propertyId
+                    ? existingProperty
+                    : null);
+        }
 
         public Task AddAsync(
             MarketProperty property,
-            CancellationToken cancellationToken = default)
-        {
-            AddedProperty = property;
-            return Task.CompletedTask;
-        }
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
     }
 }
+

@@ -85,6 +85,11 @@ public sealed class CreatePropertyUseCaseTests
     {
         public MarketProperty? AddedProperty { get; private set; }
 
+        public Task<MarketProperty?> FindByIdAsync(
+            Guid propertyId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<MarketProperty?>(null);
+
         public Task AddAsync(
             MarketProperty property,
             CancellationToken cancellationToken = default)

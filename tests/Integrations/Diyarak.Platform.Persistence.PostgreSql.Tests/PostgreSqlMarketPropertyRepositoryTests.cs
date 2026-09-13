@@ -80,6 +80,73 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
         Assert.Equal(3, persisted.ParkingSpaceCount);
     }
 
+
+    [Fact]
+    public async Task FindByIdAsync_returns_complete_property_state_without_tracking()
+    {
+        await using PlatformDbContext context = CreateContext();
+
+        var property = new MarketProperty(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            new PropertyAddress(
+                "River Street",
+                "18",
+                "28195",
+                "Bremen",
+                new GeoCoordinate(53.0793, 8.8017)),
+            livingArea: new Area(74m, AreaUnit.SquareMeter),
+            usableArea: new Area(80m, AreaUnit.SquareMeter),
+            totalRooms: 3m,
+            bedroomCount: 2,
+            bathroomCount: 1,
+            furnishingQuality: FurnishingQuality.Upscale,
+            features:
+            [
+                PropertyFeature.FittedKitchen,
+                PropertyFeature.BalconyOrTerrace,
+            ],
+            constructionYear: 2010,
+            lastModernizationYear: 2023,
+            parkingSpaceCount: 1);
+
+        var repository =
+            new PostgreSqlMarketPropertyRepository(context);
+
+        await repository.AddAsync(property);
+        context.ChangeTracker.Clear();
+
+        MarketProperty? loaded =
+            await repository.FindByIdAsync(property.Id);
+
+        MarketProperty existing = Assert.IsType<MarketProperty>(loaded);
+        Assert.Equal(property.Id, existing.Id);
+        Assert.Equal(PropertyCategory.Apartment, existing.Category);
+        Assert.Equal("River Street", existing.Address.Street);
+        Assert.Equal("Bremen", existing.Address.City);
+        Assert.Equal(53.0793, existing.Address.Location?.Latitude);
+        Assert.Equal(74m, existing.LivingArea?.Value);
+        Assert.Equal(3m, existing.TotalRooms);
+        Assert.Equal(FurnishingQuality.Upscale, existing.FurnishingQuality);
+        Assert.Contains(
+            PropertyFeature.BalconyOrTerrace,
+            existing.Features);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public async Task FindByIdAsync_returns_null_when_property_does_not_exist()
+    {
+        await using PlatformDbContext context = CreateContext();
+        var repository =
+            new PostgreSqlMarketPropertyRepository(context);
+
+        MarketProperty? loaded =
+            await repository.FindByIdAsync(Guid.NewGuid());
+
+        Assert.Null(loaded);
+    }
+
     private static PlatformDbContext CreateContext()
     {
         var options =
