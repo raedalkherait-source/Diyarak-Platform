@@ -1,12 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Diyarak.Market.Application;
 using Diyarak.Market.Property;
+using Diyarak.Platform.Domain.Primitives;
 using Diyarak.Platform.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
@@ -23,171 +23,188 @@ using MarketProperty = Diyarak.Market.Property.Property;
 
 namespace Diyarak.Api.Tests;
 
-public sealed class CreatePropertyEndpointTests
+public sealed class ListOwnedPropertiesEndpointTests
 {
-    private const string Issuer = "https://idp.example.test/";
+    private const string Issuer = "https://issuer.example.test";
     private const string Audience = "diyarak-api";
-
-    private static readonly string[] PropertyFeatures =
-    [
-        "FittedKitchen",
-        "BalconyOrTerrace",
-    ];
 
     private static readonly SymmetricSecurityKey SigningKey =
         new(
             Encoding.UTF8.GetBytes(
-                "diyarak-api-tests-signing-key-32-bytes-minimum-2026"))
+                "diyarak-api-tests-signing-key-which-is-long-enough-123456"))
         {
             KeyId = "diyarak-api-tests",
         };
+
+    private static readonly PropertyFeature[] ExistingFeatures =
+    [
+        PropertyFeature.FittedKitchen,
+        PropertyFeature.BalconyOrTerrace,
+    ];
 
     [Fact]
     public async Task Route_is_not_mapped_when_authentication_is_disabled()
     {
         using var factory = new TestApiFactory(
             userId: null,
+            properties: [],
             authenticationEnabled: false);
         using HttpClient client = factory.CreateClient();
 
-        HttpResponseMessage response = await SendValidCreateAsync(client);
+        HttpResponseMessage response =
+            await client.GetAsync("/api/market/properties");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Null(factory.Repository.AddedProperty);
+        Assert.Equal(0, factory.Repository.FindByOwnerCallCount);
     }
 
     [Fact]
-    public async Task Create_without_access_token_returns_401()
+    public async Task List_without_access_token_returns_401()
     {
-        using var factory = new TestApiFactory(userId: null);
+        using var factory = new TestApiFactory(
+            userId: null,
+            properties: []);
         using HttpClient client = factory.CreateClient();
 
-        HttpResponseMessage response = await SendValidCreateAsync(client);
+        HttpResponseMessage response =
+            await client.GetAsync("/api/market/properties");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Null(factory.Repository.AddedProperty);
+        Assert.Equal(0, factory.Repository.FindByOwnerCallCount);
     }
 
     [Fact]
-    public async Task Create_with_valid_unmapped_identity_returns_403()
+    public async Task List_with_valid_unmapped_identity_returns_403()
     {
-        using var factory = new TestApiFactory(userId: null);
+        using var factory = new TestApiFactory(
+            userId: null,
+            properties: []);
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("unmapped-user"));
 
-        HttpResponseMessage response = await SendValidCreateAsync(client);
+        HttpResponseMessage response =
+            await client.GetAsync("/api/market/properties");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Null(factory.Repository.AddedProperty);
+        Assert.Equal(0, factory.Repository.FindByOwnerCallCount);
     }
 
     [Fact]
-    public async Task Create_with_invalid_request_returns_400()
-    {
-        using var factory = new TestApiFactory(Guid.NewGuid());
-        using HttpClient client = factory.CreateClient();
-        AddBearerToken(client, CreateToken("mapped-user"));
-
-        HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/market/properties",
-            new
-            {
-                category = "UnknownCategory",
-                address = new
-                {
-                    street = "Market Street",
-                    houseNumber = "12A",
-                    postalCode = "23552",
-                    city = "Luebeck",
-                },
-            });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await AssertProblemCodeAsync(
-            response,
-            CreatePropertyErrors.InvalidRequest.Code);
-        Assert.Null(factory.Repository.AddedProperty);
-    }
-
-    [Fact]
-    public async Task Create_with_mapped_user_returns_201_and_persists_actor_owned_property()
+    public async Task List_with_mapped_user_returns_empty_array_when_no_property_exists()
     {
         Guid actorUserId = Guid.NewGuid();
-        using var factory = new TestApiFactory(actorUserId);
+        using var factory = new TestApiFactory(
+            actorUserId,
+            properties: []);
         using HttpClient client = factory.CreateClient();
         AddBearerToken(client, CreateToken("mapped-user"));
 
-        HttpResponseMessage response = await SendValidCreateAsync(client);
+        HttpResponseMessage response =
+            await client.GetAsync("/api/market/properties");
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-        MarketProperty property = Assert.IsType<MarketProperty>(
-            factory.Repository.AddedProperty);
-
-        Assert.Equal(actorUserId, property.OwnerUserId);
-        Assert.Equal(PropertyCategory.Apartment, property.Category);
-        Assert.Equal("Market Street", property.Address.Street);
-        Assert.Equal("12A", property.Address.HouseNumber);
-        Assert.Equal("23552", property.Address.PostalCode);
-        Assert.Equal("Luebeck", property.Address.City);
-        Assert.Equal(53.8655, property.Address.Location?.Latitude);
-        Assert.Equal(10.6866, property.Address.Location?.Longitude);
-        Assert.Equal(82.5m, property.LivingArea?.Value);
-        Assert.Equal(3.5m, property.TotalRooms);
-        Assert.Equal(FurnishingQuality.Upscale, property.FurnishingQuality);
-        Assert.Contains(
-            PropertyFeature.BalconyOrTerrace,
-            property.Features);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Repository.FindByOwnerCallCount);
+        Assert.Equal(actorUserId, factory.Repository.LastOwnerUserId);
 
         string body = await response.Content.ReadAsStringAsync();
         using JsonDocument document = JsonDocument.Parse(body);
-        Guid responsePropertyId =
-            document.RootElement.GetProperty("propertyId").GetGuid();
-
-        Assert.False(
-            document.RootElement.TryGetProperty(
-                "ownerUserId",
-                out _));
-        Assert.Equal(property.Id, responsePropertyId);
-        Assert.Equal(
-            $"/api/market/properties/{property.Id}",
-            response.Headers.Location?.OriginalString);
+        Assert.Equal(JsonValueKind.Array, document.RootElement.ValueKind);
+        Assert.Equal(0, document.RootElement.GetArrayLength());
     }
 
-    private static Task<HttpResponseMessage> SendValidCreateAsync(
-        HttpClient client)
+    [Fact]
+    public async Task List_with_mapped_user_does_not_expose_other_or_legacy_unowned_properties()
     {
-        return client.PostAsJsonAsync(
-            "/api/market/properties",
-            new
-            {
-                category = "Apartment",
-                address = new
-                {
-                    street = "Market Street",
-                    houseNumber = "12A",
-                    postalCode = "23552",
-                    city = "Luebeck",
-                    location = new
-                    {
-                        latitude = 53.8655,
-                        longitude = 10.6866,
-                    },
-                },
-                livingArea = new
-                {
-                    value = 82.5m,
-                    unit = "SquareMeter",
-                },
-                totalRooms = 3.5m,
-                bedroomCount = 2,
-                bathroomCount = 1,
-                furnishingQuality = "Upscale",
-                features = PropertyFeatures,
-                constructionYear = 1998,
-                lastModernizationYear = 2024,
-                parkingSpaceCount = 1,
-            });
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty other = CreateProperty(Guid.NewGuid(), "Other Street");
+        MarketProperty legacy = CreateProperty(null, "Legacy Street");
+        using var factory = new TestApiFactory(
+            actorUserId,
+            [other, legacy]);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync("/api/market/properties");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.Equal(0, document.RootElement.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task List_with_mapped_owner_returns_management_representation()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty owned = CreateProperty(actorUserId, "Market Street");
+        MarketProperty other = CreateProperty(Guid.NewGuid(), "Other Street");
+        MarketProperty legacy = CreateProperty(null, "Legacy Street");
+        using var factory = new TestApiFactory(
+            actorUserId,
+            [owned, other, legacy]);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync("/api/market/properties");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Repository.FindByOwnerCallCount);
+
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        JsonElement root = document.RootElement;
+        Assert.Equal(1, root.GetArrayLength());
+
+        JsonElement item = root[0];
+        Assert.Equal(
+            owned.Id,
+            item.GetProperty("propertyId").GetGuid());
+        Assert.False(item.TryGetProperty("ownerUserId", out _));
+        Assert.Equal(
+            "Apartment",
+            item.GetProperty("category").GetString());
+        Assert.Equal(
+            "Market Street",
+            item.GetProperty("address")
+                .GetProperty("street")
+                .GetString());
+        Assert.Equal(
+            82.5m,
+            item.GetProperty("livingArea")
+                .GetProperty("value")
+                .GetDecimal());
+        Assert.Contains(
+            item.GetProperty("features").EnumerateArray(),
+            feature => feature.GetString() == "BalconyOrTerrace");
+    }
+
+    private static MarketProperty CreateProperty(
+        Guid? ownerUserId,
+        string street)
+    {
+        return new MarketProperty(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            new PropertyAddress(
+                street,
+                "12A",
+                "23552",
+                "Luebeck",
+                new GeoCoordinate(53.8655, 10.6866)),
+            livingArea: new Area(82.5m, AreaUnit.SquareMeter),
+            usableArea: new Area(91m, AreaUnit.SquareMeter),
+            totalRooms: 3.5m,
+            bedroomCount: 2,
+            bathroomCount: 1,
+            furnishingQuality: FurnishingQuality.Upscale,
+            features: ExistingFeatures,
+            constructionYear: 1998,
+            lastModernizationYear: 2024,
+            parkingSpaceCount: 1,
+            ownerUserId: ownerUserId);
     }
 
     private static void AddBearerToken(
@@ -223,18 +240,6 @@ public sealed class CreatePropertyEndpointTests
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private static async Task AssertProblemCodeAsync(
-        HttpResponseMessage response,
-        string expectedCode)
-    {
-        string body = await response.Content.ReadAsStringAsync();
-        using JsonDocument document = JsonDocument.Parse(body);
-
-        Assert.Equal(
-            expectedCode,
-            document.RootElement.GetProperty("code").GetString());
-    }
-
     private sealed class TestApiFactory : WebApplicationFactory<Program>
     {
         private readonly Guid? _userId;
@@ -242,11 +247,12 @@ public sealed class CreatePropertyEndpointTests
 
         public TestApiFactory(
             Guid? userId,
+            IReadOnlyList<MarketProperty> properties,
             bool authenticationEnabled = true)
         {
             _userId = userId;
             _authenticationEnabled = authenticationEnabled;
-            Repository = new StubMarketPropertyRepository();
+            Repository = new StubMarketPropertyRepository(properties);
         }
 
         public StubMarketPropertyRepository Repository { get; }
@@ -318,10 +324,13 @@ public sealed class CreatePropertyEndpointTests
             Task.FromResult(userId);
     }
 
-    public sealed class StubMarketPropertyRepository
+    public sealed class StubMarketPropertyRepository(
+        IReadOnlyList<MarketProperty> properties)
         : IMarketPropertyRepository
     {
-        public MarketProperty? AddedProperty { get; private set; }
+        public int FindByOwnerCallCount { get; private set; }
+
+        public Guid? LastOwnerUserId { get; private set; }
 
         public Task<MarketProperty?> FindByIdAsync(
             Guid propertyId,
@@ -330,15 +339,21 @@ public sealed class CreatePropertyEndpointTests
 
         public Task<IReadOnlyList<MarketProperty>> FindByOwnerUserIdAsync(
             Guid ownerUserId,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<MarketProperty>>([]);
+            CancellationToken cancellationToken = default)
+        {
+            FindByOwnerCallCount++;
+            LastOwnerUserId = ownerUserId;
+
+            IReadOnlyList<MarketProperty> owned = properties
+                .Where(property => property.OwnerUserId == ownerUserId)
+                .ToArray();
+
+            return Task.FromResult(owned);
+        }
 
         public Task AddAsync(
             MarketProperty property,
-            CancellationToken cancellationToken = default)
-        {
-            AddedProperty = property;
-            return Task.CompletedTask;
-        }
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
     }
 }

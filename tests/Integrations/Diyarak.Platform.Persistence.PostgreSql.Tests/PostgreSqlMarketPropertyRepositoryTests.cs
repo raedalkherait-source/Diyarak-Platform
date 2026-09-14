@@ -153,6 +153,61 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
         Assert.Null(loaded);
     }
 
+    [Fact]
+    public async Task FindByOwnerUserIdAsync_returns_empty_when_owner_has_no_properties()
+    {
+        await using PlatformDbContext context = CreateContext();
+        var repository =
+            new PostgreSqlMarketPropertyRepository(context);
+
+        IReadOnlyList<MarketProperty> properties =
+            await repository.FindByOwnerUserIdAsync(
+                Guid.NewGuid());
+
+        Assert.Empty(properties);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public async Task FindByOwnerUserIdAsync_returns_only_owned_properties()
+    {
+        await using PlatformDbContext context = CreateContext();
+
+        Guid ownerUserId = Guid.NewGuid();
+        MarketProperty owned = CreateProperty(ownerUserId, "Owned Street");
+        MarketProperty other = CreateProperty(Guid.NewGuid(), "Other Street");
+        MarketProperty legacyUnowned = CreateProperty(null, "Legacy Street");
+        var repository =
+            new PostgreSqlMarketPropertyRepository(context);
+
+        await repository.AddAsync(owned);
+        await repository.AddAsync(other);
+        await repository.AddAsync(legacyUnowned);
+        context.ChangeTracker.Clear();
+
+        IReadOnlyList<MarketProperty> properties =
+            await repository.FindByOwnerUserIdAsync(ownerUserId);
+
+        MarketProperty loaded = Assert.Single(properties);
+        Assert.Equal(owned.Id, loaded.Id);
+        Assert.Equal(ownerUserId, loaded.OwnerUserId);
+        Assert.Equal("Owned Street", loaded.Address.Street);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    private static MarketProperty CreateProperty(
+        Guid? ownerUserId,
+        string street) =>
+        new(
+            Guid.NewGuid(),
+            PropertyCategory.House,
+            new PropertyAddress(
+                street,
+                "1",
+                "23552",
+                "Luebeck"),
+            ownerUserId: ownerUserId);
+
     private static PlatformDbContext CreateContext()
     {
         var options =

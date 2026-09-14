@@ -23,6 +23,13 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
 
         endpoints
             .MapGet(
+                "/api/market/properties",
+                ListOwnedPropertiesAsync)
+            .RequireAuthorization(
+                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+
+        endpoints
+            .MapGet(
                 "/api/market/properties/{propertyId}",
                 GetPropertyAsync)
             .RequireAuthorization(
@@ -64,6 +71,29 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
         }
 
         return ToProblemDetails(result.Error, httpContext);
+    }
+
+    internal static async Task<IResult> ListOwnedPropertiesAsync(
+        IAuthenticatedActorAccessor actorAccessor,
+        ListOwnedPropertiesUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
+        Result<IReadOnlyList<MarketProperty>> result =
+            await useCase.ExecuteAsync(
+                actorUserId,
+                cancellationToken);
+
+        if (!result.IsSuccess)
+            return ToProblemDetails(result.Error, httpContext);
+
+        MarketPropertyResponse[] response = result.Value
+            .Select(ToResponse)
+            .ToArray();
+
+        return Results.Ok(response);
     }
 
     internal static async Task<IResult> GetPropertyAsync(

@@ -8,6 +8,10 @@ public interface IMarketPropertyRepository
         Guid propertyId,
         CancellationToken cancellationToken = default);
 
+    public Task<IReadOnlyList<MarketProperty>> FindByOwnerUserIdAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken = default);
+
     public Task AddAsync(
         MarketProperty property,
         CancellationToken cancellationToken = default);

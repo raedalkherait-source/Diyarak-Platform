@@ -149,6 +149,11 @@ public sealed class GetPropertyUseCaseTests
                     : null);
         }
 
+        public Task<IReadOnlyList<MarketProperty>> FindByOwnerUserIdAsync(
+            Guid ownerUserId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<MarketProperty>>([]);
+
         public Task AddAsync(
             MarketProperty property,
             CancellationToken cancellationToken = default) =>

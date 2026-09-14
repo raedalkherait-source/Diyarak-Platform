@@ -32,6 +32,21 @@ internal sealed class PostgreSqlMarketPropertyRepository
             : MarketPropertyRecordMapper.ToDomain(record);
     }
 
+    public async Task<IReadOnlyList<MarketProperty>> FindByOwnerUserIdAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken = default)
+    {
+        List<MarketPropertyRecord> records =
+            await _context.MarketProperties
+                .AsNoTracking()
+                .Where(property => property.OwnerUserId == ownerUserId)
+                .ToListAsync(cancellationToken);
+
+        return records
+            .Select(MarketPropertyRecordMapper.ToDomain)
+            .ToArray();
+    }
+
     public async Task AddAsync(
         MarketProperty property,
         CancellationToken cancellationToken = default)
