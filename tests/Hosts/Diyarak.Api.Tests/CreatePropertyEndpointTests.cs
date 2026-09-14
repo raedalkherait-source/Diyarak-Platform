@@ -340,5 +340,11 @@ public sealed class CreatePropertyEndpointTests
             AddedProperty = property;
             return Task.CompletedTask;
         }
+
+        public Task<bool> TrySaveAsync(
+            MarketProperty property,
+            long expectedVersion,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
     }
 }

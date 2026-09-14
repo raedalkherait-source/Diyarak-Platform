@@ -80,3 +80,8 @@ ADR-0030 defines authenticated Property creation through `POST /api/market/prope
 - Search behavior is not yet defined.
 
 Implementation should not introduce speculative domain fields, lifecycle states, API contracts, or dependencies before concrete requirements are documented.
+
+
+## Property management replacement (ADR-0036)
+
+Authenticated mapped owners can replace the mutable detail state of an owned Property with `PUT /api/market/properties/{propertyId}`. The request carries the current positive `version` plus the complete Property detail representation. Identity and `OwnerUserId` remain immutable. Missing, non-owned, and legacy-unowned Properties are concealed as `404`; stale versions return `409 market.property.concurrent_modification`. Omitted optional Property fields are cleared because the contract is full replacement, not PATCH. New Properties start at version `1`, and Property management create/get/list responses expose the current version.

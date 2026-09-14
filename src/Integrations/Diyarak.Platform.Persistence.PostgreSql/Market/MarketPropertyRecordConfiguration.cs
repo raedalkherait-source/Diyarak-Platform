@@ -30,6 +30,11 @@ internal sealed class MarketPropertyRecordConfiguration
             .HasColumnName("owner_user_id")
             .HasColumnType("uuid");
 
+        builder.Property(record => record.Version)
+            .HasColumnName("version")
+            .HasColumnType("bigint")
+            .IsConcurrencyToken();
+
         builder.Property(record => record.Category)
             .HasColumnName("category")
             .HasColumnType("integer");

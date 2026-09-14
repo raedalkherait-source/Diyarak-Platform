@@ -15,4 +15,9 @@ public interface IMarketPropertyRepository
     public Task AddAsync(
         MarketProperty property,
         CancellationToken cancellationToken = default);
+
+    public Task<bool> TrySaveAsync(
+        MarketProperty property,
+        long expectedVersion,
+        CancellationToken cancellationToken = default);
 }

@@ -58,4 +58,34 @@ internal sealed class PostgreSqlMarketPropertyRepository
 
         await _context.SaveChangesAsync(cancellationToken);
     }
+    public async Task<bool> TrySaveAsync(
+        MarketProperty property,
+        long expectedVersion,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(property);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(expectedVersion);
+
+        MarketPropertyRecord record =
+            MarketPropertyRecordMapper.FromDomain(property);
+
+        record.Version = checked(expectedVersion + 1);
+
+        var entry = _context.MarketProperties.Attach(record);
+        entry.State = EntityState.Modified;
+        entry.Property(candidate => candidate.Version).OriginalValue =
+            expectedVersion;
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            entry.State = EntityState.Detached;
+            return false;
+        }
+    }
+
 }

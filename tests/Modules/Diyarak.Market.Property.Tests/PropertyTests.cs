@@ -193,6 +193,65 @@ public sealed class PropertyTests
                 features: [(PropertyFeature)0]));
     }
 
+    [Fact]
+    public void Constructor_starts_at_initial_version()
+    {
+        var property = new Property(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            CreateAddress());
+
+        Assert.Equal(Property.InitialVersion, property.Version);
+    }
+
+    [Fact]
+    public void Restore_preserves_persisted_version()
+    {
+        var property = Property.Restore(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            CreateAddress(),
+            livingArea: null,
+            usableArea: null,
+            totalRooms: null,
+            bedroomCount: null,
+            bathroomCount: null,
+            furnishingQuality: null,
+            features: null,
+            constructionYear: null,
+            lastModernizationYear: null,
+            commercialSubtype: null,
+            salesArea: null,
+            totalArea: null,
+            parkingSpaceCount: null,
+            ownerUserId: Guid.NewGuid(),
+            version: 7);
+
+        Assert.Equal(7, property.Version);
+    }
+
+    [Fact]
+    public void ReplaceDetails_changes_mutable_state_without_changing_owner_or_version()
+    {
+        Guid ownerUserId = Guid.NewGuid();
+        var property = new Property(
+            Guid.NewGuid(),
+            PropertyCategory.House,
+            CreateAddress(),
+            ownerUserId: ownerUserId);
+
+        property.ReplaceDetails(
+            PropertyCategory.Apartment,
+            new PropertyAddress("New Street", "9", "54321", "New City"),
+            livingArea: new Area(90m, AreaUnit.SquareMeter));
+
+        Assert.Equal(ownerUserId, property.OwnerUserId);
+        Assert.Equal(Property.InitialVersion, property.Version);
+        Assert.Equal(PropertyCategory.Apartment, property.Category);
+        Assert.Equal("New Street", property.Address.Street);
+        Assert.Equal(90m, property.LivingArea?.Value);
+    }
+
     private static PropertyAddress CreateAddress() =>
         new("Example Street", "12A", "12345", "Example City");
 }

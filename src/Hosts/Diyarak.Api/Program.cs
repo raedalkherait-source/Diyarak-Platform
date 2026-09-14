@@ -110,6 +110,7 @@ builder.Services.AddPostgreSqlPersistence(
 builder.Services.AddScoped<CreatePropertyUseCase>();
 builder.Services.AddScoped<ListOwnedPropertiesUseCase>();
 builder.Services.AddScoped<GetPropertyUseCase>();
+builder.Services.AddScoped<UpdatePropertyUseCase>();
 builder.Services.AddScoped<CreateListingUseCase>();
 builder.Services.AddScoped<ListOwnedListingsUseCase>();
 builder.Services.AddScoped<GetListingUseCase>();

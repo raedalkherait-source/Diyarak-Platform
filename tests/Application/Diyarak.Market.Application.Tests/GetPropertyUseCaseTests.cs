@@ -158,5 +158,11 @@ public sealed class GetPropertyUseCaseTests
             MarketProperty property,
             CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+
+        public Task<bool> TrySaveAsync(
+            MarketProperty property,
+            long expectedVersion,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
     }
 }

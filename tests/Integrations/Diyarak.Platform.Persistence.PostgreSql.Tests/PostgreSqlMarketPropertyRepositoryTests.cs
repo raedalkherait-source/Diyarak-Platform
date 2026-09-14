@@ -56,6 +56,7 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
 
         Assert.Equal(property.Id, persisted.Id);
         Assert.Equal(ownerUserId, persisted.OwnerUserId);
+        Assert.Equal(MarketProperty.InitialVersion, persisted.Version);
         Assert.Equal((int)PropertyCategory.CommercialProperty, persisted.Category);
         Assert.Equal("Harbor Road", persisted.Street);
         Assert.Equal("5", persisted.HouseNumber);
@@ -127,6 +128,7 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
         MarketProperty existing = Assert.IsType<MarketProperty>(loaded);
         Assert.Equal(property.Id, existing.Id);
         Assert.Equal(ownerUserId, existing.OwnerUserId);
+        Assert.Equal(MarketProperty.InitialVersion, existing.Version);
         Assert.Equal(PropertyCategory.Apartment, existing.Category);
         Assert.Equal("River Street", existing.Address.Street);
         Assert.Equal("Bremen", existing.Address.City);
@@ -193,6 +195,33 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
         Assert.Equal(ownerUserId, loaded.OwnerUserId);
         Assert.Equal("Owned Street", loaded.Address.Street);
         Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public async Task TrySaveAsync_updates_state_and_increments_version()
+    {
+        await using PlatformDbContext context = CreateContext();
+        Guid ownerUserId = Guid.NewGuid();
+        MarketProperty property = CreateProperty(ownerUserId, "Before Street");
+        var repository = new PostgreSqlMarketPropertyRepository(context);
+
+        await repository.AddAsync(property);
+        context.ChangeTracker.Clear();
+
+        MarketProperty loaded = Assert.IsType<MarketProperty>(
+            await repository.FindByIdAsync(property.Id));
+        loaded.ReplaceDetails(
+            PropertyCategory.Apartment,
+            new PropertyAddress("After Street", "2", "23552", "Luebeck"));
+
+        bool saved = await repository.TrySaveAsync(loaded, loaded.Version);
+
+        Assert.True(saved);
+        context.ChangeTracker.Clear();
+        MarketPropertyRecord persisted = await context.MarketProperties.SingleAsync(
+            candidate => candidate.Id == property.Id);
+        Assert.Equal("After Street", persisted.Street);
+        Assert.Equal(2, persisted.Version);
     }
 
     private static MarketProperty CreateProperty(

@@ -35,6 +35,13 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
             .RequireAuthorization(
                 Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
 
+        endpoints
+            .MapPut(
+                "/api/market/properties/{propertyId}",
+                UpdatePropertyAsync)
+            .RequireAuthorization(
+                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+
         return endpoints;
     }
 
@@ -67,7 +74,9 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
 
             return Results.Created(
                 $"/api/market/properties/{propertyId}",
-                new CreateMarketPropertyResponse(propertyId));
+                new CreateMarketPropertyResponse(
+                    propertyId,
+                    MarketProperty.InitialVersion));
         }
 
         return ToProblemDetails(result.Error, httpContext);
@@ -123,6 +132,47 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
             : ToProblemDetails(result.Error, httpContext);
     }
 
+    internal static async Task<IResult> UpdatePropertyAsync(
+        string propertyId,
+        JsonElement request,
+        IAuthenticatedActorAccessor actorAccessor,
+        UpdatePropertyUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(propertyId, out Guid parsedPropertyId) ||
+            parsedPropertyId == Guid.Empty)
+        {
+            return ToProblemDetails(
+                UpdatePropertyErrors.InvalidIdentifier,
+                httpContext);
+        }
+
+        if (!MarketPropertyUpdateRequestParser.TryParse(
+                request,
+                out UpdatePropertyCommand command))
+        {
+            return ToProblemDetails(
+                UpdatePropertyErrors.InvalidRequest,
+                httpContext);
+        }
+
+        Guid actorUserId = GetRequiredActorUserId(actorAccessor);
+
+        Result<long> result = await useCase.ExecuteAsync(
+            parsedPropertyId,
+            actorUserId,
+            command,
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Results.Ok(
+                new UpdateMarketPropertyResponse(
+                    parsedPropertyId,
+                    result.Value))
+            : ToProblemDetails(result.Error, httpContext);
+    }
+
     private static Guid GetRequiredActorUserId(
         IAuthenticatedActorAccessor actorAccessor)
     {
@@ -146,6 +196,7 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
 
         return new MarketPropertyResponse(
             property.Id,
+            property.Version,
             property.Category.ToString(),
             new MarketPropertyAddressResponse(
                 property.Address.Street,
@@ -195,6 +246,7 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
         {
             ErrorType.Validation => StatusCodes.Status400BadRequest,
             ErrorType.NotFound => StatusCodes.Status404NotFound,
+            ErrorType.Conflict => StatusCodes.Status409Conflict,
             _ => throw new InvalidOperationException(
                 $"Unsupported expected Market Property error type '{error.Type}'."),
         };
@@ -203,6 +255,7 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
         {
             StatusCodes.Status400BadRequest => "Bad Request",
             StatusCodes.Status404NotFound => "Not Found",
+            StatusCodes.Status409Conflict => "Conflict",
             _ => throw new InvalidOperationException(
                 "Unsupported Market Property HTTP status code."),
         };
@@ -219,10 +272,16 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
     }
 
     internal sealed record CreateMarketPropertyResponse(
-        Guid PropertyId);
+        Guid PropertyId,
+        long Version);
+
+    internal sealed record UpdateMarketPropertyResponse(
+        Guid PropertyId,
+        long Version);
 
     internal sealed record MarketPropertyResponse(
         Guid PropertyId,
+        long Version,
         string Category,
         MarketPropertyAddressResponse Address,
         MarketAreaResponse? LivingArea,

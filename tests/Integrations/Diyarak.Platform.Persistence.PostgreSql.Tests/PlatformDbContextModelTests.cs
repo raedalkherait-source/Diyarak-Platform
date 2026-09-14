@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace Diyarak.Platform.Persistence.PostgreSql.Tests;
@@ -64,6 +64,7 @@ public sealed class PlatformDbContextModelTests
             "TotalAreaUnit",
             "OwnerUserId",
             "ParkingSpaceCount",
+            "Version",
         ];
 
         string[] actualProperties =
@@ -105,5 +106,3 @@ public sealed class PlatformDbContextModelTests
             ownerConstraint.Sql);
     }
 }
-
-

@@ -93,3 +93,6 @@ The following behavior remains undefined and must not be invented:
 - Approval of any additional Module-to-Core dependency or additional Market subject type.
 
 These questions must be resolved from concrete product and architecture requirements rather than inferred from the current Market implementation.
+
+
+ADR-0036 adds owner-only Property replacement and Property version concurrency. It does not change Listing subject authorization: Listing creation continues to require only that the referenced Property exists until a separate requirement defines whether Property ownership, delegation, or agency is required.
