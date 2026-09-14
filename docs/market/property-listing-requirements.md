@@ -235,4 +235,4 @@ ADR-0032 adds creator-only direct loading of current Listing management state wi
 
 ### Defined by ADR-0036
 
-Property management now supports authenticated owner-only full replacement with optimistic concurrency. `Id` and `OwnerUserId` are immutable. A required positive version protects against lost updates, and omitted optional fields are cleared by replacement semantics. Property removal, transfer/delegation, partial update semantics, and public exposure remain undefined.
+Property management now supports authenticated owner-only full replacement with optimistic concurrency. `Id` and `OwnerUserId` are immutable. A required positive version protects against lost updates, and omitted optional fields are cleared by replacement semantics. ADR-0037 also uses persisted Property management ownership as the current authorization baseline for Listing creation: only the matching mapped owner may create a Listing for that Property. Property removal, ownership transfer/delegation, partial update semantics, public exposure, and delegated Listing authority remain undefined.

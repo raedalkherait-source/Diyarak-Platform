@@ -8,20 +8,24 @@ namespace Diyarak.Market.Application;
 public sealed class CreateListingUseCase
 {
     private readonly IMarketListingRepository _listingRepository;
-    private readonly IPropertyExistenceChecker _propertyExistenceChecker;
+    private readonly IPropertyListingAuthorizationChecker
+        _propertyListingAuthorizationChecker;
     private readonly IMarketTransactionRunner _transactionRunner;
 
     public CreateListingUseCase(
         IMarketListingRepository listingRepository,
-        IPropertyExistenceChecker propertyExistenceChecker,
+        IPropertyListingAuthorizationChecker
+            propertyListingAuthorizationChecker,
         IMarketTransactionRunner transactionRunner)
     {
         ArgumentNullException.ThrowIfNull(listingRepository);
-        ArgumentNullException.ThrowIfNull(propertyExistenceChecker);
+        ArgumentNullException.ThrowIfNull(
+            propertyListingAuthorizationChecker);
         ArgumentNullException.ThrowIfNull(transactionRunner);
 
         _listingRepository = listingRepository;
-        _propertyExistenceChecker = propertyExistenceChecker;
+        _propertyListingAuthorizationChecker =
+            propertyListingAuthorizationChecker;
         _transactionRunner = transactionRunner;
     }
 
@@ -45,12 +49,14 @@ public sealed class CreateListingUseCase
         return await _transactionRunner.ExecuteAsync(
             async transactionalCancellationToken =>
             {
-                bool propertyExists =
-                    await _propertyExistenceChecker.ExistsAsync(
-                        propertyId,
-                        transactionalCancellationToken);
+                bool canCreateListing =
+                    await _propertyListingAuthorizationChecker
+                        .CanCreateListingAsync(
+                            propertyId,
+                            actorUserId,
+                            transactionalCancellationToken);
 
-                if (!propertyExists)
+                if (!canCreateListing)
                 {
                     return Result.Failure<Guid>(
                         CreateListingErrors.PropertyNotFound);

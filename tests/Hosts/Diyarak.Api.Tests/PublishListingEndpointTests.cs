@@ -67,7 +67,7 @@ public sealed class PublishListingEndpointTests
             Guid.NewGuid().ToString());
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Equal(0, factory.PropertyListingAuthorizationChecker.CallCount);
         Assert.Null(factory.ListingRepository.AddedListing);
     }
 
@@ -82,7 +82,7 @@ public sealed class PublishListingEndpointTests
             Guid.NewGuid().ToString());
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Equal(0, factory.PropertyListingAuthorizationChecker.CallCount);
         Assert.Null(factory.ListingRepository.AddedListing);
     }
 
@@ -101,7 +101,7 @@ public sealed class PublishListingEndpointTests
             Guid.NewGuid().ToString());
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Equal(0, factory.PropertyListingAuthorizationChecker.CallCount);
         Assert.Null(factory.ListingRepository.AddedListing);
     }
 
@@ -123,7 +123,7 @@ public sealed class PublishListingEndpointTests
         await AssertProblemCodeAsync(
             response,
             CreateListingErrors.InvalidPropertyIdentifier.Code);
-        Assert.Equal(0, factory.PropertyChecker.CallCount);
+        Assert.Equal(0, factory.PropertyListingAuthorizationChecker.CallCount);
         Assert.Null(factory.ListingRepository.AddedListing);
     }
 
@@ -132,7 +132,7 @@ public sealed class PublishListingEndpointTests
     {
         using var factory = new TestApiFactory(
             Guid.NewGuid(),
-            propertyExists: false);
+            listingCreationAuthorized: false);
         using HttpClient client = factory.CreateClient();
 
         AddBearerToken(
@@ -147,7 +147,7 @@ public sealed class PublishListingEndpointTests
         await AssertProblemCodeAsync(
             response,
             CreateListingErrors.PropertyNotFound.Code);
-        Assert.Equal(1, factory.PropertyChecker.CallCount);
+        Assert.Equal(1, factory.PropertyListingAuthorizationChecker.CallCount);
         Assert.Null(factory.ListingRepository.AddedListing);
     }
 
@@ -175,7 +175,7 @@ public sealed class PublishListingEndpointTests
             });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.Equal(1, factory.PropertyChecker.CallCount);
+        Assert.Equal(1, factory.PropertyListingAuthorizationChecker.CallCount);
 
         MarketListing listing = Assert.IsType<MarketListing>(
             factory.ListingRepository.AddedListing);
@@ -1242,6 +1242,7 @@ public sealed class PublishListingEndpointTests
             Guid? userId,
             MarketListing? listing = null,
             bool propertyExists = true,
+            bool listingCreationAuthorized = true,
             bool authenticationEnabled = true)
         {
             _userId = userId;
@@ -1250,11 +1251,17 @@ public sealed class PublishListingEndpointTests
                 new StubMarketListingRepository(listing);
             PropertyChecker =
                 new StubPropertyExistenceChecker(propertyExists);
+            PropertyListingAuthorizationChecker =
+                new StubPropertyListingAuthorizationChecker(
+                    listingCreationAuthorized);
         }
 
         public StubMarketListingRepository ListingRepository { get; }
 
         public StubPropertyExistenceChecker PropertyChecker { get; }
+
+        public StubPropertyListingAuthorizationChecker
+            PropertyListingAuthorizationChecker { get; }
 
         protected override IHost CreateHost(IHostBuilder builder)
         {
@@ -1296,6 +1303,12 @@ public sealed class PublishListingEndpointTests
                     services.RemoveAll<IPropertyExistenceChecker>();
                     services.AddSingleton<IPropertyExistenceChecker>(
                         PropertyChecker);
+
+                    services.RemoveAll<
+                        IPropertyListingAuthorizationChecker>();
+                    services.AddSingleton<
+                        IPropertyListingAuthorizationChecker>(
+                        PropertyListingAuthorizationChecker);
 
                     services.RemoveAll<IMarketTransactionRunner>();
                     services.AddSingleton<IMarketTransactionRunner>(
@@ -1430,6 +1443,22 @@ public sealed class PublishListingEndpointTests
         {
             CallCount++;
             return Task.FromResult(exists);
+        }
+    }
+
+    public sealed class StubPropertyListingAuthorizationChecker(
+        bool isAuthorized)
+        : IPropertyListingAuthorizationChecker
+    {
+        public int CallCount { get; private set; }
+
+        public Task<bool> CanCreateListingAsync(
+            Guid propertyId,
+            Guid actorUserId,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            return Task.FromResult(isAuthorized);
         }
     }
 }

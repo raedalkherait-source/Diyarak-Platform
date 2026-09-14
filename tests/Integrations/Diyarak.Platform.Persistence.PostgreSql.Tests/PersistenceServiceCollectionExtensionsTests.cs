@@ -30,6 +30,11 @@ public sealed class PersistenceServiceCollectionExtensionsTests
             scope.ServiceProvider
                 .GetRequiredService<IPropertyExistenceChecker>();
 
+        IPropertyListingAuthorizationChecker
+            listingAuthorizationChecker =
+                scope.ServiceProvider.GetRequiredService<
+                    IPropertyListingAuthorizationChecker>();
+
         IMarketPropertyRepository propertyRepository =
             scope.ServiceProvider
                 .GetRequiredService<IMarketPropertyRepository>();
@@ -47,6 +52,9 @@ public sealed class PersistenceServiceCollectionExtensionsTests
 
         Assert.IsType<PostgreSqlPropertyExistenceChecker>(
             checker);
+
+        Assert.IsType<PostgreSqlPropertyListingAuthorizationChecker>(
+            listingAuthorizationChecker);
 
         Assert.IsType<PostgreSqlMarketPropertyRepository>(
             propertyRepository);

@@ -11,7 +11,8 @@ public sealed class CreateListingUseCaseTests
     public async Task ExecuteAsync_returns_validation_failure_for_empty_property_identifier()
     {
         var repository = new StubMarketListingRepository();
-        var checker = new StubPropertyExistenceChecker(exists: true);
+        var checker = new StubPropertyListingAuthorizationChecker(
+            isAuthorized: true);
         var transactionRunner = new StubMarketTransactionRunner();
         var useCase = new CreateListingUseCase(
             repository,
@@ -35,7 +36,8 @@ public sealed class CreateListingUseCaseTests
     public async Task ExecuteAsync_returns_validation_failure_for_empty_actor_identifier()
     {
         var repository = new StubMarketListingRepository();
-        var checker = new StubPropertyExistenceChecker(exists: true);
+        var checker = new StubPropertyListingAuthorizationChecker(
+            isAuthorized: true);
         var transactionRunner = new StubMarketTransactionRunner();
         var useCase = new CreateListingUseCase(
             repository,
@@ -56,35 +58,40 @@ public sealed class CreateListingUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_returns_conflict_when_property_does_not_exist()
+    public async Task ExecuteAsync_returns_concealed_conflict_when_property_is_not_authorized()
     {
         var repository = new StubMarketListingRepository();
-        var checker = new StubPropertyExistenceChecker(exists: false);
+        var checker = new StubPropertyListingAuthorizationChecker(
+            isAuthorized: false);
         var transactionRunner = new StubMarketTransactionRunner();
         var useCase = new CreateListingUseCase(
             repository,
             checker,
             transactionRunner);
         Guid propertyId = Guid.NewGuid();
+        Guid actorUserId = Guid.NewGuid();
 
         Result<Guid> result = await useCase.ExecuteAsync(
             propertyId,
-            Guid.NewGuid());
+            actorUserId);
 
         Assert.True(result.IsFailure);
         Assert.Equal(
             CreateListingErrors.PropertyNotFound,
             result.Error);
         Assert.Equal(propertyId, checker.LastPropertyId);
+        Assert.Equal(actorUserId, checker.LastActorUserId);
+        Assert.Equal(1, checker.CallCount);
         Assert.Equal(1, transactionRunner.CallCount);
         Assert.Null(repository.AddedListing);
     }
 
     [Fact]
-    public async Task ExecuteAsync_creates_and_adds_draft_owned_by_actor()
+    public async Task ExecuteAsync_creates_and_adds_draft_for_authorized_property_owner()
     {
         var repository = new StubMarketListingRepository();
-        var checker = new StubPropertyExistenceChecker(exists: true);
+        var checker = new StubPropertyListingAuthorizationChecker(
+            isAuthorized: true);
         var transactionRunner = new StubMarketTransactionRunner();
         var useCase = new CreateListingUseCase(
             repository,
@@ -100,6 +107,8 @@ public sealed class CreateListingUseCaseTests
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value);
         Assert.Equal(propertyId, checker.LastPropertyId);
+        Assert.Equal(actorUserId, checker.LastActorUserId);
+        Assert.Equal(1, checker.CallCount);
         Assert.Equal(1, transactionRunner.CallCount);
 
         MarketListing listing = Assert.IsType<MarketListing>(
@@ -150,21 +159,26 @@ public sealed class CreateListingUseCaseTests
             Task.FromResult(true);
     }
 
-    private sealed class StubPropertyExistenceChecker(bool exists)
-        : IPropertyExistenceChecker
+    private sealed class StubPropertyListingAuthorizationChecker(
+        bool isAuthorized)
+        : IPropertyListingAuthorizationChecker
     {
         public int CallCount { get; private set; }
 
         public Guid? LastPropertyId { get; private set; }
 
-        public Task<bool> ExistsAsync(
+        public Guid? LastActorUserId { get; private set; }
+
+        public Task<bool> CanCreateListingAsync(
             Guid propertyId,
+            Guid actorUserId,
             CancellationToken cancellationToken = default)
         {
             CallCount++;
             LastPropertyId = propertyId;
+            LastActorUserId = actorUserId;
 
-            return Task.FromResult(exists);
+            return Task.FromResult(isAuthorized);
         }
     }
 }

@@ -43,6 +43,10 @@ public static class PersistenceServiceCollectionExtensions
             PostgreSqlPropertyExistenceChecker>();
 
         services.AddScoped<
+            IPropertyListingAuthorizationChecker,
+            PostgreSqlPropertyListingAuthorizationChecker>();
+
+        services.AddScoped<
             IMarketPropertyRepository,
             PostgreSqlMarketPropertyRepository>();
 

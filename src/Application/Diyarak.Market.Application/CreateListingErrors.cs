@@ -17,5 +17,5 @@ public static class CreateListingErrors
     public static Error PropertyNotFound { get; } =
         Error.Conflict(
             "market.listing.property_not_found",
-            "The referenced Property does not exist.");
+            "The referenced Property is unavailable for Listing creation.");
 }
