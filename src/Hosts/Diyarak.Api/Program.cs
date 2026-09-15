@@ -115,6 +115,7 @@ builder.Services.AddScoped<CreateListingUseCase>();
 builder.Services.AddScoped<ListOwnedListingsUseCase>();
 builder.Services.AddScoped<GetListingUseCase>();
 builder.Services.AddScoped<GetPublishedListingUseCase>();
+builder.Services.AddScoped<ListPublishedListingsUseCase>();
 builder.Services.AddScoped<UpdateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
 

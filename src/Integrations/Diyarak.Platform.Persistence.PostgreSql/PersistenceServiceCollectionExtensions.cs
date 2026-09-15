@@ -39,6 +39,10 @@ public static class PersistenceServiceCollectionExtensions
             PostgreSqlMarketListingRepository>();
 
         services.AddScoped<
+            IPublishedListingQuery,
+            PostgreSqlPublishedListingQuery>();
+
+        services.AddScoped<
             IPropertyExistenceChecker,
             PostgreSqlPropertyExistenceChecker>();
 

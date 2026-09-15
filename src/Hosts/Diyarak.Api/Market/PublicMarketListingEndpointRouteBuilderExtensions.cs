@@ -13,11 +13,53 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
 
         endpoints
             .MapGet(
+                "/api/market/public/listings",
+                ListPublishedListingsAsync)
+            .AllowAnonymous();
+
+        endpoints
+            .MapGet(
                 "/api/market/public/listings/{listingId}",
                 GetPublishedListingAsync)
             .AllowAnonymous();
 
         return endpoints;
+    }
+
+    internal static async Task<IResult> ListPublishedListingsAsync(
+        ListPublishedListingsUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!TryParsePagination(
+                httpContext.Request.Query,
+                out int page,
+                out int pageSize))
+        {
+            return ToProblemDetails(
+                ListPublishedListingsErrors.InvalidPagination,
+                httpContext);
+        }
+
+        Result<PublishedListingPage> result =
+            await useCase.ExecuteAsync(
+                page,
+                pageSize,
+                cancellationToken);
+
+        if (!result.IsSuccess)
+            return ToProblemDetails(result.Error, httpContext);
+
+        PublicMarketListingResponse[] items = result.Value.Items
+            .Select(ToResponse)
+            .ToArray();
+
+        return Results.Ok(
+            new PublicMarketListingPageResponse(
+                items,
+                result.Value.Page,
+                result.Value.PageSize,
+                result.Value.HasMore));
     }
 
     internal static async Task<IResult> GetPublishedListingAsync(
@@ -41,6 +83,35 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         return result.IsSuccess
             ? Results.Ok(ToResponse(result.Value))
             : ToProblemDetails(result.Error, httpContext);
+    }
+
+    private static bool TryParsePagination(
+        IQueryCollection query,
+        out int page,
+        out int pageSize)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        page = ListPublishedListingsUseCase.DefaultPage;
+        pageSize = ListPublishedListingsUseCase.DefaultPageSize;
+
+        if (query.TryGetValue("page", out var pageValues) &&
+            (pageValues.Count != 1 ||
+             !int.TryParse(pageValues[0], out page)))
+        {
+            return false;
+        }
+
+        if (query.TryGetValue("pageSize", out var pageSizeValues) &&
+            (pageSizeValues.Count != 1 ||
+             !int.TryParse(pageSizeValues[0], out pageSize)))
+        {
+            return false;
+        }
+
+        return page > 0 &&
+            pageSize > 0 &&
+            pageSize <= ListPublishedListingsUseCase.MaximumPageSize;
     }
 
     private static PublicMarketListingResponse ToResponse(
@@ -102,6 +173,12 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 ["traceId"] = httpContext.TraceIdentifier,
             });
     }
+
+    internal sealed record PublicMarketListingPageResponse(
+        PublicMarketListingResponse[] Items,
+        int Page,
+        int PageSize,
+        bool HasMore);
 
     internal sealed record PublicMarketListingResponse(
         Guid ListingId,

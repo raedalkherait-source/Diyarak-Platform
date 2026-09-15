@@ -13,9 +13,10 @@ Current structure:
 - `PostgreSqlPropertyExistenceChecker` implements the Application-owned `IPropertyExistenceChecker` port for publication-time subject availability.
 - `PostgreSqlPropertyListingAuthorizationChecker` implements `IPropertyListingAuthorizationChecker` with a no-tracking `Property.Id + OwnerUserId` query for Listing creation.
 - `PostgreSqlMarketListingRepository` implements the Application-owned `IMarketListingRepository` port for Listing insertion, no-tracking loading by identifier or publisher ownership, and expected-version conditional saving; `MarketListingRecord.Version` is the EF Core concurrency token for both Draft editing and publication races.
+- `PostgreSqlPublishedListingQuery` implements the Application-owned `IPublishedListingQuery` port with a no-tracking `Published` filter, deterministic `ListingId` ordering, and bounded `Skip`/`Take` pagination for the anonymous public collection.
 - `PostgreSqlMarketTransactionRunner` implements the Application-owned `IMarketTransactionRunner` port with an explicit `ReadCommitted` EF Core transaction executed through the configured retry execution strategy.
 - `AddPostgreSqlPersistence` registers the Market Application-port adapters as scoped services backed by the same `PlatformDbContext`.
 
-Integrations may persist business Modules and implement Application-owned ports while keeping domain models independent of infrastructure concerns. See ADR-0020, ADR-0021, ADR-0024, ADR-0026, ADR-0027, ADR-0028, ADR-0029, ADR-0030, ADR-0031, ADR-0032, ADR-0033, ADR-0034, and ADR-0035.
+Integrations may persist business Modules and implement Application-owned ports while keeping domain models independent of infrastructure concerns. See ADR-0020, ADR-0021, ADR-0024, ADR-0026, ADR-0027, ADR-0028, ADR-0029, ADR-0030, ADR-0031, ADR-0032, ADR-0033, ADR-0034, ADR-0035, ADR-0036, ADR-0037, ADR-0038, and ADR-0039.
 
 ADR-0029 stores a required numeric Listing version and uses it as the EF Core concurrency token for both Draft editing and publication; the migration backfills existing Listing rows to version `1` before enforcing non-null storage.

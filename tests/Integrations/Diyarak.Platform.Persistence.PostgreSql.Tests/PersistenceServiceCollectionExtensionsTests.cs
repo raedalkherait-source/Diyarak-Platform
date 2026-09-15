@@ -43,6 +43,10 @@ public sealed class PersistenceServiceCollectionExtensionsTests
             scope.ServiceProvider
                 .GetRequiredService<IMarketListingRepository>();
 
+        IPublishedListingQuery publishedListingQuery =
+            scope.ServiceProvider
+                .GetRequiredService<IPublishedListingQuery>();
+
         IMarketTransactionRunner transactionRunner =
             scope.ServiceProvider
                 .GetRequiredService<IMarketTransactionRunner>();
@@ -61,6 +65,9 @@ public sealed class PersistenceServiceCollectionExtensionsTests
 
         Assert.IsType<PostgreSqlMarketListingRepository>(
             repository);
+
+        Assert.IsType<PostgreSqlPublishedListingQuery>(
+            publishedListingQuery);
 
         Assert.IsType<PostgreSqlMarketTransactionRunner>(
             transactionRunner);
