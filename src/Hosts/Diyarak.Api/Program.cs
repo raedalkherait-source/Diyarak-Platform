@@ -114,6 +114,7 @@ builder.Services.AddScoped<UpdatePropertyUseCase>();
 builder.Services.AddScoped<CreateListingUseCase>();
 builder.Services.AddScoped<ListOwnedListingsUseCase>();
 builder.Services.AddScoped<GetListingUseCase>();
+builder.Services.AddScoped<GetPublishedListingUseCase>();
 builder.Services.AddScoped<UpdateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
 
@@ -214,6 +215,8 @@ app.MapGet(
                     environment.EnvironmentName
             }))
     .RequireRateLimiting(ApiRateLimitPolicy);
+
+app.MapPublicMarketListingEndpoints();
 
 if (builder.Configuration.GetValue<bool>(
         $"{OidcAuthenticationOptions.SectionName}:Enabled"))
