@@ -57,6 +57,18 @@ public sealed class MarketListingModelTests
 
         Assert.Equal("Id", primaryKey.Name);
 
+        var publicCollectionIndex = Assert.Single(
+            entityType.GetIndexes(),
+            index =>
+                index.GetDatabaseName() ==
+                "ix_market_listings_status_id");
+
+        Assert.Collection(
+            publicCollectionIndex.Properties,
+            property => Assert.Equal("Status", property.Name),
+            property => Assert.Equal("Id", property.Name));
+        Assert.False(publicCollectionIndex.IsUnique);
+
         var statusProperty = entityType.FindProperty("Status");
         var versionProperty = entityType.FindProperty("Version");
 

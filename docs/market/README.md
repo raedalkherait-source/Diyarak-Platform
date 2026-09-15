@@ -80,6 +80,8 @@ ADR-0030 defines authenticated Property creation through `POST /api/market/prope
 - Authentication and authorization requirements for administrative APIs are not yet defined.
 - Search behavior is not yet defined.
 
+ADR-0040 adds a persistence-only composite index on `market.listings(status, id)` for the confirmed ADR-0039 public collection access pattern. It changes no API, pagination, ranking, filtering, or lifecycle semantics.
+
 Implementation should not introduce speculative domain fields, lifecycle states, API contracts, or dependencies before concrete requirements are documented.
 
 
