@@ -80,9 +80,23 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             parsedListingId,
             cancellationToken);
 
-        return result.IsSuccess
-            ? Results.Ok(ToResponse(result.Value))
-            : ToProblemDetails(result.Error, httpContext);
+        if (!result.IsSuccess)
+            return ToProblemDetails(result.Error, httpContext);
+
+        string entityTag =
+            PublicMarketListingEntityTag.Create(result.Value);
+
+        httpContext.Response.Headers["ETag"] = entityTag;
+
+        if (PublicMarketListingEntityTag.MatchesIfNoneMatch(
+                httpContext.Request.Headers,
+                entityTag))
+        {
+            return Results.StatusCode(
+                StatusCodes.Status304NotModified);
+        }
+
+        return Results.Ok(ToResponse(result.Value));
     }
 
     private static bool TryParsePagination(

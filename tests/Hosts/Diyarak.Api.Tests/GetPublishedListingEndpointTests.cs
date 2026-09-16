@@ -157,6 +157,167 @@ public sealed class GetPublishedListingEndpointTests
     }
 
     [Fact]
+    public async Task Get_published_listing_returns_opaque_strong_etag()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        string entityTag = Assert.Single(
+            response.Headers.GetValues("ETag"));
+
+        Assert.StartsWith("\"", entityTag);
+        Assert.EndsWith("\"", entityTag);
+        Assert.DoesNotContain("W/", entityTag);
+        Assert.False(
+            entityTag.Contains(
+                listing.Id.ToString("N"),
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Get_with_matching_if_none_match_returns_304_without_body()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage initialResponse = await SendGetAsync(
+            client,
+            listing.Id);
+        string entityTag = Assert.Single(
+            initialResponse.Headers.GetValues("ETag"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id,
+            entityTag);
+
+        Assert.Equal(
+            HttpStatusCode.NotModified,
+            response.StatusCode);
+        Assert.Equal(
+            entityTag,
+            Assert.Single(response.Headers.GetValues("ETag")));
+        Assert.Equal(
+            string.Empty,
+            await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Get_with_weak_matching_if_none_match_returns_304()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage initialResponse = await SendGetAsync(
+            client,
+            listing.Id);
+        string entityTag = Assert.Single(
+            initialResponse.Headers.GetValues("ETag"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id,
+            $"W/{entityTag}");
+
+        Assert.Equal(
+            HttpStatusCode.NotModified,
+            response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_with_if_none_match_wildcard_returns_304()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id,
+            "*");
+
+        Assert.Equal(
+            HttpStatusCode.NotModified,
+            response.StatusCode);
+        Assert.True(response.Headers.Contains("ETag"));
+    }
+
+    [Fact]
+    public async Task Get_with_non_matching_if_none_match_returns_200_with_current_etag()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id,
+            "\"different\"");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.Contains("ETag"));
+    }
+
+    [Fact]
+    public async Task Published_listing_etag_changes_when_persisted_version_changes()
+    {
+        Guid listingId = Guid.NewGuid();
+        MarketListing firstVersion = CreatePublishedListing(
+            listingId,
+            version: 3);
+        MarketListing secondVersion = CreatePublishedListing(
+            listingId,
+            version: 4);
+
+        string firstEntityTag;
+        using (var factory = new TestApiFactory(
+                   firstVersion,
+                   authenticationEnabled: false))
+        using (HttpClient client = factory.CreateClient())
+        {
+            HttpResponseMessage response = await SendGetAsync(
+                client,
+                listingId);
+            firstEntityTag = Assert.Single(
+                response.Headers.GetValues("ETag"));
+        }
+
+        string secondEntityTag;
+        using (var factory = new TestApiFactory(
+                   secondVersion,
+                   authenticationEnabled: false))
+        using (HttpClient client = factory.CreateClient())
+        {
+            HttpResponseMessage response = await SendGetAsync(
+                client,
+                listingId);
+            secondEntityTag = Assert.Single(
+                response.Headers.GetValues("ETag"));
+        }
+
+        Assert.NotEqual(firstEntityTag, secondEntityTag);
+    }
+
+    [Fact]
     public async Task Public_listing_response_is_not_forced_no_store()
     {
         MarketListing listing = CreatePublishedListing();
@@ -173,11 +334,24 @@ public sealed class GetPublishedListingEndpointTests
         Assert.False(response.Headers.CacheControl is { NoStore: true });
     }
 
-    private static Task<HttpResponseMessage> SendGetAsync(
+    private static async Task<HttpResponseMessage> SendGetAsync(
         HttpClient client,
-        Guid listingId) =>
-        client.GetAsync(
+        Guid listingId,
+        string? ifNoneMatch = null)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
             $"/api/market/public/listings/{listingId}");
+
+        if (ifNoneMatch is not null)
+        {
+            request.Headers.TryAddWithoutValidation(
+                "If-None-Match",
+                ifNoneMatch);
+        }
+
+        return await client.SendAsync(request);
+    }
 
     private static async Task AssertProblemCodeAsync(
         HttpResponseMessage response,
@@ -195,14 +369,17 @@ public sealed class GetPublishedListingEndpointTests
                 root.GetProperty("traceId").GetString()));
     }
 
-    private static MarketListing CreateReadyDraftListing()
+    private static MarketListing CreateReadyDraftListing(
+        Guid? listingId = null,
+        long version = MarketListing.InitialVersion)
     {
-        var listing = new MarketListing(
-            Guid.NewGuid(),
+        var listing = MarketListing.Restore(
+            listingId ?? Guid.NewGuid(),
             Guid.NewGuid(),
             new ListingSubjectReference(
                 Guid.NewGuid(),
-                MarketListingSubjectTypes.Property));
+                MarketListingSubjectTypes.Property),
+            version);
 
         listing.SetContext(
             new ListingContext(
@@ -218,9 +395,13 @@ public sealed class GetPublishedListingEndpointTests
         return listing;
     }
 
-    private static MarketListing CreatePublishedListing()
+    private static MarketListing CreatePublishedListing(
+        Guid? listingId = null,
+        long version = MarketListing.InitialVersion)
     {
-        MarketListing listing = CreateReadyDraftListing();
+        MarketListing listing = CreateReadyDraftListing(
+            listingId,
+            version);
         listing.Publish();
         return listing;
     }
