@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Diyarak.Api.Market;
 using Diyarak.Market.Application;
 using Diyarak.Market.Property;
 using Diyarak.Platform.Domain.Primitives;
@@ -11,6 +12,7 @@ using Diyarak.Platform.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -233,6 +235,67 @@ public sealed class GetPropertyEndpointTests
         Assert.Equal(
             1,
             root.GetProperty("parkingSpaceCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task Management_success_response_sets_no_store()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty property = CreateProperty(actorUserId);
+        using var factory = new TestApiFactory(property, actorUserId);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{property.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl is { NoStore: true });
+    }
+
+    [Fact]
+    public async Task Management_unauthorized_response_sets_no_store()
+    {
+        MarketProperty property = CreateProperty(Guid.NewGuid());
+        using var factory = new TestApiFactory(property, userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response =
+            await client.GetAsync($"/api/market/properties/{property.Id}");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.True(response.Headers.CacheControl is { NoStore: true });
+    }
+
+    [Fact]
+    public void All_market_management_routes_are_marked_for_no_store()
+    {
+        MarketProperty property = CreateProperty(Guid.NewGuid());
+        using var factory = new TestApiFactory(property, Guid.NewGuid());
+
+        EndpointDataSource endpointDataSource =
+            factory.Services.GetRequiredService<EndpointDataSource>();
+
+        RouteEndpoint[] managementEndpoints = endpointDataSource.Endpoints
+            .OfType<RouteEndpoint>()
+            .Where(
+                endpoint =>
+                    endpoint.RoutePattern.RawText is { } route &&
+                    route.StartsWith(
+                        "/api/market/",
+                        StringComparison.Ordinal) &&
+                    !route.StartsWith(
+                        "/api/market/public/",
+                        StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.NotEmpty(managementEndpoints);
+        Assert.All(
+            managementEndpoints,
+            endpoint =>
+                Assert.NotNull(
+                    endpoint.Metadata
+                        .GetMetadata<MarketManagementEndpointMetadata>()));
     }
 
     private static MarketProperty CreateProperty(

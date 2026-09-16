@@ -17,37 +17,32 @@ public static class MarketListingEndpointRouteBuilderExtensions
             .MapPost(
                 "/api/market/listings",
                 CreateListingAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         endpoints
             .MapGet(
                 "/api/market/listings",
                 ListOwnedListingsAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         endpoints
             .MapGet(
                 "/api/market/listings/{listingId}",
                 GetListingAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         endpoints
             .MapMethods(
                 "/api/market/listings/{listingId}",
                 new[] { HttpMethods.Patch },
                 UpdateListingAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         endpoints
             .MapPost(
                 "/api/market/listings/{listingId}/publish",
                 PublishListingAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         return endpoints;
     }

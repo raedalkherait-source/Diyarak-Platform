@@ -156,6 +156,23 @@ public sealed class GetPublishedListingEndpointTests
         Assert.False(root.TryGetProperty("publisherUserId", out _));
     }
 
+    [Fact]
+    public async Task Public_listing_response_is_not_forced_no_store()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: true);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(response.Headers.CacheControl is { NoStore: true });
+    }
+
     private static Task<HttpResponseMessage> SendGetAsync(
         HttpClient client,
         Guid listingId) =>

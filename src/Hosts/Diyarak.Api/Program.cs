@@ -174,6 +174,24 @@ app.Use(async (context, next) =>
 
 app.UseRouting();
 
+app.Use(async (context, next) =>
+{
+    if (context.GetEndpoint()?.Metadata
+            .GetMetadata<MarketManagementEndpointMetadata>() is not null)
+    {
+        context.Response.OnStarting(
+            static state =>
+            {
+                var response = (HttpResponse)state;
+                response.Headers["Cache-Control"] = "no-store";
+                return Task.CompletedTask;
+            },
+            context.Response);
+    }
+
+    await next(context);
+});
+
 app.UseCors(CorsPolicy);
 
 app.UseAuthentication();

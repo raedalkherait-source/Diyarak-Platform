@@ -18,29 +18,25 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
             .MapPost(
                 "/api/market/properties",
                 CreatePropertyAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         endpoints
             .MapGet(
                 "/api/market/properties",
                 ListOwnedPropertiesAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         endpoints
             .MapGet(
                 "/api/market/properties/{propertyId}",
                 GetPropertyAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         endpoints
             .MapPut(
                 "/api/market/properties/{propertyId}",
                 UpdatePropertyAsync)
-            .RequireAuthorization(
-                Diyarak.Api.Authentication.AuthenticationServiceCollectionExtensions.MappedUserPolicy);
+            .RequireMappedUserManagement();
 
         return endpoints;
     }
