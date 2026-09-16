@@ -50,6 +50,19 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         if (!result.IsSuccess)
             return ToProblemDetails(result.Error, httpContext);
 
+        string entityTag =
+            PublicMarketListingEntityTag.Create(result.Value);
+
+        httpContext.Response.Headers["ETag"] = entityTag;
+
+        if (PublicMarketListingEntityTag.MatchesIfNoneMatch(
+                httpContext.Request.Headers,
+                entityTag))
+        {
+            return Results.StatusCode(
+                StatusCodes.Status304NotModified);
+        }
+
         PublicMarketListingResponse[] items = result.Value.Items
             .Select(ToResponse)
             .ToArray();

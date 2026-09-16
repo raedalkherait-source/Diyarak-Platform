@@ -1,13 +1,18 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using Diyarak.Market.Application;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
 namespace Diyarak.Api.Market;
 
 internal static class PublicMarketListingEntityTag
 {
-    private const string RepresentationRevision = "public-market-listing-v1";
+    private const string DetailRepresentationRevision =
+        "public-market-listing-v1";
+
+    private const string CollectionRepresentationRevision =
+        "public-market-listing-page-v1";
 
     internal static string Create(MarketListing listing)
     {
@@ -15,12 +20,34 @@ internal static class PublicMarketListingEntityTag
 
         string material = string.Create(
             CultureInfo.InvariantCulture,
-            $"{RepresentationRevision}:{listing.Id:N}:{listing.Version}");
+            $"{DetailRepresentationRevision}:{listing.Id:N}:{listing.Version}");
 
-        byte[] hash = SHA256.HashData(
-            Encoding.UTF8.GetBytes(material));
+        return CreateOpaqueTag(material);
+    }
 
-        return $"\"{Convert.ToHexString(hash)}\"";
+    internal static string Create(PublishedListingPage page)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+
+        var material = new StringBuilder();
+        material.Append(CollectionRepresentationRevision);
+        material.Append(':');
+        material.Append(page.Page.ToString(CultureInfo.InvariantCulture));
+        material.Append(':');
+        material.Append(page.PageSize.ToString(CultureInfo.InvariantCulture));
+        material.Append(':');
+        material.Append(page.HasMore ? '1' : '0');
+
+        foreach (MarketListing listing in page.Items)
+        {
+            material.Append(':');
+            material.Append(listing.Id.ToString("N"));
+            material.Append(':');
+            material.Append(
+                listing.Version.ToString(CultureInfo.InvariantCulture));
+        }
+
+        return CreateOpaqueTag(material.ToString());
     }
 
     internal static bool MatchesIfNoneMatch(
@@ -69,5 +96,13 @@ internal static class PublicMarketListingEntityTag
         }
 
         return false;
+    }
+
+    private static string CreateOpaqueTag(string material)
+    {
+        byte[] hash = SHA256.HashData(
+            Encoding.UTF8.GetBytes(material));
+
+        return $"\"{Convert.ToHexString(hash)}\"";
     }
 }
