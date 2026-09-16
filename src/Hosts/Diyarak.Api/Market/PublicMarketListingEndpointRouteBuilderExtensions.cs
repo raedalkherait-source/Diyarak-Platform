@@ -50,6 +50,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         if (!result.IsSuccess)
             return ToProblemDetails(result.Error, httpContext);
 
+        SetRevalidationCachePolicy(httpContext.Response);
+
         string entityTag =
             PublicMarketListingEntityTag.Create(result.Value);
 
@@ -95,6 +97,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
 
         if (!result.IsSuccess)
             return ToProblemDetails(result.Error, httpContext);
+
+        SetRevalidationCachePolicy(httpContext.Response);
 
         string entityTag =
             PublicMarketListingEntityTag.Create(result.Value);
@@ -174,6 +178,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         ArgumentNullException.ThrowIfNull(error);
         ArgumentNullException.ThrowIfNull(httpContext);
 
+        SetErrorCachePolicy(httpContext.Response);
+
         int statusCode = error.Type switch
         {
             ErrorType.Validation => StatusCodes.Status400BadRequest,
@@ -199,6 +205,21 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 ["code"] = error.Code,
                 ["traceId"] = httpContext.TraceIdentifier,
             });
+    }
+
+
+    private static void SetRevalidationCachePolicy(
+        HttpResponse response)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+        response.Headers["Cache-Control"] = "public, no-cache";
+    }
+
+    private static void SetErrorCachePolicy(
+        HttpResponse response)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+        response.Headers["Cache-Control"] = "no-store";
     }
 
     internal sealed record PublicMarketListingPageResponse(

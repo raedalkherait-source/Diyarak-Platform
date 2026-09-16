@@ -157,6 +157,68 @@ public sealed class GetPublishedListingEndpointTests
     }
 
     [Fact]
+    public async Task Published_listing_200_uses_public_no_cache_policy()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(
+            response.Headers.CacheControl is
+            { Public: true, NoCache: true, NoStore: false });
+    }
+
+    [Fact]
+    public async Task Published_listing_304_uses_public_no_cache_policy()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage initialResponse = await SendGetAsync(
+            client,
+            listing.Id);
+        string entityTag = Assert.Single(
+            initialResponse.Headers.GetValues("ETag"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            listing.Id,
+            entityTag);
+
+        Assert.Equal(HttpStatusCode.NotModified, response.StatusCode);
+        Assert.True(
+            response.Headers.CacheControl is
+            { Public: true, NoCache: true, NoStore: false });
+    }
+
+    [Fact]
+    public async Task Public_listing_404_uses_no_store_policy()
+    {
+        using var factory = new TestApiFactory(
+            listing: null,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.True(
+            response.Headers.CacheControl is { NoStore: true });
+    }
+
+    [Fact]
     public async Task Get_published_listing_returns_opaque_strong_etag()
     {
         MarketListing listing = CreatePublishedListing();

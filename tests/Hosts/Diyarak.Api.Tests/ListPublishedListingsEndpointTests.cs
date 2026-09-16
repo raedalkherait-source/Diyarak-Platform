@@ -156,6 +156,62 @@ public sealed class ListPublishedListingsEndpointTests
     }
 
     [Fact]
+    public async Task Public_collection_200_uses_public_no_cache_policy()
+    {
+        MarketListing listing = CreatePublishedListing("Cacheable listing");
+        using var factory = new TestApiFactory(
+            [listing],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(client);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(
+            response.Headers.CacheControl is
+            { Public: true, NoCache: true, NoStore: false });
+    }
+
+    [Fact]
+    public async Task Public_collection_304_uses_public_no_cache_policy()
+    {
+        MarketListing listing = CreatePublishedListing("Conditional cache listing");
+        using var factory = new TestApiFactory(
+            [listing],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage initialResponse = await SendGetAsync(client);
+        string entityTag = Assert.Single(
+            initialResponse.Headers.GetValues("ETag"));
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            ifNoneMatch: entityTag);
+
+        Assert.Equal(HttpStatusCode.NotModified, response.StatusCode);
+        Assert.True(
+            response.Headers.CacheControl is
+            { Public: true, NoCache: true, NoStore: false });
+    }
+
+    [Fact]
+    public async Task Public_collection_400_uses_no_store_policy()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?page=invalid");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.True(
+            response.Headers.CacheControl is { NoStore: true });
+    }
+
+    [Fact]
     public async Task Public_collection_returns_opaque_strong_etag()
     {
         MarketListing listing = CreatePublishedListing("ETag listing");
