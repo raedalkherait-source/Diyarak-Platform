@@ -22,6 +22,10 @@ internal sealed class MarketListingRecordConfiguration
             .HasDatabaseName(
                 "ix_market_listings_status_id");
 
+        builder.HasIndex(record => record.PublisherUserId)
+            .HasDatabaseName(
+                "ix_market_listings_publisher_user_id");
+
         builder.Property(record => record.Id)
             .HasColumnName("id")
             .HasColumnType("uuid")
