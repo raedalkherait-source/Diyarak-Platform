@@ -115,6 +115,44 @@ public sealed class PostgreSqlMarketListingRepositoryTests
     }
 
     [Fact]
+    public async Task FindPageByPublisherUserIdAsync_filters_orders_and_bounds_results()
+    {
+        await using PlatformDbContext context = CreateContext();
+
+        Guid ownerUserId = Guid.NewGuid();
+        MarketListing third = CreateListing(
+            ownerUserId,
+            Guid.Parse("00000000-0000-0000-0000-000000000003"));
+        MarketListing first = CreateListing(
+            ownerUserId,
+            Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        MarketListing second = CreateListing(
+            ownerUserId,
+            Guid.Parse("00000000-0000-0000-0000-000000000002"));
+        MarketListing other = CreateListing(Guid.NewGuid());
+
+        context.MarketListings.AddRange(
+            MarketListingRecordMapper.FromDomain(third),
+            MarketListingRecordMapper.FromDomain(first),
+            MarketListingRecordMapper.FromDomain(second),
+            MarketListingRecordMapper.FromDomain(other));
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var repository = new PostgreSqlMarketListingRepository(context);
+
+        IReadOnlyList<MarketListing> page =
+            await repository.FindPageByPublisherUserIdAsync(
+                ownerUserId,
+                skip: 1,
+                take: 2);
+
+        Assert.Equal(new[] { second.Id, third.Id }, page.Select(item => item.Id));
+        Assert.All(page, item => Assert.Equal(ownerUserId, item.PublisherUserId));
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
     public async Task AddAsync_inserts_new_draft_listing()
     {
         await using PlatformDbContext context = CreateContext();
@@ -327,8 +365,13 @@ public sealed class PostgreSqlMarketListingRepositoryTests
 
     private static MarketListing CreateListing(
         Guid publisherUserId) =>
+        CreateListing(publisherUserId, Guid.NewGuid());
+
+    private static MarketListing CreateListing(
+        Guid publisherUserId,
+        Guid listingId) =>
         new(
-            Guid.NewGuid(),
+            listingId,
             publisherUserId,
             new ListingSubjectReference(
                 Guid.NewGuid(),

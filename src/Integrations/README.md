@@ -21,3 +21,5 @@ Current structure:
 Integrations may persist business Modules and implement Application-owned ports while keeping domain models independent of infrastructure concerns. See ADR-0020, ADR-0021, ADR-0024, ADR-0026, ADR-0027, ADR-0028, ADR-0029, ADR-0030, ADR-0031, ADR-0032, ADR-0033, ADR-0034, ADR-0035, ADR-0036, ADR-0037, ADR-0038, ADR-0039, ADR-0040, and ADR-0041.
 
 ADR-0029 stores a required numeric Listing version and uses it as the EF Core concurrency token for both Draft editing and publication; the migration backfills existing Listing rows to version `1` before enforcing non-null storage.
+
+ADR-0042 replaces the ADR-0041 single-column management ownership indexes with composite ownership-plus-identifier indexes matching bounded deterministic management pagination.

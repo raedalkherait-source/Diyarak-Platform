@@ -13,54 +13,100 @@ public sealed class ListOwnedPropertiesUseCaseTests
         var repository = new StubMarketPropertyRepository([]);
         var useCase = new ListOwnedPropertiesUseCase(repository);
 
-        Result<IReadOnlyList<MarketProperty>> result =
-            await useCase.ExecuteAsync(Guid.Empty);
+        Result<OwnedPropertyPage> result =
+            await useCase.ExecuteAsync(Guid.Empty, 1, 20);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ListOwnedPropertiesErrors.InvalidActorIdentifier,
-            result.Error);
+        Assert.Equal(ListOwnedPropertiesErrors.InvalidActorIdentifier, result.Error);
         Assert.Equal(0, repository.FindByOwnerCallCount);
     }
 
-    [Fact]
-    public async Task ExecuteAsync_returns_empty_collection_when_actor_has_no_properties()
+    [Theory]
+    [InlineData(0, 20)]
+    [InlineData(1, 0)]
+    [InlineData(1, 101)]
+    public async Task ExecuteAsync_returns_validation_failure_for_invalid_pagination(
+        int page,
+        int pageSize)
     {
         var repository = new StubMarketPropertyRepository([]);
         var useCase = new ListOwnedPropertiesUseCase(repository);
 
-        Result<IReadOnlyList<MarketProperty>> result =
-            await useCase.ExecuteAsync(Guid.NewGuid());
+        Result<OwnedPropertyPage> result =
+            await useCase.ExecuteAsync(Guid.NewGuid(), page, pageSize);
 
-        Assert.True(result.IsSuccess);
-        Assert.Empty(result.Value);
-        Assert.Equal(1, repository.FindByOwnerCallCount);
+        Assert.True(result.IsFailure);
+        Assert.Equal(ListOwnedPropertiesErrors.InvalidPagination, result.Error);
+        Assert.Equal(0, repository.FindByOwnerCallCount);
     }
 
     [Fact]
-    public async Task ExecuteAsync_returns_repository_properties_for_actor()
+    public async Task ExecuteAsync_returns_bounded_ordered_page_and_has_more()
     {
         Guid actorUserId = Guid.NewGuid();
-        MarketProperty first = CreateProperty(actorUserId);
-        MarketProperty second = CreateProperty(actorUserId);
-        var repository = new StubMarketPropertyRepository(
-            [first, second]);
+        MarketProperty third = CreateProperty(
+            Guid.Parse("00000000-0000-0000-0000-000000000003"), actorUserId);
+        MarketProperty first = CreateProperty(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"), actorUserId);
+        MarketProperty second = CreateProperty(
+            Guid.Parse("00000000-0000-0000-0000-000000000002"), actorUserId);
+        var repository = new StubMarketPropertyRepository([third, first, second]);
         var useCase = new ListOwnedPropertiesUseCase(repository);
 
-        Result<IReadOnlyList<MarketProperty>> result =
-            await useCase.ExecuteAsync(actorUserId);
+        Result<OwnedPropertyPage> result =
+            await useCase.ExecuteAsync(actorUserId, 1, 2);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.Count);
-        Assert.Contains(first, result.Value);
-        Assert.Contains(second, result.Value);
+        Assert.Equal(1, result.Value.Page);
+        Assert.Equal(2, result.Value.PageSize);
+        Assert.True(result.Value.HasMore);
+        Assert.Equal(new[] { first.Id, second.Id }, result.Value.Items.Select(item => item.Id));
         Assert.Equal(1, repository.FindByOwnerCallCount);
         Assert.Equal(actorUserId, repository.LastOwnerUserId);
     }
 
-    private static MarketProperty CreateProperty(Guid ownerUserId) =>
+    [Fact]
+    public async Task ExecuteAsync_returns_second_page_without_has_more()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty first = CreateProperty(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"), actorUserId);
+        MarketProperty second = CreateProperty(
+            Guid.Parse("00000000-0000-0000-0000-000000000002"), actorUserId);
+        MarketProperty third = CreateProperty(
+            Guid.Parse("00000000-0000-0000-0000-000000000003"), actorUserId);
+        var repository = new StubMarketPropertyRepository([first, second, third]);
+        var useCase = new ListOwnedPropertiesUseCase(repository);
+
+        Result<OwnedPropertyPage> result =
+            await useCase.ExecuteAsync(actorUserId, 2, 2);
+
+        Assert.True(result.IsSuccess);
+        MarketProperty item = Assert.Single(result.Value.Items);
+        Assert.Equal(third.Id, item.Id);
+        Assert.False(result.Value.HasMore);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_fails_closed_when_repository_returns_other_owner()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        var repository = new StubMarketPropertyRepository(
+            [CreateProperty(Guid.NewGuid(), Guid.NewGuid())]);
+        var useCase = new ListOwnedPropertiesUseCase(repository);
+
+        InvalidOperationException exception =
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => useCase.ExecuteAsync(actorUserId, 1, 20));
+
+        Assert.Contains("another owner", exception.Message);
+    }
+
+    private static MarketProperty CreateProperty(
+        Guid id,
+        Guid ownerUserId) =>
         new(
-            Guid.NewGuid(),
+            id,
             PropertyCategory.House,
             new PropertyAddress(
                 "Lake Road",
@@ -74,7 +120,6 @@ public sealed class ListOwnedPropertiesUseCaseTests
         : IMarketPropertyRepository
     {
         public int FindByOwnerCallCount { get; private set; }
-
         public Guid? LastOwnerUserId { get; private set; }
 
         public Task<MarketProperty?> FindByIdAsync(

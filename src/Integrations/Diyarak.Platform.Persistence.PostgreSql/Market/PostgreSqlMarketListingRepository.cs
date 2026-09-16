@@ -50,6 +50,31 @@ internal sealed class PostgreSqlMarketListingRepository
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<MarketListing>> FindPageByPublisherUserIdAsync(
+        Guid publisherUserId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(skip);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
+
+        List<MarketListingRecord> records =
+            await _context.MarketListings
+                .AsNoTracking()
+                .Where(
+                    listing =>
+                        listing.PublisherUserId == publisherUserId)
+                .OrderBy(listing => listing.Id)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+
+        return records
+            .Select(MarketListingRecordMapper.ToDomain)
+            .ToArray();
+    }
+
     public async Task AddAsync(
         MarketListing listing,
         CancellationToken cancellationToken = default)

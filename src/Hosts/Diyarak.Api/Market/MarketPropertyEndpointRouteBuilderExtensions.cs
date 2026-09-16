@@ -88,21 +88,38 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
+        if (!TryParsePagination(
+                httpContext.Request.Query,
+                out int page,
+                out int pageSize))
+        {
+            return ToProblemDetails(
+                ListOwnedPropertiesErrors.InvalidPagination,
+                httpContext);
+        }
+
         Guid actorUserId = GetRequiredActorUserId(actorAccessor);
 
-        Result<IReadOnlyList<MarketProperty>> result =
+        Result<OwnedPropertyPage> result =
             await useCase.ExecuteAsync(
                 actorUserId,
+                page,
+                pageSize,
                 cancellationToken);
 
         if (!result.IsSuccess)
             return ToProblemDetails(result.Error, httpContext);
 
-        MarketPropertyResponse[] response = result.Value
+        MarketPropertyResponse[] items = result.Value.Items
             .Select(ToResponse)
             .ToArray();
 
-        return Results.Ok(response);
+        return Results.Ok(
+            new MarketPropertyPageResponse(
+                items,
+                result.Value.Page,
+                result.Value.PageSize,
+                result.Value.HasMore));
     }
 
     internal static async Task<IResult> GetPropertyAsync(
@@ -171,6 +188,35 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
                     parsedPropertyId,
                     result.Value))
             : ToProblemDetails(result.Error, httpContext);
+    }
+
+    private static bool TryParsePagination(
+        IQueryCollection query,
+        out int page,
+        out int pageSize)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        page = ListOwnedPropertiesUseCase.DefaultPage;
+        pageSize = ListOwnedPropertiesUseCase.DefaultPageSize;
+
+        if (query.TryGetValue("page", out var pageValues) &&
+            (pageValues.Count != 1 ||
+             !int.TryParse(pageValues[0], out page)))
+        {
+            return false;
+        }
+
+        if (query.TryGetValue("pageSize", out var pageSizeValues) &&
+            (pageSizeValues.Count != 1 ||
+             !int.TryParse(pageSizeValues[0], out pageSize)))
+        {
+            return false;
+        }
+
+        return page > 0 &&
+            pageSize > 0 &&
+            pageSize <= ListOwnedPropertiesUseCase.MaximumPageSize;
     }
 
     private static Guid GetRequiredActorUserId(
@@ -274,6 +320,12 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
     internal sealed record CreateMarketPropertyResponse(
         Guid PropertyId,
         long Version);
+
+    internal sealed record MarketPropertyPageResponse(
+        IReadOnlyCollection<MarketPropertyResponse> Items,
+        int Page,
+        int PageSize,
+        bool HasMore);
 
     internal sealed record UpdateMarketPropertyResponse(
         Guid PropertyId,

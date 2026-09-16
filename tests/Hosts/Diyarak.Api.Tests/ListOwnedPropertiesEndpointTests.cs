@@ -108,8 +108,11 @@ public sealed class ListOwnedPropertiesEndpointTests
 
         string body = await response.Content.ReadAsStringAsync();
         using JsonDocument document = JsonDocument.Parse(body);
-        Assert.Equal(JsonValueKind.Array, document.RootElement.ValueKind);
-        Assert.Equal(0, document.RootElement.GetArrayLength());
+        JsonElement root = document.RootElement;
+        Assert.Equal(0, root.GetProperty("items").GetArrayLength());
+        Assert.Equal(1, root.GetProperty("page").GetInt32());
+        Assert.Equal(20, root.GetProperty("pageSize").GetInt32());
+        Assert.False(root.GetProperty("hasMore").GetBoolean());
     }
 
     [Fact]
@@ -131,7 +134,31 @@ public sealed class ListOwnedPropertiesEndpointTests
 
         string body = await response.Content.ReadAsStringAsync();
         using JsonDocument document = JsonDocument.Parse(body);
-        Assert.Equal(0, document.RootElement.GetArrayLength());
+        Assert.Equal(
+            0,
+            document.RootElement
+                .GetProperty("items")
+                .GetArrayLength());
+    }
+
+    [Fact]
+    public async Task List_with_invalid_pagination_returns_400()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        using var factory = new TestApiFactory(actorUserId, properties: []);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync("/api/market/properties?page=1&pageSize=101");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        string body = await response.Content.ReadAsStringAsync();
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.Equal(
+            ListOwnedPropertiesErrors.InvalidPagination.Code,
+            document.RootElement.GetProperty("code").GetString());
+        Assert.Equal(0, factory.Repository.FindByOwnerCallCount);
     }
 
     [Fact]
@@ -156,9 +183,12 @@ public sealed class ListOwnedPropertiesEndpointTests
         string body = await response.Content.ReadAsStringAsync();
         using JsonDocument document = JsonDocument.Parse(body);
         JsonElement root = document.RootElement;
-        Assert.Equal(1, root.GetArrayLength());
+        Assert.Equal(1, root.GetProperty("items").GetArrayLength());
+        Assert.Equal(1, root.GetProperty("page").GetInt32());
+        Assert.Equal(20, root.GetProperty("pageSize").GetInt32());
+        Assert.False(root.GetProperty("hasMore").GetBoolean());
 
-        JsonElement item = root[0];
+        JsonElement item = root.GetProperty("items")[0];
         Assert.Equal(
             owned.Id,
             item.GetProperty("propertyId").GetGuid());

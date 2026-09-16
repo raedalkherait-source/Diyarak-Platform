@@ -5,6 +5,10 @@ namespace Diyarak.Market.Application;
 
 public sealed class ListOwnedListingsUseCase
 {
+    public const int DefaultPage = 1;
+    public const int DefaultPageSize = 20;
+    public const int MaximumPageSize = 100;
+
     private readonly IMarketListingRepository _listingRepository;
 
     public ListOwnedListingsUseCase(
@@ -14,21 +18,58 @@ public sealed class ListOwnedListingsUseCase
         _listingRepository = listingRepository;
     }
 
-    public async Task<Result<IReadOnlyList<MarketListing>>> ExecuteAsync(
+    public async Task<Result<OwnedListingPage>> ExecuteAsync(
         Guid actorUserId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default)
     {
         if (actorUserId == Guid.Empty)
         {
-            return Result.Failure<IReadOnlyList<MarketListing>>(
+            return Result.Failure<OwnedListingPage>(
                 ListOwnedListingsErrors.InvalidActorIdentifier);
         }
 
-        IReadOnlyList<MarketListing> listings =
-            await _listingRepository.FindByPublisherUserIdAsync(
+        if (page <= 0 ||
+            pageSize <= 0 ||
+            pageSize > MaximumPageSize)
+        {
+            return Result.Failure<OwnedListingPage>(
+                ListOwnedListingsErrors.InvalidPagination);
+        }
+
+        long skip = ((long)page - 1) * pageSize;
+        if (skip > int.MaxValue)
+        {
+            return Result.Failure<OwnedListingPage>(
+                ListOwnedListingsErrors.InvalidPagination);
+        }
+
+        IReadOnlyList<MarketListing> candidates =
+            await _listingRepository.FindPageByPublisherUserIdAsync(
                 actorUserId,
+                (int)skip,
+                pageSize + 1,
                 cancellationToken);
 
-        return Result.Success(listings);
+        if (candidates.Any(
+                listing =>
+                    listing.PublisherUserId != actorUserId))
+        {
+            throw new InvalidOperationException(
+                "The owned Listing query returned a Listing for another publisher.");
+        }
+
+        bool hasMore = candidates.Count > pageSize;
+        MarketListing[] items = candidates
+            .Take(pageSize)
+            .ToArray();
+
+        return Result.Success(
+            new OwnedListingPage(
+                items,
+                page,
+                pageSize,
+                hasMore));
     }
 }

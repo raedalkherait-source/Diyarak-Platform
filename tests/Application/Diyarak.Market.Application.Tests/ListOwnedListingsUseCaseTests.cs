@@ -14,54 +14,104 @@ public sealed class ListOwnedListingsUseCaseTests
         var repository = new StubMarketListingRepository([]);
         var useCase = new ListOwnedListingsUseCase(repository);
 
-        Result<IReadOnlyList<MarketListing>> result =
-            await useCase.ExecuteAsync(Guid.Empty);
+        Result<OwnedListingPage> result =
+            await useCase.ExecuteAsync(Guid.Empty, 1, 20);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ListOwnedListingsErrors.InvalidActorIdentifier,
-            result.Error);
+        Assert.Equal(ListOwnedListingsErrors.InvalidActorIdentifier, result.Error);
         Assert.Equal(0, repository.FindByPublisherCallCount);
     }
 
-    [Fact]
-    public async Task ExecuteAsync_returns_empty_collection_when_actor_has_no_listings()
+    [Theory]
+    [InlineData(0, 20)]
+    [InlineData(1, 0)]
+    [InlineData(1, 101)]
+    public async Task ExecuteAsync_returns_validation_failure_for_invalid_pagination(
+        int page,
+        int pageSize)
     {
         var repository = new StubMarketListingRepository([]);
         var useCase = new ListOwnedListingsUseCase(repository);
 
-        Result<IReadOnlyList<MarketListing>> result =
-            await useCase.ExecuteAsync(Guid.NewGuid());
+        Result<OwnedListingPage> result =
+            await useCase.ExecuteAsync(Guid.NewGuid(), page, pageSize);
 
-        Assert.True(result.IsSuccess);
-        Assert.Empty(result.Value);
-        Assert.Equal(1, repository.FindByPublisherCallCount);
+        Assert.True(result.IsFailure);
+        Assert.Equal(ListOwnedListingsErrors.InvalidPagination, result.Error);
+        Assert.Equal(0, repository.FindByPublisherCallCount);
     }
 
     [Fact]
-    public async Task ExecuteAsync_returns_repository_listings_for_actor()
+    public async Task ExecuteAsync_returns_bounded_ordered_page_and_has_more()
     {
         Guid actorUserId = Guid.NewGuid();
-        MarketListing first = CreateListing(actorUserId);
-        MarketListing second = CreateListing(actorUserId);
+        MarketListing third = CreateListing(
+            Guid.Parse("00000000-0000-0000-0000-000000000003"),
+            actorUserId);
+        MarketListing first = CreateListing(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            actorUserId);
+        MarketListing second = CreateListing(
+            Guid.Parse("00000000-0000-0000-0000-000000000002"),
+            actorUserId);
         var repository = new StubMarketListingRepository(
-            [first, second]);
+            [third, first, second]);
         var useCase = new ListOwnedListingsUseCase(repository);
 
-        Result<IReadOnlyList<MarketListing>> result =
-            await useCase.ExecuteAsync(actorUserId);
+        Result<OwnedListingPage> result =
+            await useCase.ExecuteAsync(actorUserId, 1, 2);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.Count);
-        Assert.Contains(first, result.Value);
-        Assert.Contains(second, result.Value);
+        Assert.Equal(1, result.Value.Page);
+        Assert.Equal(2, result.Value.PageSize);
+        Assert.True(result.Value.HasMore);
+        Assert.Equal(new[] { first.Id, second.Id }, result.Value.Items.Select(item => item.Id));
         Assert.Equal(1, repository.FindByPublisherCallCount);
         Assert.Equal(actorUserId, repository.LastPublisherUserId);
     }
 
-    private static MarketListing CreateListing(Guid publisherUserId) =>
+    [Fact]
+    public async Task ExecuteAsync_returns_second_page_without_has_more()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        MarketListing first = CreateListing(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"), actorUserId);
+        MarketListing second = CreateListing(
+            Guid.Parse("00000000-0000-0000-0000-000000000002"), actorUserId);
+        MarketListing third = CreateListing(
+            Guid.Parse("00000000-0000-0000-0000-000000000003"), actorUserId);
+        var repository = new StubMarketListingRepository([first, second, third]);
+        var useCase = new ListOwnedListingsUseCase(repository);
+
+        Result<OwnedListingPage> result =
+            await useCase.ExecuteAsync(actorUserId, 2, 2);
+
+        Assert.True(result.IsSuccess);
+        MarketListing item = Assert.Single(result.Value.Items);
+        Assert.Equal(third.Id, item.Id);
+        Assert.False(result.Value.HasMore);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_fails_closed_when_repository_returns_other_owner()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        var repository = new StubMarketListingRepository(
+            [CreateListing(Guid.NewGuid(), Guid.NewGuid())]);
+        var useCase = new ListOwnedListingsUseCase(repository);
+
+        InvalidOperationException exception =
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => useCase.ExecuteAsync(actorUserId, 1, 20));
+
+        Assert.Contains("another publisher", exception.Message);
+    }
+
+    private static MarketListing CreateListing(
+        Guid id,
+        Guid publisherUserId) =>
         new(
-            Guid.NewGuid(),
+            id,
             publisherUserId,
             new ListingSubjectReference(
                 Guid.NewGuid(),
@@ -72,7 +122,6 @@ public sealed class ListOwnedListingsUseCaseTests
         : IMarketListingRepository
     {
         public int FindByPublisherCallCount { get; private set; }
-
         public Guid? LastPublisherUserId { get; private set; }
 
         public Task<MarketListing?> FindByIdAsync(

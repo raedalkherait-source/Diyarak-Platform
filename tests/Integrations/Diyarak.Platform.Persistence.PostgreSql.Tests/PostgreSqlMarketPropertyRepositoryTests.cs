@@ -198,6 +198,44 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
     }
 
     [Fact]
+    public async Task FindPageByOwnerUserIdAsync_filters_orders_and_bounds_results()
+    {
+        await using PlatformDbContext context = CreateContext();
+
+        Guid ownerUserId = Guid.NewGuid();
+        MarketProperty third = CreateProperty(
+            ownerUserId,
+            "Third Street",
+            Guid.Parse("00000000-0000-0000-0000-000000000003"));
+        MarketProperty first = CreateProperty(
+            ownerUserId,
+            "First Street",
+            Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        MarketProperty second = CreateProperty(
+            ownerUserId,
+            "Second Street",
+            Guid.Parse("00000000-0000-0000-0000-000000000002"));
+        MarketProperty other = CreateProperty(Guid.NewGuid(), "Other Street");
+        var repository = new PostgreSqlMarketPropertyRepository(context);
+
+        await repository.AddAsync(third);
+        await repository.AddAsync(first);
+        await repository.AddAsync(second);
+        await repository.AddAsync(other);
+        context.ChangeTracker.Clear();
+
+        IReadOnlyList<MarketProperty> page =
+            await repository.FindPageByOwnerUserIdAsync(
+                ownerUserId,
+                skip: 1,
+                take: 2);
+
+        Assert.Equal(new[] { second.Id, third.Id }, page.Select(item => item.Id));
+        Assert.All(page, item => Assert.Equal(ownerUserId, item.OwnerUserId));
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
     public async Task TrySaveAsync_updates_state_and_increments_version()
     {
         await using PlatformDbContext context = CreateContext();
@@ -227,8 +265,14 @@ public sealed class PostgreSqlMarketPropertyRepositoryTests
     private static MarketProperty CreateProperty(
         Guid? ownerUserId,
         string street) =>
+        CreateProperty(ownerUserId, street, Guid.NewGuid());
+
+    private static MarketProperty CreateProperty(
+        Guid? ownerUserId,
+        string street,
+        Guid propertyId) =>
         new(
-            Guid.NewGuid(),
+            propertyId,
             PropertyCategory.House,
             new PropertyAddress(
                 street,

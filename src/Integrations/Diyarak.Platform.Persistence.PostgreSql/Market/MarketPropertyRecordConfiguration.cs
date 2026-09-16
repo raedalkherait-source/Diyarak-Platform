@@ -21,7 +21,12 @@ internal sealed class MarketPropertyRecordConfiguration
 
         builder.HasKey(record => record.Id);
 
-        builder.HasIndex(record => record.OwnerUserId)
+        builder.HasIndex(
+                record => new
+                {
+                    record.OwnerUserId,
+                    record.Id,
+                })
             .HasDatabaseName(
                 "ix_market_properties_owner_user_id");
 

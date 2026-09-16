@@ -12,6 +12,27 @@ public interface IMarketPropertyRepository
         Guid ownerUserId,
         CancellationToken cancellationToken = default);
 
+    public async Task<IReadOnlyList<MarketProperty>> FindPageByOwnerUserIdAsync(
+        Guid ownerUserId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(skip);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
+
+        IReadOnlyList<MarketProperty> properties =
+            await FindByOwnerUserIdAsync(
+                ownerUserId,
+                cancellationToken);
+
+        return properties
+            .OrderBy(property => property.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToArray();
+    }
+
     public Task AddAsync(
         MarketProperty property,
         CancellationToken cancellationToken = default);

@@ -47,6 +47,29 @@ internal sealed class PostgreSqlMarketPropertyRepository
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<MarketProperty>> FindPageByOwnerUserIdAsync(
+        Guid ownerUserId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(skip);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
+
+        List<MarketPropertyRecord> records =
+            await _context.MarketProperties
+                .AsNoTracking()
+                .Where(property => property.OwnerUserId == ownerUserId)
+                .OrderBy(property => property.Id)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+
+        return records
+            .Select(MarketPropertyRecordMapper.ToDomain)
+            .ToArray();
+    }
+
     public async Task AddAsync(
         MarketProperty property,
         CancellationToken cancellationToken = default)

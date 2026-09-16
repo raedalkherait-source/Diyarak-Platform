@@ -95,21 +95,38 @@ public static class MarketListingEndpointRouteBuilderExtensions
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
+        if (!TryParsePagination(
+                httpContext.Request.Query,
+                out int page,
+                out int pageSize))
+        {
+            return ToProblemDetails(
+                ListOwnedListingsErrors.InvalidPagination,
+                httpContext);
+        }
+
         Guid actorUserId = GetRequiredActorUserId(actorAccessor);
 
-        Result<IReadOnlyList<MarketListing>> result =
+        Result<OwnedListingPage> result =
             await useCase.ExecuteAsync(
                 actorUserId,
+                page,
+                pageSize,
                 cancellationToken);
 
         if (!result.IsSuccess)
             return ToProblemDetails(result.Error, httpContext);
 
-        MarketListingResponse[] response = result.Value
+        MarketListingResponse[] items = result.Value.Items
             .Select(ToResponse)
             .ToArray();
 
-        return Results.Ok(response);
+        return Results.Ok(
+            new MarketListingPageResponse(
+                items,
+                result.Value.Page,
+                result.Value.PageSize,
+                result.Value.HasMore));
     }
 
     internal static async Task<IResult> GetListingAsync(
@@ -209,6 +226,35 @@ public static class MarketListingEndpointRouteBuilderExtensions
             return Results.NoContent();
 
         return ToProblemDetails(result.Error, httpContext);
+    }
+
+    private static bool TryParsePagination(
+        IQueryCollection query,
+        out int page,
+        out int pageSize)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        page = ListOwnedListingsUseCase.DefaultPage;
+        pageSize = ListOwnedListingsUseCase.DefaultPageSize;
+
+        if (query.TryGetValue("page", out var pageValues) &&
+            (pageValues.Count != 1 ||
+             !int.TryParse(pageValues[0], out page)))
+        {
+            return false;
+        }
+
+        if (query.TryGetValue("pageSize", out var pageSizeValues) &&
+            (pageSizeValues.Count != 1 ||
+             !int.TryParse(pageSizeValues[0], out pageSize)))
+        {
+            return false;
+        }
+
+        return page > 0 &&
+            pageSize > 0 &&
+            pageSize <= ListOwnedListingsUseCase.MaximumPageSize;
     }
 
     private static MarketListingResponse ToResponse(
@@ -319,6 +365,12 @@ public static class MarketListingEndpointRouteBuilderExtensions
         bool IsOnRequest,
         decimal? Amount,
         string? Currency);
+
+    internal sealed record MarketListingPageResponse(
+        IReadOnlyCollection<MarketListingResponse> Items,
+        int Page,
+        int PageSize,
+        bool HasMore);
 
     internal sealed record UpdateMarketListingResponse(
         Guid ListingId,

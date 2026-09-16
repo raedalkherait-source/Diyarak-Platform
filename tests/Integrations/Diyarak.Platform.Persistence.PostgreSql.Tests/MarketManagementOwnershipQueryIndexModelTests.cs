@@ -44,6 +44,10 @@ public sealed class MarketManagementOwnershipQueryIndexModelTests
             property =>
                 Assert.Equal(
                     "PublisherUserId",
+                    property.Name),
+            property =>
+                Assert.Equal(
+                    "Id",
                     property.Name));
 
         var propertyType = Assert.Single(
@@ -63,6 +67,10 @@ public sealed class MarketManagementOwnershipQueryIndexModelTests
             property =>
                 Assert.Equal(
                     "OwnerUserId",
+                    property.Name),
+            property =>
+                Assert.Equal(
+                    "Id",
                     property.Name));
     }
 }
