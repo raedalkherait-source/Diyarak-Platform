@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using Diyarak.Market.Application;
 using Diyarak.Market.Listing;
@@ -384,6 +384,103 @@ public sealed class ListPublishedListingsEndpointTests
         Assert.NotEqual(firstEntityTag, secondEntityTag);
     }
 
+    [Fact]
+    public async Task Head_collection_returns_200_without_body_and_matches_get_etag()
+    {
+        MarketListing listing = CreatePublishedListing("HEAD listing");
+        using var factory = new TestApiFactory(
+            [listing],
+            authenticationEnabled: true);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage getResponse = await SendGetAsync(client);
+        string entityTag = Assert.Single(
+            getResponse.Headers.GetValues("ETag"));
+
+        HttpResponseMessage response = await SendHeadAsync(client);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            entityTag,
+            Assert.Single(response.Headers.GetValues("ETag")));
+        Assert.Equal(
+            string.Empty,
+            await response.Content.ReadAsStringAsync());
+        Assert.True(
+            response.Headers.CacheControl is
+            { Public: true, NoCache: true, NoStore: false });
+    }
+
+    [Fact]
+    public async Task Head_collection_with_matching_if_none_match_returns_304_without_body()
+    {
+        MarketListing listing = CreatePublishedListing(
+            "Conditional HEAD listing");
+        using var factory = new TestApiFactory(
+            [listing],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage initialResponse = await SendGetAsync(client);
+        string entityTag = Assert.Single(
+            initialResponse.Headers.GetValues("ETag"));
+
+        HttpResponseMessage response = await SendHeadAsync(
+            client,
+            ifNoneMatch: entityTag);
+
+        Assert.Equal(HttpStatusCode.NotModified, response.StatusCode);
+        Assert.Equal(
+            entityTag,
+            Assert.Single(response.Headers.GetValues("ETag")));
+        Assert.Equal(
+            string.Empty,
+            await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Head_collection_invalid_pagination_returns_400_without_body_and_no_store()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendHeadAsync(
+            client,
+            query: "?page=invalid");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(
+            string.Empty,
+            await response.Content.ReadAsStringAsync());
+        Assert.True(
+            response.Headers.CacheControl is { NoStore: true });
+    }
+
+    [Fact]
+    public async Task Head_collection_respects_requested_page_coordinates()
+    {
+        MarketListing listing = CreatePublishedListing("Paged HEAD listing");
+        using var factory = new TestApiFactory(
+            [listing],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage getResponse = await SendGetAsync(
+            client,
+            query: "?page=2&pageSize=1");
+        HttpResponseMessage headResponse = await SendHeadAsync(
+            client,
+            query: "?page=2&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, headResponse.StatusCode);
+        Assert.Equal(
+            Assert.Single(getResponse.Headers.GetValues("ETag")),
+            Assert.Single(headResponse.Headers.GetValues("ETag")));
+        Assert.Equal(2, factory.Query.LastTake);
+    }
+
     private static async Task<HttpResponseMessage> SendGetAsync(
         HttpClient client,
         string query = "",
@@ -391,6 +488,25 @@ public sealed class ListPublishedListingsEndpointTests
     {
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
+            $"/api/market/public/listings{query}");
+
+        if (ifNoneMatch is not null)
+        {
+            request.Headers.TryAddWithoutValidation(
+                "If-None-Match",
+                ifNoneMatch);
+        }
+
+        return await client.SendAsync(request);
+    }
+
+    private static async Task<HttpResponseMessage> SendHeadAsync(
+        HttpClient client,
+        string query = "",
+        string? ifNoneMatch = null)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Head,
             $"/api/market/public/listings{query}");
 
         if (ifNoneMatch is not null)
@@ -517,3 +633,4 @@ public sealed class ListPublishedListingsEndpointTests
         }
     }
 }
+

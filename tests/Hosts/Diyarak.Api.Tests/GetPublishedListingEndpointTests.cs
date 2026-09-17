@@ -396,6 +396,86 @@ public sealed class GetPublishedListingEndpointTests
         Assert.False(response.Headers.CacheControl is { NoStore: true });
     }
 
+    [Fact]
+    public async Task Head_published_listing_returns_200_without_body_and_matches_get_etag()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: true);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage getResponse = await SendGetAsync(
+            client,
+            listing.Id);
+        string entityTag = Assert.Single(
+            getResponse.Headers.GetValues("ETag"));
+
+        HttpResponseMessage response = await SendHeadAsync(
+            client,
+            listing.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            entityTag,
+            Assert.Single(response.Headers.GetValues("ETag")));
+        Assert.Equal(
+            string.Empty,
+            await response.Content.ReadAsStringAsync());
+        Assert.True(
+            response.Headers.CacheControl is
+            { Public: true, NoCache: true, NoStore: false });
+    }
+
+    [Fact]
+    public async Task Head_with_matching_if_none_match_returns_304_without_body()
+    {
+        MarketListing listing = CreatePublishedListing();
+        using var factory = new TestApiFactory(
+            listing,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage initialResponse = await SendGetAsync(
+            client,
+            listing.Id);
+        string entityTag = Assert.Single(
+            initialResponse.Headers.GetValues("ETag"));
+
+        HttpResponseMessage response = await SendHeadAsync(
+            client,
+            listing.Id,
+            entityTag);
+
+        Assert.Equal(HttpStatusCode.NotModified, response.StatusCode);
+        Assert.Equal(
+            entityTag,
+            Assert.Single(response.Headers.GetValues("ETag")));
+        Assert.Equal(
+            string.Empty,
+            await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Head_missing_listing_returns_404_without_body_and_no_store()
+    {
+        using var factory = new TestApiFactory(
+            listing: null,
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendHeadAsync(
+            client,
+            Guid.NewGuid());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(
+            string.Empty,
+            await response.Content.ReadAsStringAsync());
+        Assert.True(
+            response.Headers.CacheControl is { NoStore: true });
+    }
+
     private static async Task<HttpResponseMessage> SendGetAsync(
         HttpClient client,
         Guid listingId,
@@ -403,6 +483,25 @@ public sealed class GetPublishedListingEndpointTests
     {
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
+            $"/api/market/public/listings/{listingId}");
+
+        if (ifNoneMatch is not null)
+        {
+            request.Headers.TryAddWithoutValidation(
+                "If-None-Match",
+                ifNoneMatch);
+        }
+
+        return await client.SendAsync(request);
+    }
+
+    private static async Task<HttpResponseMessage> SendHeadAsync(
+        HttpClient client,
+        Guid listingId,
+        string? ifNoneMatch = null)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Head,
             $"/api/market/public/listings/{listingId}");
 
         if (ifNoneMatch is not null)

@@ -1,4 +1,4 @@
-using Diyarak.Market.Application;
+﻿using Diyarak.Market.Application;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
@@ -6,20 +6,28 @@ namespace Diyarak.Api.Market;
 
 public static class PublicMarketListingEndpointRouteBuilderExtensions
 {
+    private static readonly string[] PublicReadMethods =
+    [
+        HttpMethods.Get,
+        HttpMethods.Head,
+    ];
+
     public static IEndpointRouteBuilder MapPublicMarketListingEndpoints(
         this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
         endpoints
-            .MapGet(
+            .MapMethods(
                 "/api/market/public/listings",
+                PublicReadMethods,
                 ListPublishedListingsAsync)
             .AllowAnonymous();
 
         endpoints
-            .MapGet(
+            .MapMethods(
                 "/api/market/public/listings/{listingId}",
+                PublicReadMethods,
                 GetPublishedListingAsync)
             .AllowAnonymous();
 
@@ -31,6 +39,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
+        SuppressResponseBodyForHead(httpContext);
+
         if (!TryParsePagination(
                 httpContext.Request.Query,
                 out int page,
@@ -65,6 +75,9 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 StatusCodes.Status304NotModified);
         }
 
+        if (HttpMethods.IsHead(httpContext.Request.Method))
+            return Results.Ok();
+
         PublicMarketListingResponse[] items = result.Value.Items
             .Select(ToResponse)
             .ToArray();
@@ -83,6 +96,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
+        SuppressResponseBodyForHead(httpContext);
+
         if (!Guid.TryParse(listingId, out Guid parsedListingId) ||
             parsedListingId == Guid.Empty)
         {
@@ -112,6 +127,9 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             return Results.StatusCode(
                 StatusCodes.Status304NotModified);
         }
+
+        if (HttpMethods.IsHead(httpContext.Request.Method))
+            return Results.Ok();
 
         return Results.Ok(ToResponse(result.Value));
     }
@@ -188,6 +206,9 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 $"Unsupported expected public Market Listing error type '{error.Type}'."),
         };
 
+        if (HttpMethods.IsHead(httpContext.Request.Method))
+            return Results.StatusCode(statusCode);
+
         string title = statusCode switch
         {
             StatusCodes.Status400BadRequest => "Bad Request",
@@ -208,6 +229,14 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
     }
 
 
+    private static void SuppressResponseBodyForHead(
+        HttpContext httpContext)
+    {
+        ArgumentNullException.ThrowIfNull(httpContext);
+
+        if (HttpMethods.IsHead(httpContext.Request.Method))
+            httpContext.Response.Body = System.IO.Stream.Null;
+    }
     private static void SetRevalidationCachePolicy(
         HttpResponse response)
     {
@@ -244,3 +273,4 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         decimal? Amount,
         string? Currency);
 }
+
