@@ -1,4 +1,4 @@
-﻿using Diyarak.Market.Application;
+using Diyarak.Market.Application;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
@@ -6,6 +6,8 @@ namespace Diyarak.Api.Market;
 
 public static class PublicMarketListingEndpointRouteBuilderExtensions
 {
+    private const string PublicListingsPath = "/api/market/public/listings";
+
     private static readonly string[] PublicReadMethods =
     [
         HttpMethods.Get,
@@ -19,14 +21,14 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
 
         endpoints
             .MapMethods(
-                "/api/market/public/listings",
+                PublicListingsPath,
                 PublicReadMethods,
                 ListPublishedListingsAsync)
             .AllowAnonymous();
 
         endpoints
             .MapMethods(
-                "/api/market/public/listings/{listingId}",
+                $"{PublicListingsPath}/{{listingId}}",
                 PublicReadMethods,
                 GetPublishedListingAsync)
             .AllowAnonymous();
@@ -61,6 +63,11 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             return ToProblemDetails(result.Error, httpContext);
 
         SetRevalidationCachePolicy(httpContext.Response);
+        SetPaginationLinks(
+            httpContext.Response,
+            result.Value.Page,
+            result.Value.PageSize,
+            result.Value.HasMore);
 
         string entityTag =
             PublicMarketListingEntityTag.Create(result.Value);
@@ -229,6 +236,47 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
     }
 
 
+    private static void SetPaginationLinks(
+        HttpResponse response,
+        int page,
+        int pageSize,
+        bool hasMore)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+
+        string? previousLink = page > 1
+            ? CreatePaginationLink(page - 1, pageSize, "prev")
+            : null;
+
+        string? nextLink = hasMore && page < int.MaxValue
+            ? CreatePaginationLink(page + 1, pageSize, "next")
+            : null;
+
+        if (previousLink is not null && nextLink is not null)
+        {
+            response.Headers["Link"] =
+                $"{previousLink}, {nextLink}";
+            return;
+        }
+
+        if (previousLink is not null)
+        {
+            response.Headers["Link"] = previousLink;
+            return;
+        }
+
+        if (nextLink is not null)
+            response.Headers["Link"] = nextLink;
+    }
+
+    private static string CreatePaginationLink(
+        int page,
+        int pageSize,
+        string relation)
+    {
+        return $"<{PublicListingsPath}?page={page}&pageSize={pageSize}>; rel=\"{relation}\"";
+    }
+
     private static void SuppressResponseBodyForHead(
         HttpContext httpContext)
     {
@@ -237,6 +285,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         if (HttpMethods.IsHead(httpContext.Request.Method))
             httpContext.Response.Body = System.IO.Stream.Null;
     }
+
     private static void SetRevalidationCachePolicy(
         HttpResponse response)
     {
@@ -273,4 +322,3 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         decimal? Amount,
         string? Currency);
 }
-

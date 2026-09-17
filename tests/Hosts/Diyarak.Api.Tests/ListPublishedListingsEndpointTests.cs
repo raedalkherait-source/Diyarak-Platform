@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.Json;
 using Diyarak.Market.Application;
 using Diyarak.Market.Listing;
@@ -153,6 +153,160 @@ public sealed class ListPublishedListingsEndpointTests
         Assert.Equal(20, root.GetProperty("pageSize").GetInt32());
         Assert.False(root.GetProperty("hasMore").GetBoolean());
         Assert.Equal(1, root.GetProperty("items").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Public_collection_first_page_with_more_items_exposes_next_link()
+    {
+        using var factory = new TestApiFactory(
+            [
+                CreatePublishedListing("First page listing"),
+                CreatePublishedListing("Next page listing"),
+            ],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            query: "?page=1&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/public/listings?page=2&pageSize=1>; rel=\"next\"",
+            GetLinkHeader(response));
+    }
+
+    [Fact]
+    public async Task Public_collection_middle_page_exposes_previous_and_next_links()
+    {
+        using var factory = new TestApiFactory(
+            [
+                CreatePublishedListing("Middle page listing"),
+                CreatePublishedListing("Following page listing"),
+            ],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            query: "?page=2&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/public/listings?page=1&pageSize=1>; rel=\"prev\", " +
+            "</api/market/public/listings?page=3&pageSize=1>; rel=\"next\"",
+            GetLinkHeader(response));
+    }
+
+    [Fact]
+    public async Task Public_collection_last_page_exposes_previous_link_only()
+    {
+        using var factory = new TestApiFactory(
+            [CreatePublishedListing("Last page listing")],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            query: "?page=2&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/public/listings?page=1&pageSize=1>; rel=\"prev\"",
+            GetLinkHeader(response));
+    }
+
+    [Fact]
+    public async Task Public_collection_maximum_page_omits_unaddressable_next_link()
+    {
+        using var factory = new TestApiFactory(
+            [
+                CreatePublishedListing("Maximum page listing"),
+                CreatePublishedListing("Unaddressable next listing"),
+            ],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            query: "?page=2147483647&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/public/listings?page=2147483646&pageSize=1>; rel=\"prev\"",
+            GetLinkHeader(response));
+    }
+
+    [Fact]
+    public async Task Public_collection_single_first_page_omits_link_header()
+    {
+        using var factory = new TestApiFactory(
+            [CreatePublishedListing("Only page listing")],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            query: "?page=1&pageSize=20");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(response.Headers.Contains("Link"));
+    }
+
+    [Fact]
+    public async Task Public_collection_304_preserves_page_navigation_link()
+    {
+        using var factory = new TestApiFactory(
+            [
+                CreatePublishedListing("Conditional page listing"),
+                CreatePublishedListing("Conditional next listing"),
+            ],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage initialResponse = await SendGetAsync(
+            client,
+            query: "?page=1&pageSize=1");
+        string entityTag = Assert.Single(
+            initialResponse.Headers.GetValues("ETag"));
+        string link = GetLinkHeader(initialResponse);
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            query: "?page=1&pageSize=1",
+            ifNoneMatch: entityTag);
+
+        Assert.Equal(HttpStatusCode.NotModified, response.StatusCode);
+        Assert.Equal(
+            link,
+            GetLinkHeader(response));
+    }
+
+    [Fact]
+    public async Task Head_collection_exposes_same_page_navigation_link_as_get()
+    {
+        using var factory = new TestApiFactory(
+            [
+                CreatePublishedListing("HEAD page listing"),
+                CreatePublishedListing("HEAD next listing"),
+            ],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage getResponse = await SendGetAsync(
+            client,
+            query: "?page=1&pageSize=1");
+        HttpResponseMessage headResponse = await SendHeadAsync(
+            client,
+            query: "?page=1&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, headResponse.StatusCode);
+        Assert.Equal(
+            GetLinkHeader(getResponse),
+            GetLinkHeader(headResponse));
+        Assert.Equal(
+            string.Empty,
+            await headResponse.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -481,6 +635,14 @@ public sealed class ListPublishedListingsEndpointTests
         Assert.Equal(2, factory.Query.LastTake);
     }
 
+    private static string GetLinkHeader(
+        HttpResponseMessage response)
+    {
+        return string.Join(
+            ", ",
+            response.Headers.GetValues("Link"));
+    }
+
     private static async Task<HttpResponseMessage> SendGetAsync(
         HttpClient client,
         string query = "",
@@ -633,4 +795,3 @@ public sealed class ListPublishedListingsEndpointTests
         }
     }
 }
-
