@@ -112,6 +112,13 @@ public static class MarketListingEndpointRouteBuilderExtensions
         if (!result.IsSuccess)
             return ToProblemDetails(result.Error, httpContext);
 
+        MarketPaginationLinkHeader.Set(
+            httpContext.Response,
+            "/api/market/listings",
+            result.Value.Page,
+            result.Value.PageSize,
+            result.Value.HasMore);
+
         MarketListingResponse[] items = result.Value.Items
             .Select(ToResponse)
             .ToArray();

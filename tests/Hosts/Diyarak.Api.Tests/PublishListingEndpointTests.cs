@@ -82,6 +82,7 @@ public sealed class PublishListingEndpointTests
             Guid.NewGuid().ToString());
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.False(response.Headers.Contains("Link"));
         Assert.Equal(0, factory.PropertyListingAuthorizationChecker.CallCount);
         Assert.Null(factory.ListingRepository.AddedListing);
     }
@@ -101,6 +102,7 @@ public sealed class PublishListingEndpointTests
             Guid.NewGuid().ToString());
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.False(response.Headers.Contains("Link"));
         Assert.Equal(0, factory.PropertyListingAuthorizationChecker.CallCount);
         Assert.Null(factory.ListingRepository.AddedListing);
     }
@@ -326,7 +328,81 @@ public sealed class PublishListingEndpointTests
         await AssertProblemCodeAsync(
             response,
             ListOwnedListingsErrors.InvalidPagination.Code);
+        Assert.False(response.Headers.Contains("Link"));
         Assert.Equal(0, factory.ListingRepository.FindByPublisherCallCount);
+    }
+
+    [Fact]
+    public async Task List_first_page_with_more_results_exposes_next_link()
+    {
+        MarketListing first = CreateReadyListing();
+        MarketListing second = CreateReadyListing(first.PublisherUserId);
+
+        using var factory = new TestApiFactory(
+            first.PublisherUserId,
+            first);
+        factory.ListingRepository.AdditionalListings.Add(second);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync(
+                "/api/market/listings?page=1&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/listings?page=2&pageSize=1>; rel=\"next\"",
+            response.Headers.GetValues("Link").Single());
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
+    public async Task List_middle_page_exposes_prev_and_next_links()
+    {
+        MarketListing first = CreateReadyListing();
+        MarketListing second = CreateReadyListing(first.PublisherUserId);
+        MarketListing third = CreateReadyListing(first.PublisherUserId);
+
+        using var factory = new TestApiFactory(
+            first.PublisherUserId,
+            first);
+        factory.ListingRepository.AdditionalListings.Add(second);
+        factory.ListingRepository.AdditionalListings.Add(third);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync(
+                "/api/market/listings?page=2&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/listings?page=1&pageSize=1>; rel=\"prev\", " +
+            "</api/market/listings?page=3&pageSize=1>; rel=\"next\"",
+            response.Headers.GetValues("Link").Single());
+    }
+
+    [Fact]
+    public async Task List_last_page_exposes_prev_link_only()
+    {
+        MarketListing first = CreateReadyListing();
+        MarketListing second = CreateReadyListing(first.PublisherUserId);
+
+        using var factory = new TestApiFactory(
+            first.PublisherUserId,
+            first);
+        factory.ListingRepository.AdditionalListings.Add(second);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync(
+                "/api/market/listings?page=2&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/listings?page=1&pageSize=1>; rel=\"prev\"",
+            response.Headers.GetValues("Link").Single());
     }
 
     [Fact]
@@ -349,6 +425,7 @@ public sealed class PublishListingEndpointTests
         HttpResponseMessage response = await SendListAsync(client);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(response.Headers.Contains("Link"));
         Assert.Equal(
             1,
             factory.ListingRepository.FindByPublisherCallCount);
@@ -1238,11 +1315,12 @@ public sealed class PublishListingEndpointTests
                 root.GetProperty("traceId").GetString()));
     }
 
-    private static MarketListing CreateReadyListing()
+    private static MarketListing CreateReadyListing(
+        Guid? publisherUserId = null)
     {
         var listing = new MarketListing(
             Guid.NewGuid(),
-            Guid.NewGuid(),
+            publisherUserId ?? Guid.NewGuid(),
             new ListingSubjectReference(
                 Guid.NewGuid(),
                 MarketListingSubjectTypes.Property));
@@ -1417,17 +1495,24 @@ public sealed class PublishListingEndpointTests
 
         public int FindByPublisherCallCount { get; private set; }
 
+        public List<MarketListing> AdditionalListings { get; } = [];
+
         public Task<IReadOnlyList<MarketListing>> FindByPublisherUserIdAsync(
             Guid publisherUserId,
             CancellationToken cancellationToken = default)
         {
             FindByPublisherCallCount++;
 
-            IReadOnlyList<MarketListing> result =
-                listing is not null &&
-                listing.PublisherUserId == publisherUserId
-                    ? [listing]
-                    : Array.Empty<MarketListing>();
+            var candidates = new List<MarketListing>();
+            if (listing is not null)
+                candidates.Add(listing);
+
+            candidates.AddRange(AdditionalListings);
+
+            IReadOnlyList<MarketListing> result = candidates
+                .Where(candidate =>
+                    candidate.PublisherUserId == publisherUserId)
+                .ToArray();
 
             return Task.FromResult(result);
         }

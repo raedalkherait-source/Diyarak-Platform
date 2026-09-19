@@ -106,6 +106,13 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
         if (!result.IsSuccess)
             return ToProblemDetails(result.Error, httpContext);
 
+        MarketPaginationLinkHeader.Set(
+            httpContext.Response,
+            "/api/market/properties",
+            result.Value.Page,
+            result.Value.PageSize,
+            result.Value.HasMore);
+
         MarketPropertyResponse[] items = result.Value.Items
             .Select(ToResponse)
             .ToArray();

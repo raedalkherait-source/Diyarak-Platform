@@ -70,6 +70,7 @@ public sealed class ListOwnedPropertiesEndpointTests
             await client.GetAsync("/api/market/properties");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.False(response.Headers.Contains("Link"));
         Assert.Equal(0, factory.Repository.FindByOwnerCallCount);
     }
 
@@ -86,6 +87,7 @@ public sealed class ListOwnedPropertiesEndpointTests
             await client.GetAsync("/api/market/properties");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.False(response.Headers.Contains("Link"));
         Assert.Equal(0, factory.Repository.FindByOwnerCallCount);
     }
 
@@ -158,7 +160,77 @@ public sealed class ListOwnedPropertiesEndpointTests
         Assert.Equal(
             ListOwnedPropertiesErrors.InvalidPagination.Code,
             document.RootElement.GetProperty("code").GetString());
+        Assert.False(response.Headers.Contains("Link"));
         Assert.Equal(0, factory.Repository.FindByOwnerCallCount);
+    }
+
+    [Fact]
+    public async Task List_first_page_with_more_results_exposes_next_link()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty first = CreateProperty(actorUserId, "First Street");
+        MarketProperty second = CreateProperty(actorUserId, "Second Street");
+        using var factory = new TestApiFactory(
+            actorUserId,
+            [first, second]);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync(
+                "/api/market/properties?page=1&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/properties?page=2&pageSize=1>; rel=\"next\"",
+            response.Headers.GetValues("Link").Single());
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
+    public async Task List_middle_page_exposes_prev_and_next_links()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty first = CreateProperty(actorUserId, "First Street");
+        MarketProperty second = CreateProperty(actorUserId, "Second Street");
+        MarketProperty third = CreateProperty(actorUserId, "Third Street");
+        using var factory = new TestApiFactory(
+            actorUserId,
+            [first, second, third]);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync(
+                "/api/market/properties?page=2&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/properties?page=1&pageSize=1>; rel=\"prev\", " +
+            "</api/market/properties?page=3&pageSize=1>; rel=\"next\"",
+            response.Headers.GetValues("Link").Single());
+    }
+
+    [Fact]
+    public async Task List_last_page_exposes_prev_link_only()
+    {
+        Guid actorUserId = Guid.NewGuid();
+        MarketProperty first = CreateProperty(actorUserId, "First Street");
+        MarketProperty second = CreateProperty(actorUserId, "Second Street");
+        using var factory = new TestApiFactory(
+            actorUserId,
+            [first, second]);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken("mapped-user"));
+
+        HttpResponseMessage response =
+            await client.GetAsync(
+                "/api/market/properties?page=2&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/properties?page=1&pageSize=1>; rel=\"prev\"",
+            response.Headers.GetValues("Link").Single());
     }
 
     [Fact]
@@ -178,6 +250,7 @@ public sealed class ListOwnedPropertiesEndpointTests
             await client.GetAsync("/api/market/properties");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(response.Headers.Contains("Link"));
         Assert.Equal(1, factory.Repository.FindByOwnerCallCount);
 
         string body = await response.Content.ReadAsStringAsync();
