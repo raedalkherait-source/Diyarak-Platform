@@ -210,7 +210,7 @@ The reference flow allows an existing property/address to be selected when creat
 
 Diyarak should preserve the same architectural principle: creating a new listing for an existing property must not require creating a duplicate property asset.
 
-The listing therefore needs an architectural way to identify its published subject without making Platform Core depend on a Market module. ADR-0010 defines that relationship through the sector-agnostic `ListingSubjectReference` contract, ADR-0011 keeps the reference immutable for the lifetime of a Listing, and ADR-0012 assigns supported subject-type validation to the consuming business module. Subject existence validation and behavior when a referenced subject becomes unavailable remain unresolved.
+The listing therefore needs an architectural way to identify its published subject without making Platform Core depend on a Market module. ADR-0010 defines that relationship through the sector-agnostic `ListingSubjectReference` contract, ADR-0011 keeps the reference immutable for the lifetime of a Listing, and ADR-0012 assigns supported subject-type validation to the consuming business module. ADR-0017 defines current Property availability as existence, and ADR-0019 defines the Application-owned Property existence check used for publication-time subject availability. Behavior when a referenced subject later becomes unavailable remains unresolved.
 
 ## Implemented Property creation boundary
 
