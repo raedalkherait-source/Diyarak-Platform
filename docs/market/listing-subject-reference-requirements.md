@@ -82,7 +82,7 @@ ADR-0030 adds authenticated Property asset creation through `POST /api/market/pr
 
 The following behavior remains undefined and must not be invented:
 
-- Property search, update, removal/archive, ownership transfer/delegation, and administrative access beyond actor-owned creation, owner-only direct/collection loading, the current full-state record/mapping, and the existence query.
+- Property search, partial update semantics, removal/archive, ownership transfer/delegation, and administrative access beyond actor-owned creation, owner-only direct/collection loading, the current full-state record/mapping, and the existence query.
 - An authoritative owner mapping and separately reviewed migration or provisioning process for legacy Property rows whose `owner_user_id` remains `NULL`.
 - Delegated Listing-creation authority for agents, companies, administrators, or other non-owner actors beyond ADR-0037 owner-only Property authorization.
 - Property row-locking or stronger-than-`ReadCommitted` isolation guarantees spanning the Property existence check and Listing write.
