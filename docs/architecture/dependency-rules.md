@@ -9,5 +9,5 @@
 - Application projects may reference Foundation, approved Core contracts, and business Modules required by their use cases, but never Integrations or Hosts.
 - Modules must not depend on Application.
 - Hosts compose Application use cases and Integrations but contain no business rules.
-- Integrations may reference Foundation, approved Core contracts, business Modules they persist or adapt, and Application projects whose ports they implement, but never Hosts or another Integration implementation. They must not move business rules out of the domain or Application layers. ADR-0020 requires Entity Framework Core persistence models and mappings to remain Integration-owned.
+- Integrations may reference Foundation, approved Core contracts, business Modules they persist or adapt, and Application projects whose ports they implement, but never Hosts or another Integration implementation. They must not move business rules out of the domain or Application layers. ADR-0020 requires Entity Framework Core persistence models and mappings to remain Integration-owned. ADR-0025 currently approves `Diyarak.Platform.Persistence.PostgreSql` → `Diyarak.Platform.Identity` for the `ExternalIdentity` and `IExternalIdentityResolver` contracts.
 - Projects named Common, Utils, or Helpers are forbidden.

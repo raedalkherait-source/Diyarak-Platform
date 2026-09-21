@@ -135,6 +135,27 @@ public sealed class ArchitectureTests
             }
     }
 
+    [Fact]
+    public void Integration_direct_core_dependencies_are_explicitly_approved()
+    {
+        string[] approvedCoreDependencies =
+        [
+            "Diyarak.Platform.Persistence.PostgreSql.csproj->Diyarak.Platform.Identity.csproj",
+        ];
+
+        foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Integrations"), "*.csproj", SearchOption.AllDirectories))
+            foreach (string reference in ReadProjectReferences(project))
+            {
+                string normalized = reference.Replace('\\', '/');
+
+                if (normalized.Contains("/Core/", StringComparison.OrdinalIgnoreCase))
+                {
+                    string dependency = $"{Path.GetFileName(project)}->{Path.GetFileName(normalized)}";
+                    Assert.Contains(dependency, approvedCoreDependencies);
+                }
+            }
+    }
+
     private static string[] ReadProjectReferences(string project)
     {
         XDocument document = XDocument.Load(project);
