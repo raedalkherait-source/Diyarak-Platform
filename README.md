@@ -1,6 +1,6 @@
-# Diyarak Platform — Foundation Enterprise v1.0
+# Diyarak Platform
 
-Production-oriented foundation for **Diyarak**, a modular platform for the Syrian real-estate and construction sector.
+**Diyarak** is a modular platform for the Syrian real-estate and construction sector. Foundation 1.0 is complete, while Platform Core and Diyarak Market are being developed incrementally from confirmed requirements.
 
 ## Included
 
@@ -41,14 +41,16 @@ Windows PowerShell equivalents are provided in `scripts/*.ps1`.
 ## Repository boundaries
 
 ```text
-Foundation
-├── Diyarak.Platform.Domain.Primitives
-├── Diyarak.Platform.SharedKernel
-├── Diyarak.Platform.BuildingBlocks
-└── Diyarak.Platform.Contracts
+src/
+|-- Foundation
+|-- Core
+|-- Modules
+|-- Application
+|-- Integrations
+`-- Hosts
 ```
 
-`Core`, `Modules`, `Integrations`, and `Hosts` are reserved for subsequent milestones. See `docs/architecture/dependency-rules.md`.
+Diyarak is a modular monolith. Foundation contains stable cross-cutting abstractions; domain rules live in Modules or Core; Application coordinates use cases; Integrations implement infrastructure and Application-owned ports; and Hosts compose the application with concrete adapters. See `docs/architecture/overview.md` and `docs/architecture/dependency-rules.md`.
 
 ## Important deployment note
 
