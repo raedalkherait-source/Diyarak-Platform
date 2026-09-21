@@ -121,6 +121,18 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
+    public void Domain_projects_do_not_reference_entity_framework()
+    {
+        string[] domainLayers = ["Foundation", "Core", "Modules"];
+
+        foreach (string layer in domainLayers)
+            foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", layer), "*.csproj", SearchOption.AllDirectories))
+                Assert.DoesNotContain(
+                    ReadPackageReferences(project),
+                    package => package.Contains("EntityFrameworkCore", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void Integrations_do_not_reference_hosts_or_other_integrations()
     {
         string[] forbiddenSegments = ["/Integrations/", "/Hosts/"];
@@ -154,6 +166,12 @@ public sealed class ArchitectureTests
                     Assert.Contains(dependency, approvedCoreDependencies);
                 }
             }
+    }
+
+    private static string[] ReadPackageReferences(string project)
+    {
+        XDocument document = XDocument.Load(project);
+        return document.Descendants("PackageReference").Select(element => element.Attribute("Include")?.Value).Where(value => value is not null).Cast<string>().ToArray();
     }
 
     private static string[] ReadProjectReferences(string project)
