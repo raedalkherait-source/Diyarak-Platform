@@ -6,10 +6,10 @@ public sealed class ArchitectureTests
     private static readonly string Root = FindRepositoryRoot();
 
     [Fact]
-    public void Foundation_projects_use_approved_names()
+    public void Source_projects_use_approved_names()
     {
         string[] forbidden = ["Common", "Utils", "Helpers"];
-        foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Foundation"), "*.csproj", SearchOption.AllDirectories))
+        foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src"), "*.csproj", SearchOption.AllDirectories))
             Assert.DoesNotContain(forbidden, word => Path.GetFileNameWithoutExtension(project).Contains(word, StringComparison.OrdinalIgnoreCase));
     }
 
