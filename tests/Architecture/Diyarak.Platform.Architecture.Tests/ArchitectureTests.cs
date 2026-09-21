@@ -21,6 +21,20 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
+    public void Building_blocks_has_no_project_references()
+    {
+        string project = Path.Combine(Root, "src", "Foundation", "Diyarak.Platform.BuildingBlocks", "Diyarak.Platform.BuildingBlocks.csproj");
+        Assert.Empty(ReadProjectReferences(project));
+    }
+
+    [Fact]
+    public void Contracts_has_no_project_references()
+    {
+        string project = Path.Combine(Root, "src", "Foundation", "Diyarak.Platform.Contracts", "Diyarak.Platform.Contracts.csproj");
+        Assert.Empty(ReadProjectReferences(project));
+    }
+
+    [Fact]
     public void Shared_kernel_only_references_domain_primitives()
     {
         string project = Path.Combine(Root, "src", "Foundation", "Diyarak.Platform.SharedKernel", "Diyarak.Platform.SharedKernel.csproj");
