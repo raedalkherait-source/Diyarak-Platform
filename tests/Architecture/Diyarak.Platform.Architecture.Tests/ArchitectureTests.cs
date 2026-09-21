@@ -56,7 +56,7 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void Core_does_not_reference_modules_integrations_or_hosts()
+    public void Core_does_not_reference_modules_application_integrations_or_hosts()
     {
         string[] forbiddenSegments = ["/Modules/", "/Application/", "/Integrations/", "/Hosts/"];
         foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Core"), "*.csproj", SearchOption.AllDirectories))
