@@ -83,6 +83,943 @@ public sealed class ListPublishedListingsEndpointTests
     }
 
     [Fact]
+    public async Task Public_collection_parses_transaction_intent_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?transactionIntent=Rent");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        TransactionIntent intent =
+            Assert.Single(
+                Assert.IsAssignableFrom<IReadOnlyCollection<TransactionIntent>>(
+                    criteria.TransactionIntents));
+
+        Assert.Equal(TransactionIntent.Rent, intent);
+    }
+    [Fact]
+    public async Task Public_collection_parses_repeated_transaction_intent_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?transactionIntent=Rent&transactionIntent=Sell");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        IReadOnlyCollection<TransactionIntent> intents =
+            Assert.IsAssignableFrom<IReadOnlyCollection<TransactionIntent>>(
+                criteria.TransactionIntents);
+
+        Assert.Equal(
+            [TransactionIntent.Rent, TransactionIntent.Sell],
+            intents);
+    }
+    [Fact]
+    public async Task Invalid_transaction_intent_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?transactionIntent=Unknown");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_parses_property_category_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?propertyCategory=Apartment");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        Diyarak.Market.Property.PropertyCategory category =
+            Assert.Single(
+                Assert.IsAssignableFrom<
+                    IReadOnlyCollection<Diyarak.Market.Property.PropertyCategory>>(
+                    property.Categories));
+
+        Assert.Equal(
+            Diyarak.Market.Property.PropertyCategory.Apartment,
+            category);
+    }
+    [Fact]
+    public async Task Public_collection_parses_repeated_property_category_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?propertyCategory=Apartment&propertyCategory=House");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        IReadOnlyCollection<Diyarak.Market.Property.PropertyCategory>
+            categories =
+                Assert.IsAssignableFrom<
+                    IReadOnlyCollection<Diyarak.Market.Property.PropertyCategory>>(
+                    property.Categories);
+
+        Assert.Equal(
+            [
+                Diyarak.Market.Property.PropertyCategory.Apartment,
+                Diyarak.Market.Property.PropertyCategory.House,
+            ],
+            categories);
+    }
+    [Fact]
+    public async Task Invalid_property_category_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?propertyCategory=Unknown");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_parses_commercial_subtype_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?commercialSubtype=OfficeOrPractice");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        Diyarak.Market.Property.CommercialPropertySubtype subtype =
+            Assert.Single(
+                Assert.IsAssignableFrom<
+                    IReadOnlyCollection<Diyarak.Market.Property.CommercialPropertySubtype>>(
+                    property.CommercialSubtypes));
+
+        Assert.Equal(
+            Diyarak.Market.Property.CommercialPropertySubtype.OfficeOrPractice,
+            subtype);
+    }
+    [Fact]
+    public async Task Public_collection_parses_repeated_commercial_subtype_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?commercialSubtype=OfficeOrPractice&commercialSubtype=Retail");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        IReadOnlyCollection<Diyarak.Market.Property.CommercialPropertySubtype>
+            subtypes =
+                Assert.IsAssignableFrom<
+                    IReadOnlyCollection<Diyarak.Market.Property.CommercialPropertySubtype>>(
+                    property.CommercialSubtypes);
+
+        Assert.Equal(
+            [
+                Diyarak.Market.Property.CommercialPropertySubtype.OfficeOrPractice,
+                Diyarak.Market.Property.CommercialPropertySubtype.Retail,
+            ],
+            subtypes);
+    }
+    [Fact]
+    public async Task Invalid_commercial_subtype_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?commercialSubtype=Unknown");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_trims_and_parses_city_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?city=%20Berlin%20");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedPropertyLocationSearchCriteria location =
+            Assert.IsType<PublishedPropertyLocationSearchCriteria>(
+                property.Location);
+
+        Assert.Equal("Berlin", location.City);
+        Assert.Null(location.PostalCode);
+    }
+    [Fact]
+    public async Task Whitespace_only_city_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?city=%20%20%20");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Repeated_city_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?city=Berlin&city=Hamburg");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_trims_and_parses_postal_code_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?postalCode=%2010100%20");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedPropertyLocationSearchCriteria location =
+            Assert.IsType<PublishedPropertyLocationSearchCriteria>(
+                property.Location);
+
+        Assert.Null(location.City);
+        Assert.Equal("10100", location.PostalCode);
+    }
+    [Fact]
+    public async Task Whitespace_only_postal_code_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?postalCode=%20%20%20");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Repeated_postal_code_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?postalCode=10100&postalCode=10115");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_composes_city_and_postal_code_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?city=%20Berlin%20&postalCode=%2010100%20");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedPropertyLocationSearchCriteria location =
+            Assert.IsType<PublishedPropertyLocationSearchCriteria>(
+                property.Location);
+
+        Assert.Equal("Berlin", location.City);
+        Assert.Equal("10100", location.PostalCode);
+    }
+    [Fact]
+    public async Task Public_collection_parses_price_range_and_currency_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?priceMin=100000.50&priceMax=250000.75&priceCurrency=SYP");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedListingPriceSearchCriteria price =
+            Assert.IsType<PublishedListingPriceSearchCriteria>(
+                criteria.Price);
+
+        Assert.Equal(100000.50m, price.Minimum);
+        Assert.Equal(250000.75m, price.Maximum);
+        Assert.Equal("SYP", price.Currency?.Code);
+    }
+    [Fact]
+    public async Task Malformed_price_minimum_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?priceMin=not-a-number&priceCurrency=SYP");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Malformed_price_currency_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?priceMin=100000&priceCurrency=INVALID");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Price_bound_without_currency_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?priceMin=100000");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Price_currency_without_bound_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?priceCurrency=SYP");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Inverted_price_range_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?priceMin=250000&priceMax=100000&priceCurrency=SYP");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidSearchCriteria.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_parses_living_area_range_and_unit_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?livingAreaMin=75.5&livingAreaMax=150.25&livingAreaUnit=SquareMeter");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedAreaSearchCriteria livingArea =
+            Assert.IsType<PublishedAreaSearchCriteria>(
+                property.LivingArea);
+
+        Assert.Equal(75.5m, livingArea.Minimum);
+        Assert.Equal(150.25m, livingArea.Maximum);
+        Assert.Equal(
+            Diyarak.Platform.Domain.Primitives.AreaUnit.SquareMeter,
+            livingArea.Unit);
+    }
+    [Fact]
+    public async Task Living_area_bound_without_unit_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?livingAreaMin=75.5");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Living_area_unit_without_bound_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?livingAreaUnit=SquareMeter");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Inverted_living_area_range_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?livingAreaMin=150&livingAreaMax=75&livingAreaUnit=SquareMeter");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Negative_living_area_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?livingAreaMin=-1&livingAreaUnit=SquareMeter");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Invalid_living_area_unit_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?livingAreaMin=75&livingAreaUnit=Unknown");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_parses_total_rooms_range_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?totalRoomsMin=2.5&totalRoomsMax=4");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedPropertyRoomSearchCriteria rooms =
+            Assert.IsType<PublishedPropertyRoomSearchCriteria>(
+                property.Rooms);
+
+        PublishedDecimalRange totalRooms =
+            Assert.IsType<PublishedDecimalRange>(
+                rooms.TotalRooms);
+
+        Assert.Equal(2.5m, totalRooms.Minimum);
+        Assert.Equal(4m, totalRooms.Maximum);
+    }
+    [Fact]
+    public async Task Public_collection_parses_bedroom_count_range_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?bedroomCountMin=2&bedroomCountMax=4");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedPropertyRoomSearchCriteria rooms =
+            Assert.IsType<PublishedPropertyRoomSearchCriteria>(
+                property.Rooms);
+
+        PublishedIntegerRange bedroomCount =
+            Assert.IsType<PublishedIntegerRange>(
+                rooms.BedroomCount);
+
+        Assert.Equal(2, bedroomCount.Minimum);
+        Assert.Equal(4, bedroomCount.Maximum);
+    }
+    [Fact]
+    public async Task Public_collection_parses_bathroom_count_range_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?bathroomCountMin=1&bathroomCountMax=3");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedPropertyRoomSearchCriteria rooms =
+            Assert.IsType<PublishedPropertyRoomSearchCriteria>(
+                property.Rooms);
+
+        PublishedIntegerRange bathroomCount =
+            Assert.IsType<PublishedIntegerRange>(
+                rooms.BathroomCount);
+
+        Assert.Equal(1, bathroomCount.Minimum);
+        Assert.Equal(3, bathroomCount.Maximum);
+    }
+    [Fact]
+    public async Task Public_collection_parses_parking_space_count_range_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?parkingSpaceCountMin=1&parkingSpaceCountMax=3");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedIntegerRange parkingSpaceCount =
+            Assert.IsType<PublishedIntegerRange>(
+                property.ParkingSpaceCount);
+
+        Assert.Equal(1, parkingSpaceCount.Minimum);
+        Assert.Equal(3, parkingSpaceCount.Maximum);
+    }
+    [Fact]
+    public async Task Public_collection_parses_construction_year_range_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?constructionYearMin=1990&constructionYearMax=2020");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        PublishedIntegerRange constructionYear =
+            Assert.IsType<PublishedIntegerRange>(
+                property.ConstructionYear);
+
+        Assert.Equal(1990, constructionYear.Minimum);
+        Assert.Equal(2020, constructionYear.Maximum);
+    }
+    [Fact]
+    public async Task Public_collection_parses_furnishing_quality_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?furnishingQuality=Luxury");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        Diyarak.Market.Property.FurnishingQuality furnishingQuality =
+            Assert.Single(
+                Assert.IsAssignableFrom<IReadOnlyCollection<Diyarak.Market.Property.FurnishingQuality>>(
+                    property.FurnishingQualities));
+
+        Assert.Equal(
+            Diyarak.Market.Property.FurnishingQuality.Luxury,
+            furnishingQuality);
+    }
+    [Fact]
+    public async Task Public_collection_parses_repeated_furnishing_quality_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?furnishingQuality=Simple&furnishingQuality=Luxury");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        IReadOnlyCollection<Diyarak.Market.Property.FurnishingQuality> furnishingQualities =
+            Assert.IsAssignableFrom<IReadOnlyCollection<Diyarak.Market.Property.FurnishingQuality>>(
+                property.FurnishingQualities);
+
+        Assert.Equal(
+            [
+                Diyarak.Market.Property.FurnishingQuality.Simple,
+                Diyarak.Market.Property.FurnishingQuality.Luxury,
+            ],
+            furnishingQualities);
+    }
+    [Fact]
+    public async Task Invalid_furnishing_quality_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?furnishingQuality=Unknown");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_parses_property_feature_filter()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?propertyFeature=Elevator");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        Diyarak.Market.Property.PropertyFeature requiredFeature =
+            Assert.Single(
+                Assert.IsAssignableFrom<IReadOnlyCollection<Diyarak.Market.Property.PropertyFeature>>(
+                    property.RequiredFeatures));
+
+        Assert.Equal(
+            Diyarak.Market.Property.PropertyFeature.Elevator,
+            requiredFeature);
+    }
+    [Fact]
+    public async Task Public_collection_parses_repeated_property_feature_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?propertyFeature=Elevator&propertyFeature=BalconyOrTerrace");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, factory.Query.CallCount);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(
+                criteria.Property);
+
+        IReadOnlyCollection<Diyarak.Market.Property.PropertyFeature> requiredFeatures =
+            Assert.IsAssignableFrom<IReadOnlyCollection<Diyarak.Market.Property.PropertyFeature>>(
+                property.RequiredFeatures);
+
+        Assert.Equal(
+            [
+                Diyarak.Market.Property.PropertyFeature.Elevator,
+                Diyarak.Market.Property.PropertyFeature.BalconyOrTerrace,
+            ],
+            requiredFeatures);
+    }
+    [Fact]
+    public async Task Invalid_property_feature_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?propertyFeature=Unknown");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+    [Fact]
+    public async Task Public_collection_page_links_preserve_search_filters()
+    {
+        using var factory = new TestApiFactory(
+            [
+                CreatePublishedListing("First filtered listing"),
+                CreatePublishedListing("Second filtered listing"),
+            ],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await SendGetAsync(
+            client,
+            query: "?city=Damascus&propertyFeature=Elevator&page=1&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "</api/market/public/listings?city=Damascus&propertyFeature=Elevator&page=2&pageSize=1>; rel=\"next\"",
+            GetLinkHeader(response));
+    }
+    [Fact]
     public async Task Collection_uses_requested_page_and_returns_public_projection_only()
     {
         MarketListing first = CreatePublishedListing("First listing");
@@ -783,14 +1720,18 @@ public sealed class ListPublishedListingsEndpointTests
 
         public int LastTake { get; private set; }
 
+        public PublishedListingSearchCriteria? LastCriteria { get; private set; }
+
         public Task<IReadOnlyList<MarketListing>> ListPageAsync(
             int skip,
             int take,
+            PublishedListingSearchCriteria? criteria = null,
             CancellationToken cancellationToken = default)
         {
             CallCount++;
             LastSkip = skip;
             LastTake = take;
+            LastCriteria = criteria;
             return Task.FromResult(listings);
         }
     }

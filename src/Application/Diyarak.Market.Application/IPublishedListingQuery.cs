@@ -7,5 +7,6 @@ public interface IPublishedListingQuery
     public Task<IReadOnlyList<MarketListing>> ListPageAsync(
         int skip,
         int take,
+        PublishedListingSearchCriteria? criteria = null,
         CancellationToken cancellationToken = default);
 }

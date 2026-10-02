@@ -52,11 +52,20 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 ListPublishedListingsErrors.InvalidPagination,
                 httpContext);
         }
+        if (!TryParseSearchCriteria(
+                httpContext.Request.Query,
+                out PublishedListingSearchCriteria? criteria))
+        {
+            return ToProblemDetails(
+                ListPublishedListingsErrors.InvalidSearchCriteria,
+                httpContext);
+        }
 
         Result<PublishedListingPage> result =
             await useCase.ExecuteAsync(
                 page,
                 pageSize,
+                criteria,
                 cancellationToken);
 
         if (!result.IsSuccess)
@@ -68,7 +77,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             PublicListingsPath,
             result.Value.Page,
             result.Value.PageSize,
-            result.Value.HasMore);
+            result.Value.HasMore,
+            httpContext.Request.Query);
 
         string entityTag =
             PublicMarketListingEntityTag.Create(result.Value);
@@ -142,6 +152,600 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         return Results.Ok(ToResponse(result.Value));
     }
 
+    private static bool TryParseSearchCriteria(
+        IQueryCollection query,
+        out PublishedListingSearchCriteria? criteria)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        IReadOnlyCollection<Diyarak.Market.Listing.TransactionIntent>?
+            transactionIntents = null;
+
+        if (query.TryGetValue(
+                "transactionIntent",
+                out var transactionIntentValues))
+        {
+            if (transactionIntentValues.Count == 0)
+                return Fail(out criteria);
+
+            var parsedTransactionIntents =
+                new List<Diyarak.Market.Listing.TransactionIntent>(
+                    transactionIntentValues.Count);
+
+            foreach (string? value in transactionIntentValues)
+            {
+                if (string.IsNullOrWhiteSpace(value) ||
+                    !Enum.TryParse(
+                        value,
+                        ignoreCase: true,
+                        out Diyarak.Market.Listing.TransactionIntent intent) ||
+                    !Enum.IsDefined(intent))
+                {
+                    return Fail(out criteria);
+                }
+
+                parsedTransactionIntents.Add(intent);
+            }
+
+            transactionIntents = parsedTransactionIntents;
+        }
+
+        IReadOnlyCollection<Diyarak.Market.Property.PropertyCategory>?
+            categories = null;
+
+        if (query.TryGetValue(
+                "propertyCategory",
+                out var propertyCategoryValues))
+        {
+            if (propertyCategoryValues.Count == 0)
+                return Fail(out criteria);
+
+            var parsedCategories =
+                new List<Diyarak.Market.Property.PropertyCategory>(
+                    propertyCategoryValues.Count);
+
+            foreach (string? value in propertyCategoryValues)
+            {
+                if (string.IsNullOrWhiteSpace(value) ||
+                    !Enum.TryParse(
+                        value,
+                        ignoreCase: true,
+                        out Diyarak.Market.Property.PropertyCategory category) ||
+                    !Enum.IsDefined(category))
+                {
+                    return Fail(out criteria);
+                }
+
+                parsedCategories.Add(category);
+            }
+
+            categories = parsedCategories;
+        }
+
+        IReadOnlyCollection<Diyarak.Market.Property.CommercialPropertySubtype>?
+            commercialSubtypes = null;
+
+        if (query.TryGetValue(
+                "commercialSubtype",
+                out var commercialSubtypeValues))
+        {
+            if (commercialSubtypeValues.Count == 0)
+                return Fail(out criteria);
+
+            var parsedCommercialSubtypes =
+                new List<Diyarak.Market.Property.CommercialPropertySubtype>(
+                    commercialSubtypeValues.Count);
+
+            foreach (string? value in commercialSubtypeValues)
+            {
+                if (string.IsNullOrWhiteSpace(value) ||
+                    !Enum.TryParse(
+                        value,
+                        ignoreCase: true,
+                        out Diyarak.Market.Property.CommercialPropertySubtype subtype) ||
+                    !Enum.IsDefined(subtype))
+                {
+                    return Fail(out criteria);
+                }
+
+                parsedCommercialSubtypes.Add(subtype);
+            }
+
+            commercialSubtypes = parsedCommercialSubtypes;
+        }
+
+        string? city = null;
+
+        if (query.TryGetValue("city", out var cityValues))
+        {
+            if (cityValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(cityValues[0]))
+            {
+                return Fail(out criteria);
+            }
+
+            city = cityValues[0]!.Trim();
+        }
+
+        string? postalCode = null;
+
+        if (query.TryGetValue("postalCode", out var postalCodeValues))
+        {
+            if (postalCodeValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(postalCodeValues[0]))
+            {
+                return Fail(out criteria);
+            }
+
+            postalCode = postalCodeValues[0]!.Trim();
+        }
+
+        decimal? priceMinimum = null;
+        decimal? priceMaximum = null;
+        Diyarak.Platform.Domain.Primitives.Currency? priceCurrency = null;
+        bool hasPriceFilter = false;
+
+        if (query.TryGetValue("priceMin", out var priceMinimumValues))
+        {
+            if (priceMinimumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(priceMinimumValues[0]) ||
+                !decimal.TryParse(
+                    priceMinimumValues[0],
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal parsedPriceMinimum))
+            {
+                return Fail(out criteria);
+            }
+
+            priceMinimum = parsedPriceMinimum;
+            hasPriceFilter = true;
+        }
+
+        if (query.TryGetValue("priceMax", out var priceMaximumValues))
+        {
+            if (priceMaximumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(priceMaximumValues[0]) ||
+                !decimal.TryParse(
+                    priceMaximumValues[0],
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal parsedPriceMaximum))
+            {
+                return Fail(out criteria);
+            }
+
+            priceMaximum = parsedPriceMaximum;
+            hasPriceFilter = true;
+        }
+
+        if (query.TryGetValue("priceCurrency", out var priceCurrencyValues))
+        {
+            if (priceCurrencyValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(priceCurrencyValues[0]) ||
+                !Diyarak.Platform.Domain.Primitives.Currency.TryCreate(
+                    priceCurrencyValues[0],
+                    out priceCurrency))
+            {
+                return Fail(out criteria);
+            }
+
+            hasPriceFilter = true;
+        }
+
+        PublishedListingPriceSearchCriteria? price =
+            hasPriceFilter
+                ? new PublishedListingPriceSearchCriteria(
+                    Minimum: priceMinimum,
+                    Maximum: priceMaximum,
+                    Currency: priceCurrency)
+                : null;
+
+        decimal? livingAreaMinimum = null;
+        decimal? livingAreaMaximum = null;
+        Diyarak.Platform.Domain.Primitives.AreaUnit? livingAreaUnit = null;
+        bool hasLivingAreaFilter = false;
+
+        if (query.TryGetValue("livingAreaMin", out var livingAreaMinimumValues))
+        {
+            if (livingAreaMinimumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(livingAreaMinimumValues[0]) ||
+                !decimal.TryParse(
+                    livingAreaMinimumValues[0],
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal parsedLivingAreaMinimum))
+            {
+                return Fail(out criteria);
+            }
+
+            livingAreaMinimum = parsedLivingAreaMinimum;
+            hasLivingAreaFilter = true;
+        }
+
+        if (query.TryGetValue("livingAreaMax", out var livingAreaMaximumValues))
+        {
+            if (livingAreaMaximumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(livingAreaMaximumValues[0]) ||
+                !decimal.TryParse(
+                    livingAreaMaximumValues[0],
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal parsedLivingAreaMaximum))
+            {
+                return Fail(out criteria);
+            }
+
+            livingAreaMaximum = parsedLivingAreaMaximum;
+            hasLivingAreaFilter = true;
+        }
+
+        if (query.TryGetValue("livingAreaUnit", out var livingAreaUnitValues))
+        {
+            if (livingAreaUnitValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(livingAreaUnitValues[0]) ||
+                !Enum.TryParse(
+                    livingAreaUnitValues[0],
+                    ignoreCase: true,
+                    out Diyarak.Platform.Domain.Primitives.AreaUnit parsedLivingAreaUnit) ||
+                !Enum.IsDefined(parsedLivingAreaUnit))
+            {
+                return Fail(out criteria);
+            }
+
+            livingAreaUnit = parsedLivingAreaUnit;
+            hasLivingAreaFilter = true;
+        }
+
+        PublishedAreaSearchCriteria? livingArea =
+            hasLivingAreaFilter
+                ? new PublishedAreaSearchCriteria(
+                    Minimum: livingAreaMinimum,
+                    Maximum: livingAreaMaximum,
+                    Unit: livingAreaUnit)
+                : null;
+
+        decimal? totalRoomsMinimum = null;
+        decimal? totalRoomsMaximum = null;
+        bool hasTotalRoomsFilter = false;
+
+        if (query.TryGetValue("totalRoomsMin", out var totalRoomsMinimumValues))
+        {
+            if (totalRoomsMinimumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(totalRoomsMinimumValues[0]) ||
+                !decimal.TryParse(
+                    totalRoomsMinimumValues[0],
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal parsedTotalRoomsMinimum))
+            {
+                return Fail(out criteria);
+            }
+
+            totalRoomsMinimum = parsedTotalRoomsMinimum;
+            hasTotalRoomsFilter = true;
+        }
+
+        if (query.TryGetValue("totalRoomsMax", out var totalRoomsMaximumValues))
+        {
+            if (totalRoomsMaximumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(totalRoomsMaximumValues[0]) ||
+                !decimal.TryParse(
+                    totalRoomsMaximumValues[0],
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal parsedTotalRoomsMaximum))
+            {
+                return Fail(out criteria);
+            }
+
+            totalRoomsMaximum = parsedTotalRoomsMaximum;
+            hasTotalRoomsFilter = true;
+        }
+
+        PublishedDecimalRange? totalRooms =
+            hasTotalRoomsFilter
+                ? new PublishedDecimalRange(
+                    Minimum: totalRoomsMinimum,
+                    Maximum: totalRoomsMaximum)
+                : null;
+
+        PublishedPropertyRoomSearchCriteria? rooms =
+            totalRooms is null
+                ? null
+                : new PublishedPropertyRoomSearchCriteria(
+                    TotalRooms: totalRooms);
+        int? bedroomCountMinimum = null;
+        int? bedroomCountMaximum = null;
+        bool hasBedroomCountFilter = false;
+
+        if (query.TryGetValue("bedroomCountMin", out var bedroomCountMinimumValues))
+        {
+            if (bedroomCountMinimumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(bedroomCountMinimumValues[0]) ||
+                !int.TryParse(
+                    bedroomCountMinimumValues[0],
+                    out int parsedBedroomCountMinimum))
+            {
+                return Fail(out criteria);
+            }
+
+            bedroomCountMinimum = parsedBedroomCountMinimum;
+            hasBedroomCountFilter = true;
+        }
+
+        if (query.TryGetValue("bedroomCountMax", out var bedroomCountMaximumValues))
+        {
+            if (bedroomCountMaximumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(bedroomCountMaximumValues[0]) ||
+                !int.TryParse(
+                    bedroomCountMaximumValues[0],
+                    out int parsedBedroomCountMaximum))
+            {
+                return Fail(out criteria);
+            }
+
+            bedroomCountMaximum = parsedBedroomCountMaximum;
+            hasBedroomCountFilter = true;
+        }
+
+        if (hasBedroomCountFilter)
+        {
+            rooms = rooms is null
+                ? new PublishedPropertyRoomSearchCriteria(
+                    BedroomCount: new PublishedIntegerRange(
+                        Minimum: bedroomCountMinimum,
+                        Maximum: bedroomCountMaximum))
+                : rooms with
+                {
+                    BedroomCount = new PublishedIntegerRange(
+                        Minimum: bedroomCountMinimum,
+                        Maximum: bedroomCountMaximum)
+                };
+        }
+        int? bathroomCountMinimum = null;
+        int? bathroomCountMaximum = null;
+        bool hasBathroomCountFilter = false;
+
+        if (query.TryGetValue("bathroomCountMin", out var bathroomCountMinimumValues))
+        {
+            if (bathroomCountMinimumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(bathroomCountMinimumValues[0]) ||
+                !int.TryParse(
+                    bathroomCountMinimumValues[0],
+                    out int parsedBathroomCountMinimum))
+            {
+                return Fail(out criteria);
+            }
+
+            bathroomCountMinimum = parsedBathroomCountMinimum;
+            hasBathroomCountFilter = true;
+        }
+
+        if (query.TryGetValue("bathroomCountMax", out var bathroomCountMaximumValues))
+        {
+            if (bathroomCountMaximumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(bathroomCountMaximumValues[0]) ||
+                !int.TryParse(
+                    bathroomCountMaximumValues[0],
+                    out int parsedBathroomCountMaximum))
+            {
+                return Fail(out criteria);
+            }
+
+            bathroomCountMaximum = parsedBathroomCountMaximum;
+            hasBathroomCountFilter = true;
+        }
+
+        if (hasBathroomCountFilter)
+        {
+            rooms = rooms is null
+                ? new PublishedPropertyRoomSearchCriteria(
+                    BathroomCount: new PublishedIntegerRange(
+                        Minimum: bathroomCountMinimum,
+                        Maximum: bathroomCountMaximum))
+                : rooms with
+                {
+                    BathroomCount = new PublishedIntegerRange(
+                        Minimum: bathroomCountMinimum,
+                        Maximum: bathroomCountMaximum)
+                };
+        }
+        int? parkingSpaceCountMinimum = null;
+        int? parkingSpaceCountMaximum = null;
+        bool hasParkingSpaceCountFilter = false;
+
+        if (query.TryGetValue("parkingSpaceCountMin", out var parkingSpaceCountMinimumValues))
+        {
+            if (parkingSpaceCountMinimumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(parkingSpaceCountMinimumValues[0]) ||
+                !int.TryParse(
+                    parkingSpaceCountMinimumValues[0],
+                    System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out int parsedParkingSpaceCountMinimum))
+            {
+                return Fail(out criteria);
+            }
+
+            parkingSpaceCountMinimum = parsedParkingSpaceCountMinimum;
+            hasParkingSpaceCountFilter = true;
+        }
+
+        if (query.TryGetValue("parkingSpaceCountMax", out var parkingSpaceCountMaximumValues))
+        {
+            if (parkingSpaceCountMaximumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(parkingSpaceCountMaximumValues[0]) ||
+                !int.TryParse(
+                    parkingSpaceCountMaximumValues[0],
+                    System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out int parsedParkingSpaceCountMaximum))
+            {
+                return Fail(out criteria);
+            }
+
+            parkingSpaceCountMaximum = parsedParkingSpaceCountMaximum;
+            hasParkingSpaceCountFilter = true;
+        }
+
+        PublishedIntegerRange? parkingSpaceCount =
+            hasParkingSpaceCountFilter
+                ? new PublishedIntegerRange(
+                    Minimum: parkingSpaceCountMinimum,
+                    Maximum: parkingSpaceCountMaximum)
+                : null;
+        int? constructionYearMinimum = null;
+        int? constructionYearMaximum = null;
+        bool hasConstructionYearFilter = false;
+
+        if (query.TryGetValue("constructionYearMin", out var constructionYearMinimumValues))
+        {
+            if (constructionYearMinimumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(constructionYearMinimumValues[0]) ||
+                !int.TryParse(
+                    constructionYearMinimumValues[0],
+                    System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out int parsedConstructionYearMinimum))
+            {
+                return Fail(out criteria);
+            }
+
+            constructionYearMinimum = parsedConstructionYearMinimum;
+            hasConstructionYearFilter = true;
+        }
+
+        if (query.TryGetValue("constructionYearMax", out var constructionYearMaximumValues))
+        {
+            if (constructionYearMaximumValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(constructionYearMaximumValues[0]) ||
+                !int.TryParse(
+                    constructionYearMaximumValues[0],
+                    System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out int parsedConstructionYearMaximum))
+            {
+                return Fail(out criteria);
+            }
+
+            constructionYearMaximum = parsedConstructionYearMaximum;
+            hasConstructionYearFilter = true;
+        }
+
+        PublishedIntegerRange? constructionYear =
+            hasConstructionYearFilter
+                ? new PublishedIntegerRange(
+                    Minimum: constructionYearMinimum,
+                    Maximum: constructionYearMaximum)
+                : null;
+        IReadOnlyCollection<Diyarak.Market.Property.FurnishingQuality>? furnishingQualities = null;
+
+        if (query.TryGetValue("furnishingQuality", out var furnishingQualityValues))
+        {
+            List<Diyarak.Market.Property.FurnishingQuality> parsedFurnishingQualities = [];
+
+            foreach (string? value in furnishingQualityValues)
+            {
+                if (string.IsNullOrWhiteSpace(value) ||
+                    !Enum.TryParse(
+                        value,
+                        ignoreCase: true,
+                        out Diyarak.Market.Property.FurnishingQuality parsedFurnishingQuality) ||
+                    !Enum.IsDefined(parsedFurnishingQuality))
+                {
+                    return Fail(out criteria);
+                }
+
+                parsedFurnishingQualities.Add(parsedFurnishingQuality);
+            }
+
+            furnishingQualities = parsedFurnishingQualities;
+        }
+        IReadOnlyCollection<Diyarak.Market.Property.PropertyFeature>? requiredFeatures = null;
+
+        if (query.TryGetValue("propertyFeature", out var propertyFeatureValues))
+        {
+            List<Diyarak.Market.Property.PropertyFeature> parsedRequiredFeatures = [];
+
+            foreach (string? value in propertyFeatureValues)
+            {
+                if (string.IsNullOrWhiteSpace(value) ||
+                    !Enum.TryParse(
+                        value,
+                        ignoreCase: true,
+                        out Diyarak.Market.Property.PropertyFeature parsedPropertyFeature) ||
+                    !Enum.IsDefined(parsedPropertyFeature))
+                {
+                    return Fail(out criteria);
+                }
+
+                parsedRequiredFeatures.Add(parsedPropertyFeature);
+            }
+
+            requiredFeatures = parsedRequiredFeatures;
+        }
+        if (transactionIntents is null &&
+            categories is null &&
+            commercialSubtypes is null &&
+            city is null &&
+            postalCode is null &&
+            price is null &&
+            livingArea is null &&
+            rooms is null &&
+            furnishingQualities is null &&
+            requiredFeatures is null &&
+            constructionYear is null &&
+            parkingSpaceCount is null)
+        {
+            criteria = null;
+            return true;
+        }
+
+        PublishedPropertyLocationSearchCriteria? location =
+            city is null &&
+            postalCode is null
+                ? null
+                : new PublishedPropertyLocationSearchCriteria(
+                    City: city,
+                    PostalCode: postalCode);
+
+        PublishedPropertySearchCriteria? property =
+            categories is null &&
+            commercialSubtypes is null &&
+            location is null &&
+            livingArea is null &&
+            rooms is null &&
+            furnishingQualities is null &&
+            requiredFeatures is null &&
+            constructionYear is null &&
+            parkingSpaceCount is null
+                ? null
+                : new PublishedPropertySearchCriteria(
+                    Categories: categories,
+                    CommercialSubtypes: commercialSubtypes,
+                    Location: location,
+                    LivingArea: livingArea,
+                    Rooms: rooms,
+                    FurnishingQualities: furnishingQualities,
+                    RequiredFeatures: requiredFeatures,
+                    ConstructionYear: constructionYear,
+                    ParkingSpaceCount: parkingSpaceCount);
+
+        criteria =
+            new PublishedListingSearchCriteria(
+                TransactionIntents: transactionIntents,
+                Price: price,
+                Property: property);
+
+        return true;
+    }
+    private static bool Fail(
+        out PublishedListingSearchCriteria? criteria)
+    {
+        criteria = null;
+        return false;
+    }
     private static bool TryParsePagination(
         IQueryCollection query,
         out int page,

@@ -212,11 +212,35 @@ The first Search MVP increment does not introduce a new public Property projecti
 - A future public Property or subject projection requires separate explicit requirements before the public Listing representation is expanded.
 - Future presentation work must separately define address visibility and must not infer permission to expose street or house-number data from their persistence in the Property record.
 
+## HTTP query-parameter contract
+
+The public Search MVP uses the existing `GET /api/market/public/listings` and `HEAD /api/market/public/listings` collection endpoints.
+
+The confirmed query parameters are:
+
+- Pagination uses scalar `page` and `pageSize`.
+- Listing transaction intent uses repeatable `transactionIntent`.
+- Property category uses repeatable `propertyCategory`.
+- Commercial subtype uses repeatable `commercialSubtype`.
+- Location uses scalar `city` and `postalCode`.
+- Listing price uses scalar `priceMin`, `priceMax`, and `priceCurrency`.
+- Living area uses scalar `livingAreaMin`, `livingAreaMax`, and `livingAreaUnit`.
+- Total rooms uses scalar `totalRoomsMin` and `totalRoomsMax`.
+- Bedroom count uses scalar `bedroomCountMin` and `bedroomCountMax`.
+- Bathroom count uses scalar `bathroomCountMin` and `bathroomCountMax`.
+- Furnishing quality uses repeatable `furnishingQuality`.
+- Property features use repeatable `propertyFeature` and map to `RequiredFeatures`.
+- Construction year uses scalar `constructionYearMin` and `constructionYearMax`.
+- Parking-space count uses scalar `parkingSpaceCountMin` and `parkingSpaceCountMax`.
+
+Repeatable enum filters are represented by repeating the same query parameter name. Scalar filters must appear at most once. Malformed scalar values, repeated scalar parameters, unknown enum values, undefined enum values, invalid ranges, and invalid dependent-parameter combinations produce `400 Bad Request`.
+
+Public collection `prev` and `next` `Link` metadata preserves active defined search filters from the incoming request, excludes the incoming `page` and `pageSize`, and appends the target `page` and `pageSize` for the generated navigation link.
+
 ## Remaining open requirements
 
 The following behavior remains undefined and must not be invented:
 
-- The exact HTTP query-parameter names and transport encoding for the confirmed Search MVP filters, including representation of multi-value filters.
 - Whether the existing Application published-Listing query contract is evolved for filtering or a separate search/read-side contract is introduced.
 - Whether future public search results expose a dedicated Property or subject projection.
 - Public presentation of Property address data, including city, postal code, street, house number, and coordinates.
