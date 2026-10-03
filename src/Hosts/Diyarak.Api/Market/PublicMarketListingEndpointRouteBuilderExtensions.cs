@@ -354,35 +354,27 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         int? bedroomCountMaximum = null;
         bool hasBedroomCountFilter = false;
 
-        if (query.TryGetValue("bedroomCountMin", out var bedroomCountMinimumValues))
+        if (!TryParseOptionalInteger(
+                query,
+                "bedroomCountMin",
+                out bedroomCountMinimum,
+                out bool hasBedroomCountMinimum))
         {
-            if (bedroomCountMinimumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(bedroomCountMinimumValues[0]) ||
-                !int.TryParse(
-                    bedroomCountMinimumValues[0],
-                    out int parsedBedroomCountMinimum))
-            {
-                return Fail(out criteria);
-            }
-
-            bedroomCountMinimum = parsedBedroomCountMinimum;
-            hasBedroomCountFilter = true;
+            return Fail(out criteria);
         }
 
-        if (query.TryGetValue("bedroomCountMax", out var bedroomCountMaximumValues))
-        {
-            if (bedroomCountMaximumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(bedroomCountMaximumValues[0]) ||
-                !int.TryParse(
-                    bedroomCountMaximumValues[0],
-                    out int parsedBedroomCountMaximum))
-            {
-                return Fail(out criteria);
-            }
+        hasBedroomCountFilter = hasBedroomCountFilter || hasBedroomCountMinimum;
 
-            bedroomCountMaximum = parsedBedroomCountMaximum;
-            hasBedroomCountFilter = true;
+        if (!TryParseOptionalInteger(
+                query,
+                "bedroomCountMax",
+                out bedroomCountMaximum,
+                out bool hasBedroomCountMaximum))
+        {
+            return Fail(out criteria);
         }
+
+        hasBedroomCountFilter = hasBedroomCountFilter || hasBedroomCountMaximum;
 
         if (hasBedroomCountFilter)
         {
@@ -402,35 +394,27 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         int? bathroomCountMaximum = null;
         bool hasBathroomCountFilter = false;
 
-        if (query.TryGetValue("bathroomCountMin", out var bathroomCountMinimumValues))
+        if (!TryParseOptionalInteger(
+                query,
+                "bathroomCountMin",
+                out bathroomCountMinimum,
+                out bool hasBathroomCountMinimum))
         {
-            if (bathroomCountMinimumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(bathroomCountMinimumValues[0]) ||
-                !int.TryParse(
-                    bathroomCountMinimumValues[0],
-                    out int parsedBathroomCountMinimum))
-            {
-                return Fail(out criteria);
-            }
-
-            bathroomCountMinimum = parsedBathroomCountMinimum;
-            hasBathroomCountFilter = true;
+            return Fail(out criteria);
         }
 
-        if (query.TryGetValue("bathroomCountMax", out var bathroomCountMaximumValues))
-        {
-            if (bathroomCountMaximumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(bathroomCountMaximumValues[0]) ||
-                !int.TryParse(
-                    bathroomCountMaximumValues[0],
-                    out int parsedBathroomCountMaximum))
-            {
-                return Fail(out criteria);
-            }
+        hasBathroomCountFilter = hasBathroomCountFilter || hasBathroomCountMinimum;
 
-            bathroomCountMaximum = parsedBathroomCountMaximum;
-            hasBathroomCountFilter = true;
+        if (!TryParseOptionalInteger(
+                query,
+                "bathroomCountMax",
+                out bathroomCountMaximum,
+                out bool hasBathroomCountMaximum))
+        {
+            return Fail(out criteria);
         }
+
+        hasBathroomCountFilter = hasBathroomCountFilter || hasBathroomCountMaximum;
 
         if (hasBathroomCountFilter)
         {
@@ -450,39 +434,27 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         int? parkingSpaceCountMaximum = null;
         bool hasParkingSpaceCountFilter = false;
 
-        if (query.TryGetValue("parkingSpaceCountMin", out var parkingSpaceCountMinimumValues))
+        if (!TryParseOptionalInteger(
+                query,
+                "parkingSpaceCountMin",
+                out parkingSpaceCountMinimum,
+                out bool hasParkingSpaceCountMinimum))
         {
-            if (parkingSpaceCountMinimumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(parkingSpaceCountMinimumValues[0]) ||
-                !int.TryParse(
-                    parkingSpaceCountMinimumValues[0],
-                    System.Globalization.NumberStyles.Integer,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out int parsedParkingSpaceCountMinimum))
-            {
-                return Fail(out criteria);
-            }
-
-            parkingSpaceCountMinimum = parsedParkingSpaceCountMinimum;
-            hasParkingSpaceCountFilter = true;
+            return Fail(out criteria);
         }
 
-        if (query.TryGetValue("parkingSpaceCountMax", out var parkingSpaceCountMaximumValues))
-        {
-            if (parkingSpaceCountMaximumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(parkingSpaceCountMaximumValues[0]) ||
-                !int.TryParse(
-                    parkingSpaceCountMaximumValues[0],
-                    System.Globalization.NumberStyles.Integer,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out int parsedParkingSpaceCountMaximum))
-            {
-                return Fail(out criteria);
-            }
+        hasParkingSpaceCountFilter = hasParkingSpaceCountFilter || hasParkingSpaceCountMinimum;
 
-            parkingSpaceCountMaximum = parsedParkingSpaceCountMaximum;
-            hasParkingSpaceCountFilter = true;
+        if (!TryParseOptionalInteger(
+                query,
+                "parkingSpaceCountMax",
+                out parkingSpaceCountMaximum,
+                out bool hasParkingSpaceCountMaximum))
+        {
+            return Fail(out criteria);
         }
+
+        hasParkingSpaceCountFilter = hasParkingSpaceCountFilter || hasParkingSpaceCountMaximum;
 
         PublishedIntegerRange? parkingSpaceCount =
             hasParkingSpaceCountFilter
@@ -494,39 +466,27 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         int? constructionYearMaximum = null;
         bool hasConstructionYearFilter = false;
 
-        if (query.TryGetValue("constructionYearMin", out var constructionYearMinimumValues))
+        if (!TryParseOptionalInteger(
+                query,
+                "constructionYearMin",
+                out constructionYearMinimum,
+                out bool hasConstructionYearMinimum))
         {
-            if (constructionYearMinimumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(constructionYearMinimumValues[0]) ||
-                !int.TryParse(
-                    constructionYearMinimumValues[0],
-                    System.Globalization.NumberStyles.Integer,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out int parsedConstructionYearMinimum))
-            {
-                return Fail(out criteria);
-            }
-
-            constructionYearMinimum = parsedConstructionYearMinimum;
-            hasConstructionYearFilter = true;
+            return Fail(out criteria);
         }
 
-        if (query.TryGetValue("constructionYearMax", out var constructionYearMaximumValues))
-        {
-            if (constructionYearMaximumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(constructionYearMaximumValues[0]) ||
-                !int.TryParse(
-                    constructionYearMaximumValues[0],
-                    System.Globalization.NumberStyles.Integer,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out int parsedConstructionYearMaximum))
-            {
-                return Fail(out criteria);
-            }
+        hasConstructionYearFilter = hasConstructionYearFilter || hasConstructionYearMinimum;
 
-            constructionYearMaximum = parsedConstructionYearMaximum;
-            hasConstructionYearFilter = true;
+        if (!TryParseOptionalInteger(
+                query,
+                "constructionYearMax",
+                out constructionYearMaximum,
+                out bool hasConstructionYearMaximum))
+        {
+            return Fail(out criteria);
         }
+
+        hasConstructionYearFilter = hasConstructionYearFilter || hasConstructionYearMaximum;
 
         PublishedIntegerRange? constructionYear =
             hasConstructionYearFilter
@@ -603,6 +563,36 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 Price: price,
                 Property: property);
 
+        return true;
+    }
+    private static bool TryParseOptionalInteger(
+        IQueryCollection query,
+        string name,
+        out int? value,
+        out bool isPresent)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        value = null;
+        isPresent = false;
+
+        if (!query.TryGetValue(name, out var rawValues))
+            return true;
+
+        if (rawValues.Count != 1 ||
+            string.IsNullOrWhiteSpace(rawValues[0]) ||
+            !int.TryParse(
+                rawValues[0],
+                System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out int parsedValue))
+        {
+            return false;
+        }
+
+        value = parsedValue;
+        isPresent = true;
         return true;
     }
     private static bool TryParseOptionalDecimal(
