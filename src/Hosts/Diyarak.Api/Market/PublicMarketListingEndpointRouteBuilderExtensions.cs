@@ -216,39 +216,27 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         Diyarak.Platform.Domain.Primitives.Currency? priceCurrency = null;
         bool hasPriceFilter = false;
 
-        if (query.TryGetValue("priceMin", out var priceMinimumValues))
+        if (!TryParseOptionalDecimal(
+                query,
+                "priceMin",
+                out priceMinimum,
+                out bool hasPriceMinimum))
         {
-            if (priceMinimumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(priceMinimumValues[0]) ||
-                !decimal.TryParse(
-                    priceMinimumValues[0],
-                    System.Globalization.NumberStyles.Number,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out decimal parsedPriceMinimum))
-            {
-                return Fail(out criteria);
-            }
-
-            priceMinimum = parsedPriceMinimum;
-            hasPriceFilter = true;
+            return Fail(out criteria);
         }
 
-        if (query.TryGetValue("priceMax", out var priceMaximumValues))
-        {
-            if (priceMaximumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(priceMaximumValues[0]) ||
-                !decimal.TryParse(
-                    priceMaximumValues[0],
-                    System.Globalization.NumberStyles.Number,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out decimal parsedPriceMaximum))
-            {
-                return Fail(out criteria);
-            }
+        hasPriceFilter = hasPriceFilter || hasPriceMinimum;
 
-            priceMaximum = parsedPriceMaximum;
-            hasPriceFilter = true;
+        if (!TryParseOptionalDecimal(
+                query,
+                "priceMax",
+                out priceMaximum,
+                out bool hasPriceMaximum))
+        {
+            return Fail(out criteria);
         }
+
+        hasPriceFilter = hasPriceFilter || hasPriceMaximum;
 
         if (query.TryGetValue("priceCurrency", out var priceCurrencyValues))
         {
@@ -277,39 +265,27 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         Diyarak.Platform.Domain.Primitives.AreaUnit? livingAreaUnit = null;
         bool hasLivingAreaFilter = false;
 
-        if (query.TryGetValue("livingAreaMin", out var livingAreaMinimumValues))
+        if (!TryParseOptionalDecimal(
+                query,
+                "livingAreaMin",
+                out livingAreaMinimum,
+                out bool hasLivingAreaMinimum))
         {
-            if (livingAreaMinimumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(livingAreaMinimumValues[0]) ||
-                !decimal.TryParse(
-                    livingAreaMinimumValues[0],
-                    System.Globalization.NumberStyles.Number,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out decimal parsedLivingAreaMinimum))
-            {
-                return Fail(out criteria);
-            }
-
-            livingAreaMinimum = parsedLivingAreaMinimum;
-            hasLivingAreaFilter = true;
+            return Fail(out criteria);
         }
 
-        if (query.TryGetValue("livingAreaMax", out var livingAreaMaximumValues))
-        {
-            if (livingAreaMaximumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(livingAreaMaximumValues[0]) ||
-                !decimal.TryParse(
-                    livingAreaMaximumValues[0],
-                    System.Globalization.NumberStyles.Number,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out decimal parsedLivingAreaMaximum))
-            {
-                return Fail(out criteria);
-            }
+        hasLivingAreaFilter = hasLivingAreaFilter || hasLivingAreaMinimum;
 
-            livingAreaMaximum = parsedLivingAreaMaximum;
-            hasLivingAreaFilter = true;
+        if (!TryParseOptionalDecimal(
+                query,
+                "livingAreaMax",
+                out livingAreaMaximum,
+                out bool hasLivingAreaMaximum))
+        {
+            return Fail(out criteria);
         }
+
+        hasLivingAreaFilter = hasLivingAreaFilter || hasLivingAreaMaximum;
 
         if (query.TryGetValue("livingAreaUnit", out var livingAreaUnitValues))
         {
@@ -340,39 +316,27 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         decimal? totalRoomsMaximum = null;
         bool hasTotalRoomsFilter = false;
 
-        if (query.TryGetValue("totalRoomsMin", out var totalRoomsMinimumValues))
+        if (!TryParseOptionalDecimal(
+                query,
+                "totalRoomsMin",
+                out totalRoomsMinimum,
+                out bool hasTotalRoomsMinimum))
         {
-            if (totalRoomsMinimumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(totalRoomsMinimumValues[0]) ||
-                !decimal.TryParse(
-                    totalRoomsMinimumValues[0],
-                    System.Globalization.NumberStyles.Number,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out decimal parsedTotalRoomsMinimum))
-            {
-                return Fail(out criteria);
-            }
-
-            totalRoomsMinimum = parsedTotalRoomsMinimum;
-            hasTotalRoomsFilter = true;
+            return Fail(out criteria);
         }
 
-        if (query.TryGetValue("totalRoomsMax", out var totalRoomsMaximumValues))
-        {
-            if (totalRoomsMaximumValues.Count != 1 ||
-                string.IsNullOrWhiteSpace(totalRoomsMaximumValues[0]) ||
-                !decimal.TryParse(
-                    totalRoomsMaximumValues[0],
-                    System.Globalization.NumberStyles.Number,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out decimal parsedTotalRoomsMaximum))
-            {
-                return Fail(out criteria);
-            }
+        hasTotalRoomsFilter = hasTotalRoomsFilter || hasTotalRoomsMinimum;
 
-            totalRoomsMaximum = parsedTotalRoomsMaximum;
-            hasTotalRoomsFilter = true;
+        if (!TryParseOptionalDecimal(
+                query,
+                "totalRoomsMax",
+                out totalRoomsMaximum,
+                out bool hasTotalRoomsMaximum))
+        {
+            return Fail(out criteria);
         }
+
+        hasTotalRoomsFilter = hasTotalRoomsFilter || hasTotalRoomsMaximum;
 
         PublishedDecimalRange? totalRooms =
             hasTotalRoomsFilter
@@ -639,6 +603,36 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 Price: price,
                 Property: property);
 
+        return true;
+    }
+    private static bool TryParseOptionalDecimal(
+        IQueryCollection query,
+        string name,
+        out decimal? value,
+        out bool isPresent)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        value = null;
+        isPresent = false;
+
+        if (!query.TryGetValue(name, out var rawValues))
+            return true;
+
+        if (rawValues.Count != 1 ||
+            string.IsNullOrWhiteSpace(rawValues[0]) ||
+            !decimal.TryParse(
+                rawValues[0],
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out decimal parsedValue))
+        {
+            return false;
+        }
+
+        value = parsedValue;
+        isPresent = true;
         return true;
     }
     private static bool TryParseRepeatedEnumValues<TEnum>(
