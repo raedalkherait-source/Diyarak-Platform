@@ -158,100 +158,31 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        IReadOnlyCollection<Diyarak.Market.Listing.TransactionIntent>?
-            transactionIntents = null;
-
-        if (query.TryGetValue(
+        if (!TryParseRepeatedEnumValues(
+                query,
                 "transactionIntent",
-                out var transactionIntentValues))
+                out IReadOnlyCollection<Diyarak.Market.Listing.TransactionIntent>?
+                    transactionIntents))
         {
-            if (transactionIntentValues.Count == 0)
-                return Fail(out criteria);
-
-            var parsedTransactionIntents =
-                new List<Diyarak.Market.Listing.TransactionIntent>(
-                    transactionIntentValues.Count);
-
-            foreach (string? value in transactionIntentValues)
-            {
-                if (string.IsNullOrWhiteSpace(value) ||
-                    !Enum.TryParse(
-                        value,
-                        ignoreCase: true,
-                        out Diyarak.Market.Listing.TransactionIntent intent) ||
-                    !Enum.IsDefined(intent))
-                {
-                    return Fail(out criteria);
-                }
-
-                parsedTransactionIntents.Add(intent);
-            }
-
-            transactionIntents = parsedTransactionIntents;
+            return Fail(out criteria);
         }
 
-        IReadOnlyCollection<Diyarak.Market.Property.PropertyCategory>?
-            categories = null;
-
-        if (query.TryGetValue(
+        if (!TryParseRepeatedEnumValues(
+                query,
                 "propertyCategory",
-                out var propertyCategoryValues))
+                out IReadOnlyCollection<Diyarak.Market.Property.PropertyCategory>?
+                    categories))
         {
-            if (propertyCategoryValues.Count == 0)
-                return Fail(out criteria);
-
-            var parsedCategories =
-                new List<Diyarak.Market.Property.PropertyCategory>(
-                    propertyCategoryValues.Count);
-
-            foreach (string? value in propertyCategoryValues)
-            {
-                if (string.IsNullOrWhiteSpace(value) ||
-                    !Enum.TryParse(
-                        value,
-                        ignoreCase: true,
-                        out Diyarak.Market.Property.PropertyCategory category) ||
-                    !Enum.IsDefined(category))
-                {
-                    return Fail(out criteria);
-                }
-
-                parsedCategories.Add(category);
-            }
-
-            categories = parsedCategories;
+            return Fail(out criteria);
         }
 
-        IReadOnlyCollection<Diyarak.Market.Property.CommercialPropertySubtype>?
-            commercialSubtypes = null;
-
-        if (query.TryGetValue(
+        if (!TryParseRepeatedEnumValues(
+                query,
                 "commercialSubtype",
-                out var commercialSubtypeValues))
+                out IReadOnlyCollection<Diyarak.Market.Property.CommercialPropertySubtype>?
+                    commercialSubtypes))
         {
-            if (commercialSubtypeValues.Count == 0)
-                return Fail(out criteria);
-
-            var parsedCommercialSubtypes =
-                new List<Diyarak.Market.Property.CommercialPropertySubtype>(
-                    commercialSubtypeValues.Count);
-
-            foreach (string? value in commercialSubtypeValues)
-            {
-                if (string.IsNullOrWhiteSpace(value) ||
-                    !Enum.TryParse(
-                        value,
-                        ignoreCase: true,
-                        out Diyarak.Market.Property.CommercialPropertySubtype subtype) ||
-                    !Enum.IsDefined(subtype))
-                {
-                    return Fail(out criteria);
-                }
-
-                parsedCommercialSubtypes.Add(subtype);
-            }
-
-            commercialSubtypes = parsedCommercialSubtypes;
+            return Fail(out criteria);
         }
 
         string? city = null;
@@ -639,51 +570,21 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                     Minimum: constructionYearMinimum,
                     Maximum: constructionYearMaximum)
                 : null;
-        IReadOnlyCollection<Diyarak.Market.Property.FurnishingQuality>? furnishingQualities = null;
-
-        if (query.TryGetValue("furnishingQuality", out var furnishingQualityValues))
+        if (!TryParseRepeatedEnumValues(
+                query,
+                "furnishingQuality",
+                out IReadOnlyCollection<Diyarak.Market.Property.FurnishingQuality>?
+                    furnishingQualities))
         {
-            List<Diyarak.Market.Property.FurnishingQuality> parsedFurnishingQualities = [];
-
-            foreach (string? value in furnishingQualityValues)
-            {
-                if (string.IsNullOrWhiteSpace(value) ||
-                    !Enum.TryParse(
-                        value,
-                        ignoreCase: true,
-                        out Diyarak.Market.Property.FurnishingQuality parsedFurnishingQuality) ||
-                    !Enum.IsDefined(parsedFurnishingQuality))
-                {
-                    return Fail(out criteria);
-                }
-
-                parsedFurnishingQualities.Add(parsedFurnishingQuality);
-            }
-
-            furnishingQualities = parsedFurnishingQualities;
+            return Fail(out criteria);
         }
-        IReadOnlyCollection<Diyarak.Market.Property.PropertyFeature>? requiredFeatures = null;
-
-        if (query.TryGetValue("propertyFeature", out var propertyFeatureValues))
+        if (!TryParseRepeatedEnumValues(
+                query,
+                "propertyFeature",
+                out IReadOnlyCollection<Diyarak.Market.Property.PropertyFeature>?
+                    requiredFeatures))
         {
-            List<Diyarak.Market.Property.PropertyFeature> parsedRequiredFeatures = [];
-
-            foreach (string? value in propertyFeatureValues)
-            {
-                if (string.IsNullOrWhiteSpace(value) ||
-                    !Enum.TryParse(
-                        value,
-                        ignoreCase: true,
-                        out Diyarak.Market.Property.PropertyFeature parsedPropertyFeature) ||
-                    !Enum.IsDefined(parsedPropertyFeature))
-                {
-                    return Fail(out criteria);
-                }
-
-                parsedRequiredFeatures.Add(parsedPropertyFeature);
-            }
-
-            requiredFeatures = parsedRequiredFeatures;
+            return Fail(out criteria);
         }
         if (transactionIntents is null &&
             categories is null &&
@@ -738,6 +639,43 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 Price: price,
                 Property: property);
 
+        return true;
+    }
+    private static bool TryParseRepeatedEnumValues<TEnum>(
+        IQueryCollection query,
+        string name,
+        out IReadOnlyCollection<TEnum>? values)
+        where TEnum : struct, Enum
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        values = null;
+
+        if (!query.TryGetValue(name, out var rawValues))
+            return true;
+
+        if (rawValues.Count == 0)
+            return false;
+
+        var parsedValues = new List<TEnum>(rawValues.Count);
+
+        foreach (string? value in rawValues)
+        {
+            if (string.IsNullOrWhiteSpace(value) ||
+                !Enum.TryParse(
+                    value,
+                    ignoreCase: true,
+                    out TEnum parsedValue) ||
+                !Enum.IsDefined(parsedValue))
+            {
+                return false;
+            }
+
+            parsedValues.Add(parsedValue);
+        }
+
+        values = parsedValues;
         return true;
     }
     private static bool Fail(
