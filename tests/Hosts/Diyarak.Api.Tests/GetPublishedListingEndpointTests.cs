@@ -152,10 +152,32 @@ public sealed class GetPublishedListingEndpointTests
             "2026-10-01",
             root.GetProperty("availableFromDate").GetString());
 
+        JsonElement property = root.GetProperty("property");
+        Assert.Equal("Apartment", property.GetProperty("category").GetString());
+        Assert.Equal(
+            "Berlin",
+            property.GetProperty("location").GetProperty("city").GetString());
+        Assert.Equal(
+            "10115",
+            property.GetProperty("location").GetProperty("postalCode").GetString());
+
         Assert.False(root.TryGetProperty("version", out _));
         Assert.False(root.TryGetProperty("status", out _));
         Assert.False(root.TryGetProperty("subject", out _));
         Assert.False(root.TryGetProperty("publisherUserId", out _));
+
+        Assert.False(property.TryGetProperty("id", out _));
+        Assert.False(property.TryGetProperty("propertyId", out _));
+        Assert.False(property.TryGetProperty("ownerUserId", out _));
+        Assert.False(property.TryGetProperty("version", out _));
+        Assert.False(property.TryGetProperty("subjectId", out _));
+        Assert.False(property.TryGetProperty("subjectType", out _));
+        Assert.False(property.TryGetProperty("street", out _));
+        Assert.False(property.TryGetProperty("houseNumber", out _));
+        Assert.False(property.TryGetProperty("coordinates", out _));
+        Assert.False(property.GetProperty("location").TryGetProperty("street", out _));
+        Assert.False(property.GetProperty("location").TryGetProperty("houseNumber", out _));
+        Assert.False(property.GetProperty("location").TryGetProperty("coordinates", out _));
     }
 
     [Fact]
