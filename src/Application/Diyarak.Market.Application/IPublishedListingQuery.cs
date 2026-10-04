@@ -1,10 +1,8 @@
-using MarketListing = Diyarak.Market.Listing.Listing;
-
 namespace Diyarak.Market.Application;
 
 public interface IPublishedListingQuery
 {
-    public Task<IReadOnlyList<MarketListing>> ListPageAsync(
+    public Task<IReadOnlyList<PublishedListingProjection>> ListPageAsync(
         int skip,
         int take,
         PublishedListingSearchCriteria? criteria = null,

@@ -25,7 +25,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             Guid.Parse("00000000-0000-0000-0000-000000000002"),
             published: false);
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(published),
             MarketListingRecordMapper.FromDomain(draft));
         await context.SaveChangesAsync();
@@ -33,8 +33,8 @@ public sealed class PostgreSqlPublishedListingQueryTests
 
         var query = new PostgreSqlPublishedListingQuery(context);
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(skip: 0, take: 10);
+        MarketListing[] result =
+            (await query.ListPageAsync(skip: 0, take: 10)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(published.Id, item.Id);
@@ -55,7 +55,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             published: true,
             transactionIntent: TransactionIntent.Sell);
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(rent),
             MarketListingRecordMapper.FromDomain(sell));
         await context.SaveChangesAsync();
@@ -68,11 +68,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                 TransactionIntent.Sell,
             ]);
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(sell.Id, item.Id);
@@ -100,7 +100,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             price: ListingPrice.Known(
                 new Money(250_000m, Currency.Eur)));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(belowRange),
             MarketListingRecordMapper.FromDomain(wrongCurrency),
             MarketListingRecordMapper.FromDomain(matching));
@@ -114,11 +114,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                 Maximum: 300_000m,
                 Currency: Currency.Eur));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(matching.Id, item.Id);
@@ -138,7 +138,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             price: ListingPrice.Known(
                 new Money(200_000m, Currency.Eur)));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(onRequest),
             MarketListingRecordMapper.FromDomain(exactBoundary));
         await context.SaveChangesAsync();
@@ -151,11 +151,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                 Maximum: 200_000m,
                 Currency: Currency.Eur));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(exactBoundary.Id, item.Id);
@@ -202,7 +202,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(apartment),
             MarketPropertyRecordMapper.FromDomain(house));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(apartmentListing),
             MarketListingRecordMapper.FromDomain(houseListing));
 
@@ -217,11 +217,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     PropertyCategory.House,
                 ]));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(houseListing.Id, item.Id);
@@ -271,7 +271,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(retail),
             MarketPropertyRecordMapper.FromDomain(office));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(retailListing),
             MarketListingRecordMapper.FromDomain(officeListing));
 
@@ -286,11 +286,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     CommercialPropertySubtype.OfficeOrPractice,
                 ]));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(officeListing.Id, item.Id);
@@ -340,11 +340,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     CommercialPropertySubtype.OfficeOrPractice,
                 ]));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 10,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         Assert.Empty(result);
     }
@@ -470,7 +470,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(squareMeterProperty),
             MarketPropertyRecordMapper.FromDomain(squareFootProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(squareMeterListing),
             MarketListingRecordMapper.FromDomain(squareFootListing));
 
@@ -485,11 +485,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     Maximum: 94m,
                     Unit: AreaUnit.SquareMeter)));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(squareFootListing.Id, item.Id);
@@ -539,7 +539,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(missingAreaProperty),
             MarketPropertyRecordMapper.FromDomain(boundaryProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(missingAreaListing),
             MarketListingRecordMapper.FromDomain(boundaryListing));
 
@@ -554,11 +554,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     Maximum: 100m,
                     Unit: AreaUnit.SquareMeter)));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 10,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(boundaryListing.Id, item.Id);
@@ -640,7 +640,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(smallerProperty),
             MarketPropertyRecordMapper.FromDomain(matchingProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(smallerListing),
             MarketListingRecordMapper.FromDomain(matchingListing));
 
@@ -655,11 +655,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                         Minimum: 3.5m,
                         Maximum: 3.5m))));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(matchingListing.Id, item.Id);
@@ -707,7 +707,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(missingProperty),
             MarketPropertyRecordMapper.FromDomain(boundaryProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(missingListing),
             MarketListingRecordMapper.FromDomain(boundaryListing));
 
@@ -722,11 +722,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                         Minimum: 3.5m,
                         Maximum: 3.5m))));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 10,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(boundaryListing.Id, item.Id);
@@ -775,7 +775,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(smallerProperty),
             MarketPropertyRecordMapper.FromDomain(matchingProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(smallerListing),
             MarketListingRecordMapper.FromDomain(matchingListing));
 
@@ -790,11 +790,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                         Minimum: 3,
                         Maximum: 3))));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(matchingListing.Id, item.Id);
@@ -843,7 +843,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(smallerProperty),
             MarketPropertyRecordMapper.FromDomain(matchingProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(smallerListing),
             MarketListingRecordMapper.FromDomain(matchingListing));
 
@@ -858,11 +858,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                         Minimum: 2,
                         Maximum: 2))));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(matchingListing.Id, item.Id);
@@ -911,7 +911,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(simpleProperty),
             MarketPropertyRecordMapper.FromDomain(luxuryProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(simpleListing),
             MarketListingRecordMapper.FromDomain(luxuryListing));
 
@@ -926,11 +926,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     FurnishingQuality.Luxury,
                 ]));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(luxuryListing.Id, item.Id);
@@ -984,7 +984,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(normalProperty),
             MarketPropertyRecordMapper.FromDomain(luxuryProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(missingListing),
             MarketListingRecordMapper.FromDomain(normalListing),
             MarketListingRecordMapper.FromDomain(luxuryListing));
@@ -1001,11 +1001,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     FurnishingQuality.Luxury,
                 ]));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 10,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         Assert.Equal(
             [normalListing.Id, luxuryListing.Id],
@@ -1062,7 +1062,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(partialProperty),
             MarketPropertyRecordMapper.FromDomain(matchingProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(partialListing),
             MarketListingRecordMapper.FromDomain(matchingListing));
 
@@ -1078,11 +1078,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     PropertyFeature.Elevator,
                 ]));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(matchingListing.Id, item.Id);
@@ -1162,11 +1162,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     PropertyFeature.Elevator,
                 ]));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 10,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(listing.Id, item.Id);
@@ -1215,7 +1215,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(olderProperty),
             MarketPropertyRecordMapper.FromDomain(matchingProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(olderListing),
             MarketListingRecordMapper.FromDomain(matchingListing));
 
@@ -1229,11 +1229,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     Minimum: 2020,
                     Maximum: 2020)));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(matchingListing.Id, item.Id);
@@ -1281,7 +1281,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(missingProperty),
             MarketPropertyRecordMapper.FromDomain(boundaryProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(missingListing),
             MarketListingRecordMapper.FromDomain(boundaryListing));
 
@@ -1295,11 +1295,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     Minimum: 2020,
                     Maximum: 2020)));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 10,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(boundaryListing.Id, item.Id);
@@ -1348,7 +1348,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(smallerProperty),
             MarketPropertyRecordMapper.FromDomain(matchingProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(smallerListing),
             MarketListingRecordMapper.FromDomain(matchingListing));
 
@@ -1362,11 +1362,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     Minimum: 3,
                     Maximum: 3)));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 1,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(matchingListing.Id, item.Id);
@@ -1414,7 +1414,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             MarketPropertyRecordMapper.FromDomain(missingProperty),
             MarketPropertyRecordMapper.FromDomain(boundaryProperty));
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(missingListing),
             MarketListingRecordMapper.FromDomain(boundaryListing));
 
@@ -1428,11 +1428,11 @@ public sealed class PostgreSqlPublishedListingQueryTests
                     Minimum: 3,
                     Maximum: 3)));
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(
+        MarketListing[] result =
+            (await query.ListPageAsync(
                 skip: 0,
                 take: 10,
-                criteria: criteria);
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
 
         MarketListing item = Assert.Single(result);
         Assert.Equal(boundaryListing.Id, item.Id);
@@ -1452,7 +1452,7 @@ public sealed class PostgreSqlPublishedListingQueryTests
             Guid.Parse("00000000-0000-0000-0000-000000000003"),
             published: true);
 
-        context.MarketListings.AddRange(
+        AddListingsWithDefaultProperties(context,
             MarketListingRecordMapper.FromDomain(third),
             MarketListingRecordMapper.FromDomain(first),
             MarketListingRecordMapper.FromDomain(second));
@@ -1461,14 +1461,44 @@ public sealed class PostgreSqlPublishedListingQueryTests
 
         var query = new PostgreSqlPublishedListingQuery(context);
 
-        IReadOnlyList<MarketListing> result =
-            await query.ListPageAsync(skip: 1, take: 2);
+        MarketListing[] result =
+            (await query.ListPageAsync(skip: 1, take: 2)).Select(static projection => projection.Listing).ToArray();
 
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Length);
         Assert.Equal(second.Id, result[0].Id);
         Assert.Equal(third.Id, result[1].Id);
     }
 
+    private static void AddListingsWithDefaultProperties(
+        PlatformDbContext context,
+        params MarketListingRecord[] listings)
+    {
+        context.MarketListings.AddRange(listings);
+
+        foreach (MarketListingRecord listing in listings)
+        {
+            if (listing.SubjectType != MarketListingSubjectTypes.Property)
+                continue;
+
+            bool propertyAlreadyTracked =
+                context.MarketProperties.Local.Any(
+                    property => property.Id == listing.SubjectId);
+
+            if (propertyAlreadyTracked)
+                continue;
+
+            context.MarketProperties.Add(
+                MarketPropertyRecordMapper.FromDomain(
+                    new MarketProperty(
+                        listing.SubjectId,
+                        PropertyCategory.Apartment,
+                        new PropertyAddress(
+                            "Test Street",
+                            "1",
+                            "10115",
+                            "Berlin"))));
+        }
+    }
     private static PlatformDbContext CreateContext()
     {
         var options =

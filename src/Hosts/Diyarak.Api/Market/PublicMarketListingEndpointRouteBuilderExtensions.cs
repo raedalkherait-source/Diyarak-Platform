@@ -1,6 +1,7 @@
 using Diyarak.Market.Application;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
+using MarketProperty = Diyarak.Market.Property.Property;
 
 namespace Diyarak.Api.Market;
 
@@ -124,7 +125,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 httpContext);
         }
 
-        Result<MarketListing> result = await useCase.ExecuteAsync(
+        Result<PublishedListingProjection> result = await useCase.ExecuteAsync(
             parsedListingId,
             cancellationToken);
 
@@ -698,9 +699,12 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
     }
 
     private static PublicMarketListingResponse ToResponse(
-        MarketListing listing)
+        PublishedListingProjection projection)
     {
-        ArgumentNullException.ThrowIfNull(listing);
+        ArgumentNullException.ThrowIfNull(projection);
+
+        MarketListing listing = projection.Listing;
+        MarketProperty property = projection.Property;
 
         if (listing.Context is not { } context ||
             listing.Headline is not { } headline ||
@@ -720,7 +724,38 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 price.IsOnRequest,
                 price.Amount?.Amount,
                 price.Amount?.Currency.Code),
+            ToPropertyResponse(property),
             listing.AvailableFromDate?.Value);
+    }
+
+    private static PublicMarketListingPropertyResponse ToPropertyResponse(
+        MarketProperty property)
+    {
+        ArgumentNullException.ThrowIfNull(property);
+
+        PublicMarketListingAreaResponse? livingArea =
+            property.LivingArea is { } area
+                ? new PublicMarketListingAreaResponse(
+                    area.Value,
+                    area.Unit.ToString())
+                : null;
+
+        return new PublicMarketListingPropertyResponse(
+            property.Category.ToString(),
+            new PublicMarketListingPropertyLocationResponse(
+                property.Address.City,
+                property.Address.PostalCode),
+            livingArea,
+            property.TotalRooms,
+            property.BedroomCount,
+            property.BathroomCount,
+            property.FurnishingQuality?.ToString(),
+            property.Features
+                .Select(static feature => feature.ToString())
+                .ToArray(),
+            property.ConstructionYear,
+            property.CommercialSubtype?.ToString(),
+            property.ParkingSpaceCount);
     }
 
     private static IResult ToProblemDetails(
@@ -797,6 +832,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         PublicMarketListingContextResponse Context,
         string Headline,
         PublicMarketListingPriceResponse Price,
+        PublicMarketListingPropertyResponse Property,
         DateOnly? AvailableFromDate);
 
     internal sealed record PublicMarketListingContextResponse(
@@ -807,4 +843,25 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         bool IsOnRequest,
         decimal? Amount,
         string? Currency);
+
+    internal sealed record PublicMarketListingPropertyResponse(
+        string Category,
+        PublicMarketListingPropertyLocationResponse Location,
+        PublicMarketListingAreaResponse? LivingArea,
+        decimal? TotalRooms,
+        int? BedroomCount,
+        int? BathroomCount,
+        string? FurnishingQuality,
+        string[] Features,
+        int? ConstructionYear,
+        string? CommercialSubtype,
+        int? ParkingSpaceCount);
+
+    internal sealed record PublicMarketListingPropertyLocationResponse(
+        string City,
+        string PostalCode);
+
+    internal sealed record PublicMarketListingAreaResponse(
+        decimal Value,
+        string Unit);
 }

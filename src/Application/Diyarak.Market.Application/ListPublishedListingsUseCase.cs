@@ -1,6 +1,5 @@
 using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
-using MarketListing = Diyarak.Market.Listing.Listing;
 
 namespace Diyarak.Market.Application;
 
@@ -159,7 +158,7 @@ public sealed class ListPublishedListingsUseCase
                 ListPublishedListingsErrors.InvalidPagination);
         }
 
-        IReadOnlyList<MarketListing> candidates =
+        IReadOnlyList<PublishedListingProjection> candidates =
             await _publishedListingQuery.ListPageAsync(
                 (int)skip,
                 pageSize + 1,
@@ -167,15 +166,15 @@ public sealed class ListPublishedListingsUseCase
                 cancellationToken);
 
         if (candidates.Any(
-                listing =>
-                    listing.Status != ListingStatus.Published))
+                candidate =>
+                    candidate.Listing.Status != ListingStatus.Published))
         {
             throw new InvalidOperationException(
                 "The published Listing query returned a non-published Listing.");
         }
 
         bool hasMore = candidates.Count > pageSize;
-        MarketListing[] items = candidates
+        PublishedListingProjection[] items = candidates
             .Take(pageSize)
             .ToArray();
 

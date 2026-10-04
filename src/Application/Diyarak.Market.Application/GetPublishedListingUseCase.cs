@@ -1,27 +1,30 @@
 using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
+using MarketProperty = Diyarak.Market.Property.Property;
 
 namespace Diyarak.Market.Application;
 
 public sealed class GetPublishedListingUseCase
 {
     private readonly IMarketListingRepository _listingRepository;
+    private readonly IMarketPropertyRepository _propertyRepository;
 
     public GetPublishedListingUseCase(
-        IMarketListingRepository listingRepository)
+        IMarketListingRepository listingRepository,
+        IMarketPropertyRepository propertyRepository)
     {
-        ArgumentNullException.ThrowIfNull(listingRepository);
         _listingRepository = listingRepository;
+        _propertyRepository = propertyRepository;
     }
 
-    public async Task<Result<MarketListing>> ExecuteAsync(
+    public async Task<Result<PublishedListingProjection>> ExecuteAsync(
         Guid listingId,
         CancellationToken cancellationToken = default)
     {
         if (listingId == Guid.Empty)
         {
-            return Result.Failure<MarketListing>(
+            return Result.Failure<PublishedListingProjection>(
                 GetListingErrors.InvalidIdentifier);
         }
 
@@ -30,10 +33,31 @@ public sealed class GetPublishedListingUseCase
                 listingId,
                 cancellationToken);
 
-        return listing is null ||
-            listing.Status != ListingStatus.Published
-            ? Result.Failure<MarketListing>(
-                GetListingErrors.NotFound)
-            : Result.Success(listing);
+        if (listing is null || listing.Status != ListingStatus.Published)
+        {
+            return Result.Failure<PublishedListingProjection>(
+                GetListingErrors.NotFound);
+        }
+
+        if (listing.SubjectReference.SubjectType !=
+            MarketListingSubjectTypes.Property)
+        {
+            return Result.Failure<PublishedListingProjection>(
+                GetListingErrors.NotFound);
+        }
+
+        MarketProperty? property =
+            await _propertyRepository.FindByIdAsync(
+                listing.SubjectReference.SubjectId,
+                cancellationToken);
+
+        if (property is null)
+        {
+            return Result.Failure<PublishedListingProjection>(
+                GetListingErrors.NotFound);
+        }
+
+        return Result.Success(
+            new PublishedListingProjection(listing, property));
     }
 }

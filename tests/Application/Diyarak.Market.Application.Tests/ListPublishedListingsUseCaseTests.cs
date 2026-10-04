@@ -839,8 +839,8 @@ public sealed class ListPublishedListingsUseCaseTests
         Assert.Equal(2, query.LastSkip);
         Assert.Equal(3, query.LastTake);
         Assert.Equal(2, result.Value.Items.Count);
-        Assert.Same(first, result.Value.Items[0]);
-        Assert.Same(second, result.Value.Items[1]);
+        Assert.Same(first, result.Value.Items[0].Listing);
+        Assert.Same(second, result.Value.Items[1].Listing);
         Assert.Equal(2, result.Value.Page);
         Assert.Equal(2, result.Value.PageSize);
         Assert.True(result.Value.HasMore);
@@ -936,7 +936,7 @@ public sealed class ListPublishedListingsUseCaseTests
 
         public PublishedListingSearchCriteria? LastCriteria { get; private set; }
 
-        public Task<IReadOnlyList<MarketListing>> ListPageAsync(
+        public Task<IReadOnlyList<PublishedListingProjection>> ListPageAsync(
             int skip,
             int take,
             PublishedListingSearchCriteria? criteria = null,
@@ -946,7 +946,27 @@ public sealed class ListPublishedListingsUseCaseTests
             LastSkip = skip;
             LastTake = take;
             LastCriteria = criteria;
-            return Task.FromResult(result);
+
+            var projections = new PublishedListingProjection[result.Count];
+
+            for (int i = 0; i < result.Count; i++)
+            {
+                MarketListing listing = result[i];
+
+                projections[i] = new PublishedListingProjection(
+                    listing,
+                    new Diyarak.Market.Property.Property(
+                        listing.SubjectReference.SubjectId,
+                        Diyarak.Market.Property.PropertyCategory.Apartment,
+                        new Diyarak.Market.Property.PropertyAddress(
+                            "Test Street",
+                            "1",
+                            "10115",
+                            "Berlin")));
+            }
+
+            return Task.FromResult<IReadOnlyList<PublishedListingProjection>>(
+                projections);
         }
     }
 }

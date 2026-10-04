@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Diyarak.Market.Application;
 using Diyarak.Market.Listing;
+using Diyarak.Market.Property;
 using Diyarak.Platform.Listing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 using MarketListing = Diyarak.Market.Listing.Listing;
+using MarketProperty = Diyarak.Market.Property.Property;
 
 namespace Diyarak.Api.Tests;
 
@@ -567,6 +569,16 @@ public sealed class GetPublishedListingEndpointTests
         return listing;
     }
 
+    private static MarketProperty CreateProperty(Guid propertyId) =>
+        new(
+            propertyId,
+            PropertyCategory.Apartment,
+            new PropertyAddress(
+                "Test Street",
+                "1",
+                "10115",
+                "Berlin"));
+
     private sealed class TestApiFactory : WebApplicationFactory<Program>
     {
         private readonly bool _authenticationEnabled;
@@ -578,9 +590,16 @@ public sealed class GetPublishedListingEndpointTests
             _authenticationEnabled = authenticationEnabled;
             ListingRepository =
                 new StubMarketListingRepository(listing);
+            PropertyRepository =
+                new StubMarketPropertyRepository(
+                    listing is null
+                        ? null
+                        : CreateProperty(listing.SubjectReference.SubjectId));
         }
 
         public StubMarketListingRepository ListingRepository { get; }
+
+        public StubMarketPropertyRepository PropertyRepository { get; }
 
         protected override IHost CreateHost(IHostBuilder builder)
         {
@@ -617,6 +636,10 @@ public sealed class GetPublishedListingEndpointTests
                     services.RemoveAll<IMarketListingRepository>();
                     services.AddSingleton<IMarketListingRepository>(
                         ListingRepository);
+
+                    services.RemoveAll<IMarketPropertyRepository>();
+                    services.AddSingleton<IMarketPropertyRepository>(
+                        PropertyRepository);
                 });
         }
     }
@@ -652,6 +675,50 @@ public sealed class GetPublishedListingEndpointTests
 
         public Task<bool> TrySaveAsync(
             MarketListing listing,
+            long expectedVersion,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
+    }
+
+    public sealed class StubMarketPropertyRepository(
+        MarketProperty? property)
+        : IMarketPropertyRepository
+    {
+        public int FindCallCount { get; private set; }
+
+        public Task<MarketProperty?> FindByIdAsync(
+            Guid propertyId,
+            CancellationToken cancellationToken = default)
+        {
+            FindCallCount++;
+
+            return Task.FromResult(
+                property?.Id == propertyId
+                    ? property
+                    : null);
+        }
+
+        public Task<IReadOnlyList<MarketProperty>> FindByOwnerUserIdAsync(
+            Guid ownerUserId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<MarketProperty>>(
+                Array.Empty<MarketProperty>());
+
+        public Task<IReadOnlyList<MarketProperty>> FindPageByOwnerUserIdAsync(
+            Guid ownerUserId,
+            int skip,
+            int take,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<MarketProperty>>(
+                Array.Empty<MarketProperty>());
+
+        public Task AddAsync(
+            MarketProperty property,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<bool> TrySaveAsync(
+            MarketProperty property,
             long expectedVersion,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(true);

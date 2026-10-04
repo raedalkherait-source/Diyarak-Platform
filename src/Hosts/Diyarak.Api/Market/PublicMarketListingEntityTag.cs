@@ -2,25 +2,24 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Diyarak.Market.Application;
-using MarketListing = Diyarak.Market.Listing.Listing;
 
 namespace Diyarak.Api.Market;
 
 internal static class PublicMarketListingEntityTag
 {
     private const string DetailRepresentationRevision =
-        "public-market-listing-v1";
+        "public-market-listing-v2";
 
     private const string CollectionRepresentationRevision =
-        "public-market-listing-page-v1";
+        "public-market-listing-page-v2";
 
-    internal static string Create(MarketListing listing)
+    internal static string Create(PublishedListingProjection projection)
     {
-        ArgumentNullException.ThrowIfNull(listing);
+        ArgumentNullException.ThrowIfNull(projection);
 
         string material = string.Create(
             CultureInfo.InvariantCulture,
-            $"{DetailRepresentationRevision}:{listing.Id:N}:{listing.Version}");
+            $"{DetailRepresentationRevision}:{projection.Listing.Id:N}:{projection.Listing.Version}:{projection.Property.Version}");
 
         return CreateOpaqueTag(material);
     }
@@ -38,13 +37,16 @@ internal static class PublicMarketListingEntityTag
         material.Append(':');
         material.Append(page.HasMore ? '1' : '0');
 
-        foreach (MarketListing listing in page.Items)
+        foreach (PublishedListingProjection projection in page.Items)
         {
             material.Append(':');
-            material.Append(listing.Id.ToString("N"));
+            material.Append(projection.Listing.Id.ToString("N"));
             material.Append(':');
             material.Append(
-                listing.Version.ToString(CultureInfo.InvariantCulture));
+                projection.Listing.Version.ToString(CultureInfo.InvariantCulture));
+            material.Append(':');
+            material.Append(
+                projection.Property.Version.ToString(CultureInfo.InvariantCulture));
         }
 
         return CreateOpaqueTag(material.ToString());

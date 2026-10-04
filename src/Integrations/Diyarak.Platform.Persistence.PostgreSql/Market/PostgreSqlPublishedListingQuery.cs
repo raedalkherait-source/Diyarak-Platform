@@ -2,7 +2,6 @@ using Diyarak.Market.Application;
 using Diyarak.Market.Listing;
 using Diyarak.Platform.Domain.Primitives;
 using Microsoft.EntityFrameworkCore;
-using MarketListing = Diyarak.Market.Listing.Listing;
 
 namespace Diyarak.Platform.Persistence.PostgreSql.Market;
 
@@ -18,7 +17,7 @@ internal sealed class PostgreSqlPublishedListingQuery
         _context = context;
     }
 
-    public async Task<IReadOnlyList<MarketListing>> ListPageAsync(
+    public async Task<IReadOnlyList<PublishedListingProjection>> ListPageAsync(
         int skip,
         int take,
         PublishedListingSearchCriteria? criteria = null,
@@ -29,15 +28,31 @@ internal sealed class PostgreSqlPublishedListingQuery
 
         IQueryable<MarketListingRecord> query =
             BuildQuery(criteria);
-        List<MarketListingRecord> records =
+        var records =
             await query
-                .OrderBy(listing => listing.Id)
+                .Where(
+                    listing =>
+                        listing.SubjectType ==
+                        MarketListingSubjectTypes.Property)
+                .Join(
+                    _context.MarketProperties.AsNoTracking(),
+                    listing => listing.SubjectId,
+                    property => property.Id,
+                    (listing, property) => new
+                    {
+                        Listing = listing,
+                        Property = property,
+                    })
+                .OrderBy(pair => pair.Listing.Id)
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync(cancellationToken);
 
         return records
-            .Select(MarketListingRecordMapper.ToDomain)
+            .Select(
+                pair => new PublishedListingProjection(
+                    MarketListingRecordMapper.ToDomain(pair.Listing),
+                    MarketPropertyRecordMapper.ToDomain(pair.Property)))
             .ToArray();
     }
 

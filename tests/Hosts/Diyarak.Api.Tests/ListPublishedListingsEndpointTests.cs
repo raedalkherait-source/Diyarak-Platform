@@ -1722,7 +1722,7 @@ public sealed class ListPublishedListingsEndpointTests
 
         public PublishedListingSearchCriteria? LastCriteria { get; private set; }
 
-        public Task<IReadOnlyList<MarketListing>> ListPageAsync(
+        public Task<IReadOnlyList<PublishedListingProjection>> ListPageAsync(
             int skip,
             int take,
             PublishedListingSearchCriteria? criteria = null,
@@ -1732,7 +1732,27 @@ public sealed class ListPublishedListingsEndpointTests
             LastSkip = skip;
             LastTake = take;
             LastCriteria = criteria;
-            return Task.FromResult(listings);
+
+            var projections = new PublishedListingProjection[listings.Count];
+
+            for (int i = 0; i < listings.Count; i++)
+            {
+                MarketListing listing = listings[i];
+
+                projections[i] = new PublishedListingProjection(
+                    listing,
+                    new Diyarak.Market.Property.Property(
+                        listing.SubjectReference.SubjectId,
+                        Diyarak.Market.Property.PropertyCategory.Apartment,
+                        new Diyarak.Market.Property.PropertyAddress(
+                            "Test Street",
+                            "1",
+                            "10115",
+                            "Berlin")));
+            }
+
+            return Task.FromResult<IReadOnlyList<PublishedListingProjection>>(
+                projections);
         }
     }
 }
