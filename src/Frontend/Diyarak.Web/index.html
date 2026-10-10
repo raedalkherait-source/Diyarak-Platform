@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diyarak</title>
+  <link rel="stylesheet" href="./src/styles/app.css">
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero">
+      <p class="eyebrow">Diyarak</p>
+      <h1>Find your next property</h1>
+      <p class="hero-copy">
+        Explore published listings with safe public property details.
+      </p>
+    </section>
+
+    <section class="toolbar" aria-label="Listing controls">
+      <button id="load-listings" type="button">Load public listings</button>
+      <p id="status" role="status">Ready.</p>
+    </section>
+
+    <section>
+      <h2>Public listings</h2>
+      <div id="listing-grid" class="listing-grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <template id="listing-card-template">
+    <article class="listing-card">
+      <p class="listing-card__location"></p>
+      <h3 class="listing-card__headline"></h3>
+      <p class="listing-card__price"></p>
+      <dl class="listing-card__facts">
+        <div>
+          <dt>Category</dt>
+          <dd data-field="category"></dd>
+        </div>
+        <div>
+          <dt>Rooms</dt>
+          <dd data-field="rooms"></dd>
+        </div>
+        <div>
+          <dt>Available</dt>
+          <dd data-field="available"></dd>
+        </div>
+      </dl>
+    </article>
+  </template>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
