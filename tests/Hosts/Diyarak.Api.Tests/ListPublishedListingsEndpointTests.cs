@@ -1050,6 +1050,8 @@ public sealed class ListPublishedListingsEndpointTests
         JsonElement[] materialized = items.ToArray();
 
         Assert.Equal(2, materialized.Length);
+        AssertPublicListingContract(materialized[0]);
+        AssertPublicListingContract(materialized[1]);
         Assert.Equal(
             first.Id,
             materialized[0].GetProperty("listingId").GetGuid());
@@ -1618,6 +1620,69 @@ public sealed class ListPublishedListingsEndpointTests
         return await client.SendAsync(request);
     }
 
+    private static void AssertPublicListingContract(JsonElement listing)
+    {
+        Assert.Equal(
+            [
+                "listingId",
+                "context",
+                "headline",
+                "price",
+                "property",
+                "availableFromDate",
+            ],
+            listing.EnumerateObject().Select(property => property.Name).ToArray());
+
+        Assert.Equal(
+            [
+                "publishingRole",
+                "transactionIntent",
+            ],
+            listing.GetProperty("context").EnumerateObject().Select(property => property.Name).ToArray());
+
+        Assert.Equal(
+            [
+                "isOnRequest",
+                "amount",
+                "currency",
+            ],
+            listing.GetProperty("price").EnumerateObject().Select(property => property.Name).ToArray());
+
+        JsonElement property = listing.GetProperty("property");
+
+        Assert.Equal(
+            [
+                "category",
+                "location",
+                "livingArea",
+                "totalRooms",
+                "bedroomCount",
+                "bathroomCount",
+                "furnishingQuality",
+                "features",
+                "constructionYear",
+                "commercialSubtype",
+                "parkingSpaceCount",
+            ],
+            property.EnumerateObject().Select(item => item.Name).ToArray());
+
+        Assert.Equal(
+            [
+                "city",
+                "postalCode",
+            ],
+            property.GetProperty("location").EnumerateObject().Select(item => item.Name).ToArray());
+
+        if (property.GetProperty("livingArea").ValueKind == JsonValueKind.Object)
+        {
+            Assert.Equal(
+                [
+                    "value",
+                    "unit",
+                ],
+                property.GetProperty("livingArea").EnumerateObject().Select(item => item.Name).ToArray());
+        }
+    }
     private static async Task AssertProblemCodeAsync(
         HttpResponseMessage response,
         string expectedCode)
