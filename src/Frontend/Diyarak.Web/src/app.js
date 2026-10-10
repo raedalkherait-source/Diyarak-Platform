@@ -2,20 +2,27 @@ const statusElement = document.querySelector("#status");
 const gridElement = document.querySelector("#listing-grid");
 const template = document.querySelector("#listing-card-template");
 const loadButton = document.querySelector("#load-listings");
+const retryButton = document.querySelector("#retry-listings");
 
 loadButton.addEventListener("click", async () => {
   await loadPublicListings();
 });
 
+retryButton.addEventListener("click", async () => {
+  await loadPublicListings();
+});
+
+await loadPublicListings();
+
 async function loadPublicListings() {
-  setStatus("Loading public listings...");
+  setLoadingState();
   gridElement.replaceChildren();
 
   try {
     const response = await fetch("/api/market/public/listings");
 
     if (!response.ok) {
-      setStatus(`Unable to load listings. HTTP ${response.status}.`);
+      setErrorState(`Unable to load listings. HTTP ${response.status}.`);
       return;
     }
 
@@ -23,7 +30,7 @@ async function loadPublicListings() {
     const items = Array.isArray(payload.items) ? payload.items : [];
 
     if (items.length === 0) {
-      setStatus("No public listings found.");
+      setReadyState("No public listings found.");
       return;
     }
 
@@ -31,9 +38,9 @@ async function loadPublicListings() {
       gridElement.append(createListingCard(listing));
     }
 
-    setStatus(payload.hasMore ? "Loaded listings. More pages are available." : "Loaded listings.");
+    setReadyState(payload.hasMore ? "Loaded listings. More pages are available." : "Loaded listings.");
   } catch {
-    setStatus("Unable to reach the API.");
+    setErrorState("Unable to reach the API. Check that Diyarak.Api is running.");
   }
 }
 
@@ -78,6 +85,23 @@ function formatRooms(property) {
   return String(property.totalRooms);
 }
 
-function setStatus(message) {
+function setLoadingState() {
+  loadButton.disabled = true;
+  retryButton.hidden = true;
+  statusElement.dataset.state = "loading";
+  statusElement.textContent = "Loading public listings...";
+}
+
+function setReadyState(message) {
+  loadButton.disabled = false;
+  retryButton.hidden = true;
+  statusElement.dataset.state = "ready";
+  statusElement.textContent = message;
+}
+
+function setErrorState(message) {
+  loadButton.disabled = false;
+  retryButton.hidden = false;
+  statusElement.dataset.state = "error";
   statusElement.textContent = message;
 }

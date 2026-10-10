@@ -108,3 +108,16 @@ dd {
   margin: 0;
   text-align: right;
 }
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.secondary-button {
+  background: transparent;
+  outline: 1px solid currentColor;
+}
+
+#status[data-state="error"] {
+  font-weight: 700;
+}
