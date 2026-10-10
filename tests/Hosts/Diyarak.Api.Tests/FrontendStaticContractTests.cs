@@ -90,4 +90,14 @@ public sealed class FrontendStaticContractTests
 
         return File.ReadAllText(path);
     }
-}
+
+    [Fact]
+    public void Static_frontend_readme_documents_development_links()
+    {
+        string readme = ReadFrontendFile("README.md");
+
+        Assert.Contains("Development links", readme);
+        Assert.Contains("/app", readme);
+        Assert.Contains("/api/market/public/listings", readme);
+        Assert.Contains("/openapi/v1.json", readme);
+    }}
