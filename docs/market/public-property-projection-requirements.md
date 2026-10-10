@@ -86,3 +86,26 @@ This is an intentional public response expansion. Existing public Listing fields
 names and meanings.
 
 Clients must continue to treat omitted optional Property values as unknown rather than false.
+## Implementation status
+
+Implemented on `main`.
+
+The current implementation adds the public `property` object to anonymous published Listing detail and
+collection responses through a `PublishedListingProjection` that pairs each public Listing with its
+supported Property projection.
+
+The public read path fails closed when a published Listing cannot be paired with its Property projection.
+
+Public ETag generation now includes the Property projection change signal so Listing validators change
+when the public Property representation changes.
+
+Automated coverage includes:
+
+- Application read-path projection behavior.
+- PostgreSQL published Listing query projection pairing.
+- Anonymous public Listing detail response shape.
+- Anonymous public Listing collection response shape.
+- Public ETag behavior with Property projection data.
+- Regression coverage that the public `property` object does not expose private or internal fields such
+  as Property identifiers, owner user identifiers, versions, internal subject identifiers, exact street
+  address fields, or coordinates.
