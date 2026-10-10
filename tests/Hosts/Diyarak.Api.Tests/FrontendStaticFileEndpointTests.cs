@@ -22,7 +22,7 @@ public sealed class FrontendStaticFileEndpointTests
         string body = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("<title>Diyarak</title>", body);
-        Assert.Contains("Load public listings", body);
+        Assert.Contains("Refresh listings", body);
     }
 
     [Fact]
