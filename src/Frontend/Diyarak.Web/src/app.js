@@ -54,7 +54,13 @@ function createListingCard(listing) {
   card.querySelector(".listing-card__headline").textContent = listing.headline ?? "Untitled listing";
   card.querySelector(".listing-card__price").textContent = formatPrice(listing.price);
   card.querySelector("[data-field='category']").textContent = property.category ?? "Unknown";
-  card.querySelector("[data-field='rooms']").textContent = formatRooms(property);
+  card.querySelector("[data-field='livingArea']").textContent = formatLivingArea(property.livingArea);
+  card.querySelector("[data-field='rooms']").textContent = formatNumber(property.totalRooms);
+  card.querySelector("[data-field='bedrooms']").textContent = formatNumber(property.bedroomCount);
+  card.querySelector("[data-field='bathrooms']").textContent = formatNumber(property.bathroomCount);
+  card.querySelector("[data-field='features']").textContent = formatFeatures(property.features);
+  card.querySelector("[data-field='constructionYear']").textContent = formatNumber(property.constructionYear);
+  card.querySelector("[data-field='parking']").textContent = formatNumber(property.parkingSpaceCount);
   card.querySelector("[data-field='available']").textContent = listing.availableFromDate ?? "Unknown";
 
   return fragment;
@@ -77,12 +83,28 @@ function formatPrice(price) {
   return `${price.amount} ${price.currency}`;
 }
 
-function formatRooms(property) {
-  if (property.totalRooms === null || property.totalRooms === undefined) {
+function formatLivingArea(livingArea) {
+  if (!livingArea || livingArea.value === null || livingArea.value === undefined) {
     return "Unknown";
   }
 
-  return String(property.totalRooms);
+  return livingArea.unit ? `${livingArea.value} ${livingArea.unit}` : String(livingArea.value);
+}
+
+function formatNumber(value) {
+  if (value === null || value === undefined) {
+    return "Unknown";
+  }
+
+  return String(value);
+}
+
+function formatFeatures(features) {
+  if (!Array.isArray(features) || features.length === 0) {
+    return "None listed";
+  }
+
+  return features.join(", ");
 }
 
 function setLoadingState() {
