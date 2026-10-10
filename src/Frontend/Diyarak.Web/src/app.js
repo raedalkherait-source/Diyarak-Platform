@@ -80,7 +80,15 @@ function formatPrice(price) {
     return "Price unavailable";
   }
 
-  return `${price.amount} ${price.currency}`;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: price.currency,
+      maximumFractionDigits: 0,
+    }).format(price.amount);
+  } catch {
+    return `${price.amount} ${price.currency}`;
+  }
 }
 
 function formatLivingArea(livingArea) {

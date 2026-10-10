@@ -39,6 +39,9 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("formatNumber", javascript);
         Assert.Contains("formatFeatures", javascript);
         Assert.Contains("formatDate", javascript);
+        Assert.Contains("Intl.NumberFormat", javascript);
+        Assert.Contains("style: \"currency\"", javascript);
+        Assert.Contains("maximumFractionDigits", javascript);
         Assert.Contains("listing.availableFromDate", javascript);
         Assert.Contains("property.bedroomCount", javascript);
         Assert.Contains("property.bathroomCount", javascript);
