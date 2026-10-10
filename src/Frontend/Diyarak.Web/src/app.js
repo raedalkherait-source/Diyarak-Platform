@@ -38,7 +38,13 @@ async function loadPublicListings() {
       gridElement.append(createListingCard(listing));
     }
 
-    setReadyState(payload.hasMore ? "Loaded listings. More pages are available." : "Loaded listings.");
+    const listingCount = items.length;
+    const listingLabel = listingCount === 1 ? "listing" : "listings";
+    setReadyState(
+      payload.hasMore
+        ? `Loaded ${listingCount} ${listingLabel}. More pages are available.`
+        : `Loaded ${listingCount} ${listingLabel}.`,
+    );
   } catch {
     setErrorState("Unable to reach the API. Check that Diyarak.Api is running.");
   }
