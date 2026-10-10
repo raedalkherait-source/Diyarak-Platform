@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 
 const string ApiRateLimitPolicy = "api";
 const string CorsPolicy = "frontend";
@@ -203,6 +204,31 @@ app.UseRateLimiter();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    var frontendPath = Path.GetFullPath(
+        Path.Combine(
+            app.Environment.ContentRootPath,
+            "..",
+            "..",
+            "Frontend",
+            "Diyarak.Web"));
+
+    if (Directory.Exists(frontendPath))
+    {
+        app.UseDefaultFiles(
+            new DefaultFilesOptions
+            {
+                FileProvider = new PhysicalFileProvider(frontendPath),
+                RequestPath = "/app"
+            });
+
+        app.UseStaticFiles(
+            new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(frontendPath),
+                RequestPath = "/app"
+            });
+    }
 }
 
 app.MapHealthChecks(
