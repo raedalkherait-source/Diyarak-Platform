@@ -18,6 +18,8 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("rel=\"noopener\"", html);
         Assert.Contains("OpenAPI", html);
         Assert.Contains("href=\"/openapi/v1.json\"", html);
+        Assert.Contains("Frontend Home", html);
+        Assert.Contains("href=\"/app\"", html);
         Assert.Contains("id=\"status\"", html);
         Assert.Contains("id=\"listing-grid\"", html);
         Assert.Contains("listing-card-template", html);
