@@ -17,3 +17,10 @@ Initial scope:
 - safe rendering of public Listing and Property fields;
 - no authentication;
 - no contact, favorites, analytics, maps, or agent/company workflows.
+## Development links
+
+When `Diyarak.Api` runs in `Development`, the static frontend is available at:
+
+- `/app` - static frontend shell.
+- `/api/market/public/listings` - public listings JSON used by the frontend.
+- `/openapi/v1.json` - OpenAPI document for local API contract inspection.
