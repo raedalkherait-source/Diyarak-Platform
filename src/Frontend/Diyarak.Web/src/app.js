@@ -61,7 +61,7 @@ function createListingCard(listing) {
   card.querySelector("[data-field='features']").textContent = formatFeatures(property.features);
   card.querySelector("[data-field='constructionYear']").textContent = formatNumber(property.constructionYear);
   card.querySelector("[data-field='parking']").textContent = formatNumber(property.parkingSpaceCount);
-  card.querySelector("[data-field='available']").textContent = listing.availableFromDate ?? "Unknown";
+  card.querySelector("[data-field='available']").textContent = formatDate(listing.availableFromDate);
 
   return fragment;
 }
@@ -105,6 +105,24 @@ function formatFeatures(features) {
   }
 
   return features.join(", ");
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "Unknown";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown";
+  }
+
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function setLoadingState() {

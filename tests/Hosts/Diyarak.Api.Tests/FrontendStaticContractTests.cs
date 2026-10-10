@@ -38,6 +38,8 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("formatLivingArea", javascript);
         Assert.Contains("formatNumber", javascript);
         Assert.Contains("formatFeatures", javascript);
+        Assert.Contains("formatDate", javascript);
+        Assert.Contains("listing.availableFromDate", javascript);
         Assert.Contains("property.bedroomCount", javascript);
         Assert.Contains("property.bathroomCount", javascript);
         Assert.Contains("property.parkingSpaceCount", javascript);
