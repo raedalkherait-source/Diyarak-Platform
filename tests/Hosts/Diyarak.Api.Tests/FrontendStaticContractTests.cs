@@ -101,4 +101,14 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("/api/market/public/listings", readme);
         Assert.Contains("/openapi/v1.json", readme);
     }
-}
+
+    [Fact]
+    public void Static_frontend_uses_only_local_assets()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.DoesNotContain("https://", html);
+        Assert.DoesNotContain("http://", html);
+        Assert.Contains("href=\"./src/styles/app.css\"", html);
+        Assert.Contains("src=\"./src/app.js\"", html);
+    }}
