@@ -121,3 +121,12 @@ button:disabled {
 #status[data-state="error"] {
   font-weight: 700;
 }
+.toolbar {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+#status {
+  flex-basis: 100%;
+  margin: 0;
+}

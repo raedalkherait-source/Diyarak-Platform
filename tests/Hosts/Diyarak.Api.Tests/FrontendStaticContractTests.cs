@@ -21,6 +21,7 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("Frontend Home", html);
         Assert.Contains("href=\"/app\"", html);
         Assert.Contains("id=\"status\"", html);
+        Assert.Contains("aria-label=\"Listing controls\"", html);
         Assert.Contains("id=\"listing-grid\"", html);
         Assert.Contains("listing-card-template", html);
         Assert.Contains("data-field=\"livingArea\"", html);
@@ -68,6 +69,8 @@ public sealed class FrontendStaticContractTests
 
         Assert.Contains("button:disabled", css);
         Assert.Contains(".secondary-button", css);
+        Assert.Contains("flex-wrap: wrap", css);
+        Assert.Contains("flex-basis: 100%", css);
         Assert.Contains("#status[data-state=\"error\"]", css);
     }
 
