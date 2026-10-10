@@ -31,6 +31,8 @@ public sealed class FrontendStaticContractTests
 
         Assert.Contains("/api/market/public/listings", javascript);
         Assert.Contains("setLoadingState", javascript);
+        Assert.Contains("formatLocation", javascript);
+        Assert.Contains("Location unknown", javascript);
         Assert.Contains("setReadyState", javascript);
         Assert.Contains("listingCount", javascript);
         Assert.Contains("listingLabel", javascript);

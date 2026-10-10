@@ -74,7 +74,7 @@ function createListingCard(listing) {
 
 function formatLocation(location) {
   const parts = [location.city, location.postalCode].filter(Boolean);
-  return parts.length === 0 ? "Location unknown" : parts.join(" ");
+  return parts.length === 0 ? "Location unknown" : parts.join(", ");
 }
 
 function formatPrice(price) {
