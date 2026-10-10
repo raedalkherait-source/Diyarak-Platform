@@ -16,6 +16,12 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"status\"", html);
         Assert.Contains("id=\"listing-grid\"", html);
         Assert.Contains("listing-card-template", html);
+        Assert.Contains("data-field=\"livingArea\"", html);
+        Assert.Contains("data-field=\"bedrooms\"", html);
+        Assert.Contains("data-field=\"bathrooms\"", html);
+        Assert.Contains("data-field=\"features\"", html);
+        Assert.Contains("data-field=\"constructionYear\"", html);
+        Assert.Contains("data-field=\"parking\"", html);
     }
 
     [Fact]
@@ -29,6 +35,12 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("setErrorState", javascript);
         Assert.Contains("retryButton.hidden = false", javascript);
         Assert.Contains("loadButton.disabled = true", javascript);
+        Assert.Contains("formatLivingArea", javascript);
+        Assert.Contains("formatNumber", javascript);
+        Assert.Contains("formatFeatures", javascript);
+        Assert.Contains("property.bedroomCount", javascript);
+        Assert.Contains("property.bathroomCount", javascript);
+        Assert.Contains("property.parkingSpaceCount", javascript);
     }
 
     [Fact]
