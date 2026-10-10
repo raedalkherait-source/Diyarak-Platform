@@ -71,6 +71,10 @@ public sealed class FrontendStaticContractTests
         Assert.Contains(".secondary-button", css);
         Assert.Contains("flex-wrap: wrap", css);
         Assert.Contains("flex-basis: 100%", css);
+        Assert.Contains(".listing-card__headline", css);
+        Assert.Contains(".listing-card__price", css);
+        Assert.Contains(".listing-card__facts", css);
+        Assert.Contains("row-gap: 0.75rem", css);
         Assert.Contains("#status[data-state=\"error\"]", css);
     }
 

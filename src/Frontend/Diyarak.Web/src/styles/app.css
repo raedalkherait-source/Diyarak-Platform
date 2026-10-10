@@ -130,3 +130,6 @@ button:disabled {
   flex-basis: 100%;
   margin: 0;
 }
+.listing-card__facts {
+  row-gap: 0.75rem;
+}
