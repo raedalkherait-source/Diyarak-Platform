@@ -42,7 +42,7 @@ async function loadPublicListings() {
     const listingLabel = listingCount === 1 ? "listing" : "listings";
     setReadyState(
       payload.hasMore
-        ? `Loaded ${listingCount} ${listingLabel}. More pages are available.`
+        ? `Loaded ${listingCount} ${listingLabel}. More pages are available; pagination controls are coming soon.`
         : `Loaded ${listingCount} ${listingLabel}.`,
     );
   } catch {

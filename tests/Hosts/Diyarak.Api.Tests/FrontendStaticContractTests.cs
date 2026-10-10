@@ -36,7 +36,7 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("setReadyState", javascript);
         Assert.Contains("listingCount", javascript);
         Assert.Contains("listingLabel", javascript);
-        Assert.Contains("More pages are available", javascript);
+        Assert.Contains("More pages are available; pagination controls are coming soon", javascript);
         Assert.Contains("No public listings found. Try again later or adjust your filters.", javascript);
         Assert.Contains("setErrorState", javascript);
         Assert.Contains("retryButton.hidden = false", javascript);
