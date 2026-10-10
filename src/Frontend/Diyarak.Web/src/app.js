@@ -30,7 +30,7 @@ async function loadPublicListings() {
     const items = Array.isArray(payload.items) ? payload.items : [];
 
     if (items.length === 0) {
-      setReadyState("No public listings found.");
+      setReadyState("No public listings found. Try again later or adjust your filters.");
       return;
     }
 
