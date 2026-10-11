@@ -118,7 +118,7 @@ The form does not add ranking or total-count semantics.
 ## Shareable search and return navigation
 
 Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `page`,
-`pageSize`, `priceMin`, `priceMax`, and `priceCurrency`, including their filter form values. Applying filters, clearing,
+`pageSize`, `priceMin`, `priceMax`, `priceCurrency`, `livingAreaMin`, `livingAreaMax`, and `livingAreaUnit`, including their filter form values. Applying filters, clearing,
 or following server page links replaces the current URL without a document
 reload. Browser reload/bookmarks preserve the current page; Refresh listings
 still starts on page one with the applied filters. Unsubmitted form edits are
@@ -145,3 +145,19 @@ results and URL intact. The API remains authoritative for decimal precision
 and search validation. Price ranges exclude on-request prices, as defined by
 the existing backend. Clear resets all price fields; price filters persist
 in page links, shareable URLs, Retry, and return navigation from details.
+
+## Living area range filters
+
+Optional `livingAreaMin` and `livingAreaMax` accept non-negative decimal bounds;
+one bound is sufficient and minimum must not exceed maximum. Choose
+`livingAreaUnit`: SquareMeter, SquareFoot, Hectare, or Dunum. A unit alone
+is not a valid range. Values are sent as entered; the backend compares areas
+across units and excludes properties without a known living area.
+
+Invalid form values show the existing inline alert without changing results
+or the URL. The API remains authoritative for decimal precision and search
+validation, including values restored from bookmarks. Area filters combine
+with city, transaction, category, and price filters and persist through page
+navigation, Refresh, Retry, reload, and detail return links. Clear resets
+all area controls and dismisses validation. Controls are disabled during
+loading and the form stays hidden in the detail view.

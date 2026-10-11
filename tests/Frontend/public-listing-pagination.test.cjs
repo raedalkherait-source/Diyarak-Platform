@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit"]) {
     elements.set(`#${id}`, element());
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
@@ -652,4 +652,135 @@ test("equal bounds are valid and blank price controls introduce no price paramet
   await app.submit();
   assert.equal(app.get("filter-error").hidden,true);
   assert.equal(app.requests.at(-1),`${endpoint}?priceMin=10.5&priceMax=10.5&priceCurrency=EUR`);
+});
+
+test("area range combines with discovery and price filters without conversion", async () => {
+  const app=await createApp([response(1,false),response(1,false)],"?page=4");
+  app.get("filter-city").value=" دمشق ";
+  app.get("filter-intent").value="Sell";
+  app.get("filter-category").value="Apartment";
+  app.get("filter-price-min").value="100";
+  app.get("filter-price-currency").value="USD";
+  app.get("filter-area-min").value="0";
+  app.get("filter-area-max").value="120.75";
+  app.get("filter-area-unit").value="SquareMeter";
+  await app.submit();
+  const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(Object.fromEntries(query), {city:"دمشق",transactionIntent:"Sell",propertyCategory:"Apartment",priceMin:"100",priceCurrency:"USD",livingAreaMin:"0",livingAreaMax:"120.75",livingAreaUnit:"SquareMeter"});
+  assert.equal(app.get("filter-error").hidden,true);
+});
+
+test("single area bounds accept all supported units and retain entered decimals", async () => {
+  for (const unit of ["SquareMeter","SquareFoot","Hectare","Dunum"]) {
+    for (const bound of ["min","max"]) {
+      const app=await createApp([response(1,false),response(1,false)]);
+      app.get(`filter-area-${bound}`).value=" 0.125 ";
+      app.get("filter-area-unit").value=unit;
+      await app.submit();
+      const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+      assert.equal(query.get(bound==="min"?"livingAreaMin":"livingAreaMax"),"0.125");
+      assert.equal(query.has(bound==="min"?"livingAreaMax":"livingAreaMin"),false);
+      assert.equal(query.get("livingAreaUnit"),unit);
+    }
+  }
+});
+
+test("invalid area forms leave requests, cards and current URL intact", async () => {
+  for (const [minimum,maximum,unit] of [["20","10","SquareMeter"],["-1","","Dunum"],
+    ["oops","","SquareFoot"],["1e3","","Hectare"],["1","",""],
+    ["1","","toString"],["1","","Unknown"],["","","SquareMeter"],
+    ["","-2","SquareMeter"],["9".repeat(310),"","SquareMeter"]]) {
+    const app=await createApp([response(1,false)],"?city=Berlin&page=2");
+    app.get("filter-area-min").value=minimum;
+    app.get("filter-area-max").value=maximum;
+    app.get("filter-area-unit").value=unit;
+    await app.submit();
+    assert.deepEqual(app.requests,[`${endpoint}?city=Berlin&page=2`]);
+    assert.deepEqual(app.historyUrls,["./index.html?city=Berlin&page=2"]);
+    assert.equal(app.get("listing-grid").children.length,1);
+    assert.equal(app.get("filter-error").hidden,false);
+    assert.notEqual(app.get("filter-error").textContent,"");
+  }
+});
+
+test("correcting an area validation error submits and dismisses the alert", async () => {
+  const app=await createApp([response(1,false),response(1,false)]);
+  app.get("filter-area-min").value="10";
+  await app.submit();
+  assert.match(app.get("filter-error").textContent,/unit/);
+  app.get("filter-area-unit").value="Dunum";
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.get("filter-error").textContent,"");
+  assert.equal(app.requests.at(-1),`${endpoint}?livingAreaMin=10&livingAreaUnit=Dunum`);
+});
+
+test("clear resets area controls, other filters and validation", async () => {
+  const app=await createApp([response(2,false),response(1,false)],"?city=Berlin&priceMin=10&priceCurrency=EUR&livingAreaMin=20&livingAreaMax=10&livingAreaUnit=Hectare&page=2");
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden,false);
+  await app.click("clear-filters");
+  for(const id of ["filter-city","filter-price-min","filter-price-currency","filter-area-min","filter-area-max","filter-area-unit"]) assert.equal(app.get(id).value,"");
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.requests.at(-1),endpoint);
+  assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("area bookmark reload and detail return restore the same search", async () => {
+  const query="livingAreaMin=0&livingAreaMax=120.75&livingAreaUnit=SquareFoot&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.equal(app.get("filter-area-min").value,"0");
+  assert.equal(app.get("filter-area-max").value,"120.75");
+  assert.equal(app.get("filter-area-unit").value,"SquareFoot");
+  const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(detailLink.searchParams.get("returnSearch"),query);
+  const detail=await createApp([detailResponse({listingId})],detailLink.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("listing-filters").hidden,true);
+  const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
+});
+
+test("area navigation and retry retain server queries, refresh drops only page", async () => {
+  const filters="livingAreaMin=10&livingAreaUnit=SquareMeter&pageSize=1";
+  const next=`${endpoint}?${filters}&page=2`;
+  const previous=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},
+    response(2,false,link(previous,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  await app.click("next-page");
+  await app.click("retry-listings");
+  await app.click("previous-page");
+  app.get("filter-area-min").value="999";
+  await app.click("load-listings");
+  assert.deepEqual(app.requests,[previous,next,next,previous,`${endpoint}?${filters}`]);
+  assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
+});
+
+test("equal area bounds accept zero and blank controls omit area parameters", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false)]);
+  await app.submit();
+  assert.equal(app.requests.at(-1),endpoint);
+  app.get("filter-area-min").value="0";
+  app.get("filter-area-max").value="0";
+  app.get("filter-area-unit").value="SquareMeter";
+  await app.submit();
+  assert.equal(app.requests.at(-1),`${endpoint}?livingAreaMin=0&livingAreaMax=0&livingAreaUnit=SquareMeter`);
+});
+
+test("loading prevents applying or clearing edited area fields", async () => {
+  let resolveResponse;
+  const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);
+  app.get("filter-area-min").value="20";
+  app.get("filter-area-unit").value="SquareMeter";
+  const loading=app.submit();
+  assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("filter-area-min").value="30";
+  await app.submit();
+  await app.click("clear-filters");
+  assert.equal(app.get("filter-area-min").value,"30");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?livingAreaMin=20&livingAreaUnit=SquareMeter`]);
+  resolveResponse(response(1,false));
+  await loading;
+  assert.equal(app.get("listing-filter-fields").disabled,false);
 });

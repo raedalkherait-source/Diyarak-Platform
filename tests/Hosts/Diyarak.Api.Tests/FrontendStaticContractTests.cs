@@ -135,6 +135,25 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"price-filter-help\"", html);
     }
 
+    [Fact]
+    public void Index_contains_labeled_living_area_filters_and_unit_choices()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("for=\"filter-area-min\"", html);
+        Assert.Contains("name=\"livingAreaMin\"", html);
+        Assert.Contains("for=\"filter-area-max\"", html);
+        Assert.Contains("name=\"livingAreaMax\"", html);
+        Assert.Contains("for=\"filter-area-unit\"", html);
+        Assert.Contains("name=\"livingAreaUnit\"", html);
+        foreach (string unit in new[] { "SquareMeter", "SquareFoot", "Hectare", "Dunum" })
+        {
+            Assert.Contains($"value=\"{unit}\"", html);
+        }
+        Assert.Contains("aria-describedby=\"area-filter-help filter-error\"", html);
+        Assert.Contains("id=\"area-filter-help\"", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

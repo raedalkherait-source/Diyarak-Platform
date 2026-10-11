@@ -60,6 +60,22 @@
           <input id="filter-price-currency" name="priceCurrency" type="text" maxlength="3" placeholder="EUR" autocapitalize="characters" spellcheck="false" aria-describedby="price-filter-help filter-error">
         </label>
         <p id="price-filter-help" class="filter-message">Price ranges show listings with a known price in the selected currency. Enter a three-letter currency code, such as SYP, USD, or EUR.</p>
+        <label for="filter-area-min">Minimum living area
+          <input id="filter-area-min" name="livingAreaMin" type="number" min="0" step="any" aria-describedby="area-filter-help filter-error">
+        </label>
+        <label for="filter-area-max">Maximum living area
+          <input id="filter-area-max" name="livingAreaMax" type="number" min="0" step="any" aria-describedby="area-filter-help filter-error">
+        </label>
+        <label for="filter-area-unit">Living area unit
+          <select id="filter-area-unit" name="livingAreaUnit" aria-describedby="area-filter-help filter-error">
+            <option value="">Choose a unit</option>
+            <option value="SquareMeter">Square meters (m²)</option>
+            <option value="SquareFoot">Square feet (ft²)</option>
+            <option value="Hectare">Hectares (ha)</option>
+            <option value="Dunum">Dunum</option>
+          </select>
+        </label>
+        <p id="area-filter-help" class="filter-message">Enter at least one living area bound and choose its unit. The API compares areas across units; listings without a known living area are excluded.</p>
         <p id="filter-error" class="filter-message" role="alert" hidden></p>
         <div class="filter-actions">
           <button type="submit">Apply filters</button>

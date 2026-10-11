@@ -70,6 +70,9 @@ const categoryInput = document.querySelector("#filter-category");
 const priceMinInput = document.querySelector("#filter-price-min");
 const priceMaxInput = document.querySelector("#filter-price-max");
 const priceCurrencyInput = document.querySelector("#filter-price-currency");
+const areaMinInput = document.querySelector("#filter-area-min");
+const areaMaxInput = document.querySelector("#filter-area-max");
+const areaUnitInput = document.querySelector("#filter-area-unit");
 const filterError = document.querySelector("#filter-error");
 const clearFiltersButton = document.querySelector("#clear-filters");
 const parameters = new URLSearchParams(window.location.search);
@@ -114,10 +117,10 @@ filterForm.addEventListener("submit", async event => {
     return;
   }
 
-  const priceError = validatePriceFilters();
-  filterError.textContent = priceError ?? "";
-  filterError.hidden = !priceError;
-  if (priceError) {
+  const validationError = validatePriceFilters() ?? validateAreaFilters();
+  filterError.textContent = validationError ?? "";
+  filterError.hidden = !validationError;
+  if (validationError) {
     return;
   }
 
@@ -136,6 +139,9 @@ clearFiltersButton.addEventListener("click", async () => {
   priceMinInput.value = "";
   priceMaxInput.value = "";
   priceCurrencyInput.value = "";
+  areaMinInput.value = "";
+  areaMaxInput.value = "";
+  areaUnitInput.value = "";
   filterError.textContent = "";
   filterError.hidden = true;
   firstPageUrl = collectionUrl;
@@ -148,6 +154,9 @@ categoryInput.value = initialSearch.get("propertyCategory") ?? "";
 priceMinInput.value = initialSearch.get("priceMin") ?? "";
 priceMaxInput.value = initialSearch.get("priceMax") ?? "";
 priceCurrencyInput.value = initialSearch.get("priceCurrency") ?? "";
+areaMinInput.value = initialSearch.get("livingAreaMin") ?? "";
+areaMaxInput.value = initialSearch.get("livingAreaMax") ?? "";
+areaUnitInput.value = initialSearch.get("livingAreaUnit") ?? "";
 backLink.href = collectionPageUrl(initialSearch);
 filterForm.hidden = isDetailView;
 paginationElement.hidden = isDetailView;
@@ -167,7 +176,7 @@ async function loadSelectedView(url = firstPageUrl) {
 function getSupportedSearch(query) {
   const supported = new URLSearchParams();
   for (const [key, value] of query) {
-    if (["city", "transactionIntent", "propertyCategory", "priceMin", "priceMax", "priceCurrency", "page", "pageSize"].includes(key)) {
+    if (["city", "transactionIntent", "propertyCategory", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "page", "pageSize"].includes(key)) {
       supported.append(key, value);
     }
   }
@@ -206,6 +215,28 @@ function validatePriceFilters() {
   return null;
 }
 
+function validateAreaFilters() {
+  const minimum = areaMinInput.value.trim();
+  const maximum = areaMaxInput.value.trim();
+  const unit = areaUnitInput.value;
+  const decimalPattern = /^(?:\d+(?:\.\d*)?|\.\d+)$/;
+  for (const [value, label] of [[minimum, "minimum"], [maximum, "maximum"]]) {
+    if (value && (!decimalPattern.test(value) || !Number.isFinite(Number(value)))) {
+      return `Enter a valid non-negative ${label} living area.`;
+    }
+  }
+  if (minimum && maximum && Number(minimum) > Number(maximum)) {
+    return "Minimum living area must not exceed maximum living area.";
+  }
+  if ((minimum || maximum) && !Object.hasOwn(publicLabels.areaUnit, unit)) {
+    return "Choose a living area unit for the area range.";
+  }
+  if (!minimum && !maximum && unit) {
+    return "Enter a minimum or maximum living area to use a unit filter.";
+  }
+  return null;
+}
+
 function buildFilteredCollectionUrl() {
   const query = new URLSearchParams();
   const city = cityInput.value.trim();
@@ -229,6 +260,18 @@ function buildFilteredCollectionUrl() {
   }
   if (minimum || maximum) {
     query.set("priceCurrency", priceCurrencyInput.value.trim().toUpperCase());
+  }
+
+  const areaMinimum = areaMinInput.value.trim();
+  const areaMaximum = areaMaxInput.value.trim();
+  if (areaMinimum) {
+    query.set("livingAreaMin", areaMinimum);
+  }
+  if (areaMaximum) {
+    query.set("livingAreaMax", areaMaximum);
+  }
+  if (areaMinimum || areaMaximum) {
+    query.set("livingAreaUnit", areaUnitInput.value);
   }
 
   const search = query.toString();
