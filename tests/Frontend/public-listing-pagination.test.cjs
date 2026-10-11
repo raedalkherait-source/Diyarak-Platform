@@ -37,8 +37,10 @@ async function createApp(responses, search = "") {
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
   const requests = [];
+  const historyUrls = [];
   const context = vm.createContext({ URL, URLSearchParams, Intl, Date,
-    window: { location: { origin: "https://diyarak.example", search } },
+    window: { location: { origin: "https://diyarak.example", search },
+      history: { replaceState: (_state, _title, url) => historyUrls.push(url) } },
     document: { querySelector: id => elements.get(id) },
     fetch: async url => {
       requests.push(url);
@@ -47,7 +49,7 @@ async function createApp(responses, search = "") {
       return typeof result === "function" ? result() : result;
     } });
   await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
-  return { requests, formatters: context.formatters, get: id => elements.get(`#${id}`),
+  return { requests, historyUrls, formatters: context.formatters, get: id => elements.get(`#${id}`),
     submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
     click: id => elements.get(`#${id}`).listeners.click() };
 }
@@ -458,4 +460,91 @@ test("detail views hide filters and do not execute filter requests", async () =>
   await app.submit();
   await app.click("clear-filters");
   assert.deepEqual(app.requests,[detailUrl]);
+});
+
+test("bookmarked collection URL restores filters and page coordinates", async () => {
+  const search="?city=Luebeck&transactionIntent=Sell&propertyCategory=Apartment&page=3&pageSize=5";
+  const app=await createApp([response(3,false)],search);
+  assert.deepEqual(app.requests,[`${endpoint}${search}`]);
+  assert.equal(app.get("filter-city").value,"Luebeck");
+  assert.equal(app.get("filter-intent").value,"Sell");
+  assert.equal(app.get("filter-category").value,"Apartment");
+  assert.equal(app.get("current-page").textContent,"Page 3");
+  assert.deepEqual(app.historyUrls,[`./index.html${search}`]);
+});
+
+test("collection URL follows pagination and can restore a browser reload", async () => {
+  const next=`${endpoint}?city=Berlin&page=2&pageSize=1`;
+  const app=await createApp([response(1,true,link(next,"next")),response(2,false)],"?city=Berlin");
+  await app.click("next-page");
+  const current=new URL(app.historyUrls.at(-1),"https://diyarak.example/app/");
+  assert.equal(current.searchParams.get("page"),"2");
+  assert.equal(current.searchParams.get("city"),"Berlin");
+  const reloaded=await createApp([response(2,false)],current.search);
+  assert.deepEqual(reloaded.requests,[next]);
+  assert.equal(reloaded.get("filter-city").value,"Berlin");
+});
+
+test("card detail links and Back to listings retain the exact supported search", async () => {
+  const query=new URLSearchParams({city:"دمشق & حمص",transactionIntent:"Rent",propertyCategory:"House",page:"2",pageSize:"5"});
+  const collection=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  const anchor=cardOf(collection).querySelector(".listing-card__detail-link");
+  const detailLink=new URL(anchor.href,"https://diyarak.example/app/");
+  assert.equal(detailLink.searchParams.get("listingId"),listingId);
+  assert.equal(detailLink.searchParams.get("returnSearch"),query.toString());
+  const detail=await createApp([detailResponse({listingId})],detailLink.search);
+  assert.deepEqual(detail.requests,[detailUrl]);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.deepEqual(detail.historyUrls,[]);
+  const returned=await createApp([response(2,false)],`?${query}`);
+  assert.deepEqual(returned.requests,[`${endpoint}?${query}`]);
+});
+
+test("untrusted return parameters cannot redirect away from the local collection", async () => {
+  for (const returnSearch of ["https://evil.example/", "returnTo=https://evil.example&city=Berlin&page=2", "listingId=private&unknown=value"]) {
+    const detailParams=new URLSearchParams({listingId,returnSearch});
+    const app=await createApp([detailResponse({listingId})],`?${detailParams}`);
+    const back=new URL(app.get("back-to-listings").href,"https://diyarak.example/app/");
+    assert.equal(back.origin,"https://diyarak.example");
+    assert.equal(back.pathname,"/app/index.html");
+    assert.equal(back.searchParams.has("returnTo"),false);
+    assert.equal(back.searchParams.has("listingId"),false);
+    assert.equal(back.searchParams.has("unknown"),false);
+  }
+});
+
+test("apply and clear update the URL without retaining old page coordinates", async () => {
+  const app=await createApp([response(4,false),response(1,false),response(1,false)],"?city=Berlin&page=4&pageSize=5");
+  app.get("filter-city").value="Paris";
+  await app.submit();
+  assert.equal(app.historyUrls.at(-1),"./index.html?city=Paris");
+  await app.click("clear-filters");
+  assert.equal(app.historyUrls.at(-1),"./index.html");
+  assert.equal(app.requests.at(-1),endpoint);
+});
+
+test("Refresh starts on page one with saved filters and size, ignoring unsubmitted edits", async () => {
+  const app=await createApp([response(4,false),response(1,false)],"?city=Berlin&page=4&pageSize=5");
+  app.get("filter-city").value="Paris";
+  assert.equal(app.historyUrls.at(-1),"./index.html?city=Berlin&page=4&pageSize=5");
+  await app.click("load-listings");
+  assert.equal(app.requests.at(-1),`${endpoint}?city=Berlin&pageSize=5`);
+  assert.equal(app.historyUrls.at(-1),"./index.html?city=Berlin&pageSize=5");
+});
+
+test("failed bookmark requests remain in the URL and retry preserves them", async () => {
+  const search="?city=Berlin&page=0";
+  const app=await createApp([{ok:false,status:400},response(1,false)],search);
+  assert.equal(app.get("status").dataset.state,"error");
+  assert.equal(app.historyUrls.at(-1),`./index.html${search}`);
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests,[`${endpoint}${search}`,`${endpoint}${search}`]);
+});
+
+test("unknown URL parameters are ignored and direct details default to the collection", async () => {
+  const collection=await createApp([response(1,false)],"?city=Berlin&returnTo=https://evil.example&unknown=value");
+  assert.deepEqual(collection.requests,[`${endpoint}?city=Berlin`]);
+  assert.equal(collection.historyUrls.at(-1),"./index.html?city=Berlin");
+  const detail=await createApp([detailResponse({listingId})],detailQuery);
+  assert.equal(detail.get("back-to-listings").href,"./index.html");
 });

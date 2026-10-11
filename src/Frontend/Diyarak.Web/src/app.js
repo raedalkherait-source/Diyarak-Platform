@@ -72,7 +72,13 @@ const parameters = new URLSearchParams(window.location.search);
 const isDetailView = parameters.has("listingId");
 const selectedListingId = parameters.get("listingId");
 const collectionUrl = "/api/market/public/listings";
-let firstPageUrl = collectionUrl;
+const initialSearch = getSupportedSearch(isDetailView
+  ? new URLSearchParams(parameters.get("returnSearch") ?? "")
+  : parameters);
+const initialCollectionUrl = collectionRequestUrl(initialSearch);
+const firstPageSearch = new URLSearchParams(initialSearch);
+firstPageSearch.delete("page");
+let firstPageUrl = collectionRequestUrl(firstPageSearch);
 let requestedUrl = collectionUrl;
 let previousUrl = null;
 let nextUrl = null;
@@ -120,12 +126,16 @@ clearFiltersButton.addEventListener("click", async () => {
   await loadPublicListings(firstPageUrl);
 });
 
+cityInput.value = initialSearch.get("city") ?? "";
+intentInput.value = initialSearch.get("transactionIntent") ?? "";
+categoryInput.value = initialSearch.get("propertyCategory") ?? "";
+backLink.href = collectionPageUrl(initialSearch);
 filterForm.hidden = isDetailView;
 paginationElement.hidden = isDetailView;
 backLink.hidden = !isDetailView;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
-await loadSelectedView();
+await loadSelectedView(initialCollectionUrl);
 
 async function loadSelectedView(url = firstPageUrl) {
   if (isDetailView) {
@@ -133,6 +143,26 @@ async function loadSelectedView(url = firstPageUrl) {
   } else {
     await loadPublicListings(url);
   }
+}
+
+function getSupportedSearch(query) {
+  const supported = new URLSearchParams();
+  for (const [key, value] of query) {
+    if (["city", "transactionIntent", "propertyCategory", "page", "pageSize"].includes(key)) {
+      supported.append(key, value);
+    }
+  }
+  return supported;
+}
+
+function collectionRequestUrl(query) {
+  const search = query.toString();
+  return search ? `${collectionUrl}?${search}` : collectionUrl;
+}
+
+function collectionPageUrl(query) {
+  const search = query.toString();
+  return search ? `./index.html?${search}` : "./index.html";
 }
 
 function buildFilteredCollectionUrl() {
@@ -199,6 +229,8 @@ async function loadPublicListings(url = collectionUrl) {
   }
 
   requestedUrl = url;
+  const currentSearch = getSupportedSearch(new URL(url, window.location.origin).searchParams);
+  window.history.replaceState(null, "", collectionPageUrl(currentSearch));
   isLoading = true;
   previousUrl = null;
   nextUrl = null;
@@ -284,7 +316,12 @@ function createListingCard(listing, showDetails = false) {
   const detailLink = card.querySelector(".listing-card__detail-link");
   detailLink.hidden = showDetails || !isListingId(listing.listingId);
   if (!detailLink.hidden) {
-    detailLink.href = `./index.html?listingId=${encodeURIComponent(listing.listingId)}`;
+    const detailParameters = new URLSearchParams({ listingId: listing.listingId });
+    const returnSearch = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams).toString();
+    if (returnSearch) {
+      detailParameters.set("returnSearch", returnSearch);
+    }
+    detailLink.href = `./index.html?${detailParameters}`;
   }
 
   for (const [field, value] of [

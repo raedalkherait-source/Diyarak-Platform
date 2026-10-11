@@ -40,7 +40,7 @@ Previous and next buttons follow the API's `Link` header. Next also requires
 shows the current page without inferring a total count or last page.
 Only links to the same-origin public collection endpoint are accepted.
 Navigation is disabled while loading and after failures. Retry repeats the
-failed page request; Refresh listings returns to the first page.
+failed page request; Refresh listings returns to the first page while retaining applied filters.
 Empty pages retain any previous-page link supplied by the API.
 
 Run the frontend behavior tests with Node.js (no package installation needed):
@@ -59,8 +59,8 @@ unknown; no private fields are rendered.
 
 Malformed identifiers do not trigger an API request. A 404 shows a not-found
 message; HTTP and network failures offer Retry for the same listing.
-Refresh listing reloads the current detail. Back to listings opens the initial
-collection. This view uses the existing development-only static hosting.
+Refresh listing reloads the current detail. Back to listings restores the
+collection search carried by the detail link. This view uses the existing development-only static hosting.
 
 The frontend behavior test file covers pagination and detail loading.
 
@@ -111,6 +111,23 @@ filters during pagination. Clear filters resets the form and reloads the initial
 unfiltered collection. Controls are disabled during loading; filters are hidden
 on detail views. Unsubmitted form edits do not change the current search.
 
-Filters are session-local to this page. Detail navigation and Back to listings
-retain their existing behavior; returning opens the unfiltered first page.
+Filters and page coordinates are stored in the collection URL. Detail navigation
+includes the return search, so Back to listings restores that page and its filters.
 The initial form does not add price ranges, ranking, or total-count semantics.
+
+## Shareable search and return navigation
+
+Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `page`,
+and `pageSize`, including their filter form values. Applying filters, clearing,
+or following server page links replaces the current URL without a document
+reload. Browser reload/bookmarks preserve the current page; Refresh listings
+still starts on page one with the applied filters. Unsubmitted form edits are
+not written to the URL. Failed requests remain in the URL for retry/reload.
+
+Card links include an encoded `returnSearch` query when there is collection
+state to restore. Back to listings always points to the local index page and
+uses only the supported collection parameters; arbitrary redirect destinations
+are never accepted. Direct detail links without returnSearch return to the
+initial collection. No local storage or extra entries per pagination click are
+introduced. Unsupported URL parameters are ignored; the API validates supported
+parameter values, including malformed page coordinates.
