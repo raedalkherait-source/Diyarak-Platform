@@ -100,6 +100,9 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("/app", readme);
         Assert.Contains("/api/market/public/listings", readme);
         Assert.Contains("/openapi/v1.json", readme);
+        Assert.Contains("Local assets only", readme);
+        Assert.Contains("avoids CDN-hosted libraries", readme);
+        Assert.Contains("external runtime dependencies", readme);
     }
 
     [Fact]
