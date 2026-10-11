@@ -81,11 +81,8 @@ public sealed class FrontendStaticContractTests
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(
-            "C:",
-            "Diyarak",
-            "src",
-            "Frontend",
-            "Diyarak.Web",
+            AppContext.BaseDirectory,
+            "FrontendFiles",
             Path.Combine(relativeParts));
 
         return File.ReadAllText(path);
