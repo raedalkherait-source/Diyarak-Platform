@@ -115,4 +115,13 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("href=\"./src/styles/app.css\"", html);
         Assert.Contains("src=\"./src/app.js\"", html);
     }
-}
+
+    [Fact]
+    public void Static_frontend_readme_keeps_core_sections()
+    {
+        string readme = ReadFrontendFile("README.md");
+
+        Assert.Contains("Initial scope:", readme);
+        Assert.Contains("## Development links", readme);
+        Assert.Contains("## Local assets only", readme);
+    }}
