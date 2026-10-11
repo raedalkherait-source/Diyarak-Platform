@@ -272,11 +272,17 @@ function formatLocation(location) {
 }
 
 function formatPrice(price) {
-  if (!price || price.isOnRequest) {
+  if (!price) {
+    return "Price unavailable";
+  }
+
+  if (price.isOnRequest === true) {
     return "Price on request";
   }
 
-  if (price.amount === null || price.amount === undefined || !price.currency) {
+  if (price.isOnRequest !== false
+      || !Number.isFinite(price.amount) || price.amount < 0
+      || typeof price.currency !== "string" || !/^[A-Z]{3}$/.test(price.currency)) {
     return "Price unavailable";
   }
 
@@ -284,10 +290,10 @@ function formatPrice(price) {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency: price.currency,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 20,
     }).format(price.amount);
   } catch {
-    return `${price.amount} ${price.currency}`;
+    return `${formatNumber(price.amount)} ${price.currency}`;
   }
 }
 
@@ -328,13 +334,13 @@ function formatFeatures(features) {
 }
 
 function formatDate(value) {
-  if (!value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)
+      || value.startsWith("0000")) {
     return "Unknown";
   }
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
     return "Unknown";
   }
 
@@ -342,6 +348,7 @@ function formatDate(value) {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 

@@ -85,4 +85,17 @@ Area units display as m², ft², ha, or dunum without converting the stored valu
 An absent or unknown unit is marked unit unknown. Room counts and areas follow
 the browser's number locale, retain fractional values, and preserve zero.
 Construction years remain ungrouped. Missing or invalid numeric values display
-Unknown; empty feature lists display None listed. Price/date formatting is unchanged.
+Unknown; empty feature lists display None listed. Price and date formatting follow the rules below.
+
+## Price and available-date formatting
+
+Only explicit `isOnRequest: true` displays Price on request. Missing, incomplete,
+or invalid prices display Price unavailable. Known prices retain fractional
+amounts with locale-aware currency formatting (up to JavaScript's numeric
+precision), including zero. Currency codes follow the API's three-letter uppercase
+contract. No currency conversion is performed.
+
+`availableFromDate` is a calendar date, not an instant. Valid `yyyy-MM-dd` values
+are formatted in UTC to preserve the same calendar day in every browser time zone.
+Missing, malformed, or impossible dates display Unknown. Leap dates and the
+DateOnly year range 0001 through 9999 are supported.

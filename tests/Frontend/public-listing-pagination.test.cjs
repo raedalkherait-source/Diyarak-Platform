@@ -45,7 +45,7 @@ async function createApp(responses, search = "") {
       if (result instanceof Error) throw result;
       return typeof result === "function" ? result() : result;
     } });
-  await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures}; })()`, context);
+  await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
   return { requests, formatters: context.formatters, get: id => elements.get(`#${id}`),
     click: id => elements.get(`#${id}`).listeners.click() };
 }
@@ -313,4 +313,61 @@ test("collection and detail render the same formatted property facts", async () 
   }
   assert.equal(cardOf(detail).querySelector('[data-detail="transactionIntent"]').querySelector("dd").textContent,"For sale");
   assert.equal(cardOf(detail).querySelector('[data-detail="publishingRole"]').querySelector("dd").textContent,"Professional or agent");
+});
+
+test("fractional and zero prices retain amounts instead of whole-number rounding", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  for (const currency of ["EUR", "USD", "SYP", "JPY", "KWD", "ZZZ"]) {
+    for (const amount of [0, 1200.75, 12.3456]) {
+      const expected = new Intl.NumberFormat(undefined, {style:"currency",currency,maximumFractionDigits:20}).format(amount);
+      assert.equal(f.formatPrice({isOnRequest:false,amount,currency}), expected);
+    }
+  }
+});
+
+test("on-request prices require an explicit true flag", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  assert.equal(f.formatPrice({isOnRequest:true,amount:null,currency:null}), "Price on request");
+  for (const price of [null, undefined, {}, {isOnRequest:null,amount:100,currency:"EUR"},
+    {isOnRequest:"true",amount:100,currency:"EUR"}, {amount:100,currency:"EUR"}]) {
+    assert.equal(f.formatPrice(price), "Price unavailable");
+  }
+});
+
+test("incomplete and invalid known prices are unavailable", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  for (const amount of [null, undefined, -1, NaN, Infinity, "100"]) {
+    assert.equal(f.formatPrice({isOnRequest:false,amount,currency:"EUR"}), "Price unavailable");
+  }
+  for (const currency of [null, undefined, "", "EU", "EURO", "eur", "<script>", 123]) {
+    assert.equal(f.formatPrice({isOnRequest:false,amount:100,currency}), "Price unavailable");
+  }
+});
+
+test("valid available dates keep their calendar day across time zones", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  const expected = new Intl.DateTimeFormat(undefined,{year:"numeric",month:"short",day:"numeric",timeZone:"UTC"});
+  for (const value of ["2026-01-01", "2026-03-29", "2026-10-25", "2024-02-29", "0001-01-01", "9999-12-31"]) {
+    assert.equal(f.formatDate(value), expected.format(new Date(`${value}T00:00:00Z`)), value);
+  }
+});
+
+test("missing, malformed and impossible calendar dates remain unknown", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  for (const value of [null, undefined, "", 20260101, "2026-2-1", "2026-02-29", "2026-04-31",
+    "2026-13-01", "2026-00-01", "2026-01-00", "0000-01-01", "10000-01-01", "2026-01-01T00:00:00Z"]) {
+    assert.equal(f.formatDate(value), "Unknown", String(value));
+  }
+});
+
+test("collection and detail show the same fractional price and available day", async () => {
+  const listing = {listingId,price:{isOnRequest:false,amount:1200.75,currency:"EUR"},availableFromDate:"2026-01-01"};
+  const collection = await createApp([response(1,false,null,[listing])]);
+  const detail = await createApp([detailResponse(listing)],detailQuery);
+  const expectedPrice = new Intl.NumberFormat(undefined,{style:"currency",currency:"EUR",maximumFractionDigits:20}).format(1200.75);
+  const expectedDate = new Intl.DateTimeFormat(undefined,{year:"numeric",month:"short",day:"numeric",timeZone:"UTC"}).format(new Date("2026-01-01T00:00:00Z"));
+  for (const app of [collection,detail]) {
+    assert.equal(cardOf(app).querySelector(".listing-card__price").textContent,expectedPrice);
+    assert.equal(cardOf(app).querySelector("[data-field='available']").textContent,expectedDate);
+  }
 });
