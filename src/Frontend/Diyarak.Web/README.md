@@ -99,3 +99,18 @@ contract. No currency conversion is performed.
 are formatted in UTC to preserve the same calendar day in every browser time zone.
 Missing, malformed, or impossible dates display Unknown. Leap dates and the
 DateOnly year range 0001 through 9999 are supported.
+
+## Initial discovery filters
+
+The collection form uses the existing anonymous API's `city`,
+`transactionIntent`, and `propertyCategory` parameters. Empty inputs are omitted;
+city whitespace is trimmed and all values are URL-encoded. Applying filters
+starts at the first page. Refresh listings retains applied filters and starts
+at the first page; Retry repeats the failed request. Server Link headers retain
+filters during pagination. Clear filters resets the form and reloads the initial
+unfiltered collection. Controls are disabled during loading; filters are hidden
+on detail views. Unsubmitted form edits do not change the current search.
+
+Filters are session-local to this page. Detail navigation and Back to listings
+retain their existing behavior; returning opens the unfiltered first page.
+The initial form does not add price ranges, ranking, or total-count semantics.

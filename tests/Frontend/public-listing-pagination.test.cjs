@@ -19,7 +19,7 @@ function response(page, hasMore, links = null, items = [{}]) {
 async function createApp(responses, search = "") {
   const elements = new Map();
   function element() {
-    return { disabled: false, hidden: false, textContent: "", dataset: {},
+    return { disabled: false, hidden: false, value: "", textContent: "", dataset: {},
       children: [], listeners: {}, nodes: new Map(),
       addEventListener(event, callback) { this.listeners[event] = callback; },
       replaceChildren() { this.children = []; },
@@ -31,7 +31,8 @@ async function createApp(responses, search = "") {
   }
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
-    "listing-pagination", "listing-heading", "back-to-listings"]) {
+    "listing-pagination", "listing-heading", "back-to-listings",
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters"]) {
     elements.set(`#${id}`, element());
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
@@ -47,6 +48,7 @@ async function createApp(responses, search = "") {
     } });
   await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
   return { requests, formatters: context.formatters, get: id => elements.get(`#${id}`),
+    submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
     click: id => elements.get(`#${id}`).listeners.click() };
 }
 
@@ -370,4 +372,90 @@ test("collection and detail show the same fractional price and available day", a
     assert.equal(cardOf(app).querySelector(".listing-card__price").textContent,expectedPrice);
     assert.equal(cardOf(app).querySelector("[data-field='available']").textContent,expectedDate);
   }
+});
+
+test("filter submit trims and encodes city and sends supported API enum values", async () => {
+  const app = await createApp([response(1,false), response(1,false)]);
+  app.get("filter-city").value = "  دمشق & حمص  ";
+  app.get("filter-intent").value = "Sell";
+  app.get("filter-category").value = "Apartment";
+  await app.submit();
+  const url = new URL(app.requests[1], "https://diyarak.example");
+  assert.equal(url.pathname,endpoint);
+  assert.equal(url.searchParams.get("city"),"دمشق & حمص");
+  assert.equal(url.searchParams.get("transactionIntent"),"Sell");
+  assert.equal(url.searchParams.get("propertyCategory"),"Apartment");
+  assert.deepEqual([...url.searchParams.keys()],["city","transactionIntent","propertyCategory"]);
+  assert.equal(url.searchParams.has("page"),false);
+});
+
+test("empty filter values are omitted", async () => {
+  const app = await createApp([response(1,false), response(1,false)]);
+  app.get("filter-city").value = "   ";
+  await app.submit();
+  assert.deepEqual(app.requests,[endpoint,endpoint]);
+});
+
+test("filtered pagination and refresh retain applied filters while refresh resets the page", async () => {
+  const filtered = `${endpoint}?city=Berlin`;
+  const filteredPage2 = `${endpoint}?city=Berlin&page=2&pageSize=1`;
+  const app = await createApp([response(1,false), response(1,true,link(filteredPage2,"next")),
+    response(2,false,link(`${filtered}&page=1&pageSize=1`,"prev")),response(1,false)]);
+  app.get("filter-city").value = "Berlin";
+  await app.submit();
+  await app.click("next-page");
+  assert.equal(app.get("current-page").textContent,"Page 2");
+  app.get("filter-city").value = "Unsubmitted change";
+  await app.click("load-listings");
+  assert.deepEqual(app.requests,[endpoint,filtered,filteredPage2,filtered]);
+  assert.equal(app.get("current-page").textContent,"Page 1");
+});
+
+test("filter errors retry the same submitted request even after form edits", async () => {
+  const app = await createApp([response(1,false),{ok:false,status:400},response(1,false)]);
+  app.get("filter-city").value="Berlin";
+  app.get("filter-intent").value="Rent";
+  await app.submit();
+  assert.equal(app.get("status").dataset.state,"error");
+  assert.equal(app.get("listing-filter-fields").disabled,false);
+  app.get("filter-city").value="Paris";
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?city=Berlin&transactionIntent=Rent`,`${endpoint}?city=Berlin&transactionIntent=Rent`]);
+});
+
+test("clear filters resets the inputs and reloads the unfiltered first page", async () => {
+  const app = await createApp([response(1,false),response(1,false),response(1,false)]);
+  app.get("filter-city").value="Berlin";
+  app.get("filter-intent").value="Sell";
+  app.get("filter-category").value="House";
+  await app.submit();
+  await app.click("clear-filters");
+  assert.equal(app.requests.at(-1),endpoint);
+  for(const id of ["filter-city","filter-intent","filter-category"]) assert.equal(app.get(id).value,"");
+});
+
+test("loading disables the filter fieldset and ignores apply or clear requests", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);
+  app.get("filter-city").value="Berlin";
+  const loading=app.submit();
+  assert.equal(app.get("listing-filter-fields").disabled,true);
+  await app.submit();
+  await app.click("clear-filters");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?city=Berlin`]);
+  assert.equal(app.get("filter-city").value,"Berlin");
+  resolveResponse(response(1,false,null,[]));
+  await loading;
+  assert.equal(app.get("listing-filter-fields").disabled,false);
+  assert.match(app.get("status").textContent,/No public listings/);
+});
+
+test("detail views hide filters and do not execute filter requests", async () => {
+  const app=await createApp([detailResponse({listingId})],detailQuery);
+  assert.equal(app.get("listing-filters").hidden,true);
+  app.get("filter-city").value="Berlin";
+  await app.submit();
+  await app.click("clear-filters");
+  assert.deepEqual(app.requests,[detailUrl]);
 });

@@ -25,6 +25,38 @@
       <a class="secondary-button" href="/app">Frontend Home</a>
     </section>
 
+    <form id="listing-filters" aria-label="Public listing filters">
+      <fieldset id="listing-filter-fields">
+        <legend>Filter listings</legend>
+        <label for="filter-city">City
+          <input id="filter-city" name="city" type="text" autocomplete="address-level2">
+        </label>
+        <label for="filter-intent">Transaction intent
+          <select id="filter-intent" name="transactionIntent">
+            <option value="">Any transaction</option>
+            <option value="Rent">For rent</option>
+            <option value="Sell">For sale</option>
+            <option value="RentForLimitedPeriod">For rent for a limited period</option>
+          </select>
+        </label>
+        <label for="filter-category">Property category
+          <select id="filter-category" name="propertyCategory">
+            <option value="">Any category</option>
+            <option value="Apartment">Apartment</option>
+            <option value="House">House</option>
+            <option value="Plot">Plot</option>
+            <option value="InvestmentProperty">Investment property</option>
+            <option value="GarageOrParkingSpace">Garage or parking space</option>
+            <option value="CommercialProperty">Commercial property</option>
+          </select>
+        </label>
+        <div class="filter-actions">
+          <button type="submit">Apply filters</button>
+          <button id="clear-filters" class="secondary-button" type="button">Clear filters</button>
+        </div>
+      </fieldset>
+    </form>
+
     <section>
       <h2 id="listing-heading">Public listings</h2>
       <a id="back-to-listings" class="secondary-button" href="./index.html" hidden>Back to listings</a>

@@ -142,3 +142,49 @@ button:disabled {
   display: inline-block;
   margin-top: 20px;
 }
+
+#listing-filter-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  min-width: 0;
+  margin: 0 0 28px;
+  padding: 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+}
+
+#listing-filter-fields label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+#listing-filter-fields input,
+#listing-filter-fields select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #64748b;
+  border-radius: 8px;
+  font: inherit;
+  background: white;
+}
+
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  grid-column: 1 / -1;
+}
+
+#listing-filter-fields:disabled {
+  opacity: 0.65;
+}
+
+@media (max-width: 360px) {
+  #listing-filter-fields {
+    grid-template-columns: 1fr;
+  }
+}

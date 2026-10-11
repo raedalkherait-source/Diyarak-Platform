@@ -62,10 +62,17 @@ const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
+const filterForm = document.querySelector("#listing-filters");
+const filterFields = document.querySelector("#listing-filter-fields");
+const cityInput = document.querySelector("#filter-city");
+const intentInput = document.querySelector("#filter-intent");
+const categoryInput = document.querySelector("#filter-category");
+const clearFiltersButton = document.querySelector("#clear-filters");
 const parameters = new URLSearchParams(window.location.search);
 const isDetailView = parameters.has("listingId");
 const selectedListingId = parameters.get("listingId");
 const collectionUrl = "/api/market/public/listings";
+let firstPageUrl = collectionUrl;
 let requestedUrl = collectionUrl;
 let previousUrl = null;
 let nextUrl = null;
@@ -91,18 +98,58 @@ nextButton.addEventListener("click", async () => {
   }
 });
 
+filterForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (isLoading || isDetailView) {
+    return;
+  }
+
+  firstPageUrl = buildFilteredCollectionUrl();
+  await loadPublicListings(firstPageUrl);
+});
+
+clearFiltersButton.addEventListener("click", async () => {
+  if (isLoading || isDetailView) {
+    return;
+  }
+
+  cityInput.value = "";
+  intentInput.value = "";
+  categoryInput.value = "";
+  firstPageUrl = collectionUrl;
+  await loadPublicListings(firstPageUrl);
+});
+
+filterForm.hidden = isDetailView;
 paginationElement.hidden = isDetailView;
 backLink.hidden = !isDetailView;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
 await loadSelectedView();
 
-async function loadSelectedView(url = collectionUrl) {
+async function loadSelectedView(url = firstPageUrl) {
   if (isDetailView) {
     await loadPublicListing();
   } else {
     await loadPublicListings(url);
   }
+}
+
+function buildFilteredCollectionUrl() {
+  const query = new URLSearchParams();
+  const city = cityInput.value.trim();
+  if (city) {
+    query.set("city", city);
+  }
+  if (intentInput.value) {
+    query.set("transactionIntent", intentInput.value);
+  }
+  if (categoryInput.value) {
+    query.set("propertyCategory", categoryInput.value);
+  }
+
+  const search = query.toString();
+  return search ? `${collectionUrl}?${search}` : collectionUrl;
 }
 
 function isListingId(value) {
@@ -224,6 +271,7 @@ function getPageLink(header, relation) {
 }
 
 function updatePagination() {
+  filterFields.disabled = isLoading;
   previousButton.disabled = isLoading || !previousUrl;
   nextButton.disabled = isLoading || !nextUrl;
 }
