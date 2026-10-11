@@ -124,4 +124,5 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("Initial scope:", readme);
         Assert.Contains("## Development links", readme);
         Assert.Contains("## Local assets only", readme);
-    }}
+    }
+}
