@@ -67,6 +67,10 @@ const filterFields = document.querySelector("#listing-filter-fields");
 const cityInput = document.querySelector("#filter-city");
 const intentInput = document.querySelector("#filter-intent");
 const categoryInput = document.querySelector("#filter-category");
+const priceMinInput = document.querySelector("#filter-price-min");
+const priceMaxInput = document.querySelector("#filter-price-max");
+const priceCurrencyInput = document.querySelector("#filter-price-currency");
+const filterError = document.querySelector("#filter-error");
 const clearFiltersButton = document.querySelector("#clear-filters");
 const parameters = new URLSearchParams(window.location.search);
 const isDetailView = parameters.has("listingId");
@@ -110,6 +114,13 @@ filterForm.addEventListener("submit", async event => {
     return;
   }
 
+  const priceError = validatePriceFilters();
+  filterError.textContent = priceError ?? "";
+  filterError.hidden = !priceError;
+  if (priceError) {
+    return;
+  }
+
   firstPageUrl = buildFilteredCollectionUrl();
   await loadPublicListings(firstPageUrl);
 });
@@ -122,6 +133,11 @@ clearFiltersButton.addEventListener("click", async () => {
   cityInput.value = "";
   intentInput.value = "";
   categoryInput.value = "";
+  priceMinInput.value = "";
+  priceMaxInput.value = "";
+  priceCurrencyInput.value = "";
+  filterError.textContent = "";
+  filterError.hidden = true;
   firstPageUrl = collectionUrl;
   await loadPublicListings(firstPageUrl);
 });
@@ -129,6 +145,9 @@ clearFiltersButton.addEventListener("click", async () => {
 cityInput.value = initialSearch.get("city") ?? "";
 intentInput.value = initialSearch.get("transactionIntent") ?? "";
 categoryInput.value = initialSearch.get("propertyCategory") ?? "";
+priceMinInput.value = initialSearch.get("priceMin") ?? "";
+priceMaxInput.value = initialSearch.get("priceMax") ?? "";
+priceCurrencyInput.value = initialSearch.get("priceCurrency") ?? "";
 backLink.href = collectionPageUrl(initialSearch);
 filterForm.hidden = isDetailView;
 paginationElement.hidden = isDetailView;
@@ -148,7 +167,7 @@ async function loadSelectedView(url = firstPageUrl) {
 function getSupportedSearch(query) {
   const supported = new URLSearchParams();
   for (const [key, value] of query) {
-    if (["city", "transactionIntent", "propertyCategory", "page", "pageSize"].includes(key)) {
+    if (["city", "transactionIntent", "propertyCategory", "priceMin", "priceMax", "priceCurrency", "page", "pageSize"].includes(key)) {
       supported.append(key, value);
     }
   }
@@ -165,6 +184,28 @@ function collectionPageUrl(query) {
   return search ? `./index.html?${search}` : "./index.html";
 }
 
+function validatePriceFilters() {
+  const minimum = priceMinInput.value.trim();
+  const maximum = priceMaxInput.value.trim();
+  const currency = priceCurrencyInput.value.trim().toUpperCase();
+  const decimalPattern = /^(?:\d+(?:\.\d*)?|\.\d+)$/;
+  for (const [value, label] of [[minimum, "minimum"], [maximum, "maximum"]]) {
+    if (value && (!decimalPattern.test(value) || !Number.isFinite(Number(value)))) {
+      return `Enter a valid non-negative ${label} price.`;
+    }
+  }
+  if (minimum && maximum && Number(minimum) > Number(maximum)) {
+    return "Minimum price must not exceed maximum price.";
+  }
+  if ((minimum || maximum) && !/^[A-Z]{3}$/.test(currency)) {
+    return "Enter a three-letter currency code for the price range.";
+  }
+  if (!minimum && !maximum && currency) {
+    return "Enter a minimum or maximum price to use a currency filter.";
+  }
+  return null;
+}
+
 function buildFilteredCollectionUrl() {
   const query = new URLSearchParams();
   const city = cityInput.value.trim();
@@ -176,6 +217,18 @@ function buildFilteredCollectionUrl() {
   }
   if (categoryInput.value) {
     query.set("propertyCategory", categoryInput.value);
+  }
+
+  const minimum = priceMinInput.value.trim();
+  const maximum = priceMaxInput.value.trim();
+  if (minimum) {
+    query.set("priceMin", minimum);
+  }
+  if (maximum) {
+    query.set("priceMax", maximum);
+  }
+  if (minimum || maximum) {
+    query.set("priceCurrency", priceCurrencyInput.value.trim().toUpperCase());
   }
 
   const search = query.toString();

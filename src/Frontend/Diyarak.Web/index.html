@@ -50,6 +50,17 @@
             <option value="CommercialProperty">Commercial property</option>
           </select>
         </label>
+        <label for="filter-price-min">Minimum price
+          <input id="filter-price-min" name="priceMin" type="number" min="0" step="any" aria-describedby="price-filter-help filter-error">
+        </label>
+        <label for="filter-price-max">Maximum price
+          <input id="filter-price-max" name="priceMax" type="number" min="0" step="any" aria-describedby="price-filter-help filter-error">
+        </label>
+        <label for="filter-price-currency">Price currency
+          <input id="filter-price-currency" name="priceCurrency" type="text" maxlength="3" placeholder="EUR" autocapitalize="characters" spellcheck="false" aria-describedby="price-filter-help filter-error">
+        </label>
+        <p id="price-filter-help" class="filter-message">Price ranges show listings with a known price in the selected currency. Enter a three-letter currency code, such as SYP, USD, or EUR.</p>
+        <p id="filter-error" class="filter-message" role="alert" hidden></p>
         <div class="filter-actions">
           <button type="submit">Apply filters</button>
           <button id="clear-filters" class="secondary-button" type="button">Clear filters</button>

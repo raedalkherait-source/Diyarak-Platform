@@ -113,12 +113,12 @@ on detail views. Unsubmitted form edits do not change the current search.
 
 Filters and page coordinates are stored in the collection URL. Detail navigation
 includes the return search, so Back to listings restores that page and its filters.
-The initial form does not add price ranges, ranking, or total-count semantics.
+The form does not add ranking or total-count semantics.
 
 ## Shareable search and return navigation
 
 Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `page`,
-and `pageSize`, including their filter form values. Applying filters, clearing,
+`pageSize`, `priceMin`, `priceMax`, and `priceCurrency`, including their filter form values. Applying filters, clearing,
 or following server page links replaces the current URL without a document
 reload. Browser reload/bookmarks preserve the current page; Refresh listings
 still starts on page one with the applied filters. Unsubmitted form edits are
@@ -131,3 +131,17 @@ are never accepted. Direct detail links without returnSearch return to the
 initial collection. No local storage or extra entries per pagination click are
 introduced. Unsupported URL parameters are ignored; the API validates supported
 parameter values, including malformed page coordinates.
+
+## Price range filters
+
+Optional minimum and maximum prices use the existing `priceMin`, `priceMax`,
+and `priceCurrency` API parameters. One bound is sufficient; both must be
+non-negative and minimum must not exceed maximum. Any supplied bound requires
+a three-letter currency code, normalized to uppercase. Currency alone is not
+a valid price filter. Bounds are transmitted as entered without conversion.
+
+Invalid form values show an accessible inline message and leave the current
+results and URL intact. The API remains authoritative for decimal precision
+and search validation. Price ranges exclude on-request prices, as defined by
+the existing backend. Clear resets all price fields; price filters persist
+in page links, shareable URLs, Retry, and return navigation from details.

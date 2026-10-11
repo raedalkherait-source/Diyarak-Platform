@@ -119,6 +119,22 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"clear-filters\"", html);
     }
 
+    [Fact]
+    public void Index_contains_labeled_price_filters_and_accessible_validation()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("for=\"filter-price-min\"", html);
+        Assert.Contains("name=\"priceMin\"", html);
+        Assert.Contains("for=\"filter-price-max\"", html);
+        Assert.Contains("name=\"priceMax\"", html);
+        Assert.Contains("for=\"filter-price-currency\"", html);
+        Assert.Contains("name=\"priceCurrency\"", html);
+        Assert.Contains("id=\"filter-error\"", html);
+        Assert.Contains("role=\"alert\"", html);
+        Assert.Contains("id=\"price-filter-help\"", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error"]) {
     elements.set(`#${id}`, element());
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
@@ -547,4 +547,109 @@ test("unknown URL parameters are ignored and direct details default to the colle
   assert.equal(collection.historyUrls.at(-1),"./index.html?city=Berlin");
   const detail=await createApp([detailResponse({listingId})],detailQuery);
   assert.equal(detail.get("back-to-listings").href,"./index.html");
+});
+
+test("price range submit retains decimal bounds and normalizes currency", async () => {
+  const app=await createApp([response(1,false),response(1,false)]);
+  app.get("filter-price-min").value="0";
+  app.get("filter-price-max").value="1200.75";
+  app.get("filter-price-currency").value=" eur ";
+  await app.submit();
+  const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.equal(query.get("priceMin"),"0");
+  assert.equal(query.get("priceMax"),"1200.75");
+  assert.equal(query.get("priceCurrency"),"EUR");
+  assert.equal(app.get("filter-error").hidden,true);
+});
+
+test("single price bound is accepted and omitted bounds are not sent", async () => {
+  for(const bound of ["min","max"]) {
+    const app=await createApp([response(1,false),response(1,false)]);
+    app.get(`filter-price-${bound}`).value="100.25";
+    app.get("filter-price-currency").value="SYP";
+    await app.submit();
+    const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+    assert.equal(query.get(bound==="min"?"priceMin":"priceMax"),"100.25");
+    assert.equal(query.has(bound==="min"?"priceMax":"priceMin"),false);
+    assert.equal(query.get("priceCurrency"),"SYP");
+  }
+});
+
+test("invalid price forms do not fetch, clear cards, or change URL", async () => {
+  for(const [minimum,maximum,currency] of [["20","10","EUR"],["-1","","EUR"],["oops","","EUR"],
+    ["1e3","","EUR"],["10","",""],["10","","EU"],["","","USD"]]) {
+    const app=await createApp([response(1,false)]);
+    app.get("filter-price-min").value=minimum;
+    app.get("filter-price-max").value=maximum;
+    app.get("filter-price-currency").value=currency;
+    await app.submit();
+    assert.deepEqual(app.requests,[endpoint]);
+    assert.deepEqual(app.historyUrls,["./index.html"]);
+    assert.equal(app.get("listing-grid").children.length,1);
+    assert.equal(app.get("filter-error").hidden,false);
+    assert.notEqual(app.get("filter-error").textContent,"");
+    assert.equal(app.get("retry-listings").hidden,true);
+  }
+});
+
+test("correcting price validation submits normally and clears the inline error", async () => {
+  const app=await createApp([response(1,false),response(1,false)]);
+  app.get("filter-price-min").value="10";
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden,false);
+  app.get("filter-price-currency").value="USD";
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.get("filter-error").textContent,"");
+  assert.equal(app.requests.at(-1),`${endpoint}?priceMin=10&priceCurrency=USD`);
+});
+
+test("clear price fields also dismisses validation and restores unfiltered results", async () => {
+  const app=await createApp([response(1,false),response(1,false)]);
+  app.get("filter-price-min").value="20";
+  app.get("filter-price-max").value="10";
+  app.get("filter-price-currency").value="EUR";
+  await app.submit();
+  await app.click("clear-filters");
+  for(const id of ["filter-price-min","filter-price-max","filter-price-currency"]) assert.equal(app.get(id).value,"");
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.requests.at(-1),endpoint);
+  assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("bookmarked price search and detail return retain price bounds and currency", async () => {
+  const query="priceMin=0&priceMax=1200.75&priceCurrency=EUR&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.deepEqual(app.requests,[`${endpoint}?${query}`]);
+  assert.equal(app.get("filter-price-min").value,"0");
+  assert.equal(app.get("filter-price-max").value,"1200.75");
+  assert.equal(app.get("filter-price-currency").value,"EUR");
+  const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  const detail=await createApp([detailResponse({listingId})],detailLink.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+});
+
+test("price pagination failure and Retry preserve the server page request", async () => {
+  const next=`${endpoint}?priceMin=10&priceCurrency=EUR&page=2&pageSize=1`;
+  const app=await createApp([response(1,false),response(1,true,link(next,"next")),{ok:false,status:503},response(2,false)]);
+  app.get("filter-price-min").value="10";
+  app.get("filter-price-currency").value="EUR";
+  await app.submit();
+  await app.click("next-page");
+  await app.click("retry-listings");
+  assert.equal(app.requests.at(-2),next);
+  assert.equal(app.requests.at(-1),next);
+  assert.equal(app.historyUrls.at(-1),"./index.html?priceMin=10&priceCurrency=EUR&page=2&pageSize=1");
+});
+
+test("equal bounds are valid and blank price controls introduce no price parameters", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false)]);
+  await app.submit();
+  assert.equal(app.requests.at(-1),endpoint);
+  app.get("filter-price-min").value="10.5";
+  app.get("filter-price-max").value="10.5";
+  app.get("filter-price-currency").value="EUR";
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.requests.at(-1),`${endpoint}?priceMin=10.5&priceMax=10.5&priceCurrency=EUR`);
 });
