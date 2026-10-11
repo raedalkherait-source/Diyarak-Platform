@@ -6,6 +6,12 @@ const retryButton = document.querySelector("#retry-listings");
 const previousButton = document.querySelector("#previous-page");
 const nextButton = document.querySelector("#next-page");
 const pageElement = document.querySelector("#current-page");
+const paginationElement = document.querySelector("#listing-pagination");
+const headingElement = document.querySelector("#listing-heading");
+const backLink = document.querySelector("#back-to-listings");
+const parameters = new URLSearchParams(window.location.search);
+const isDetailView = parameters.has("listingId");
+const selectedListingId = parameters.get("listingId");
 const collectionUrl = "/api/market/public/listings";
 let requestedUrl = collectionUrl;
 let previousUrl = null;
@@ -13,11 +19,11 @@ let nextUrl = null;
 let isLoading = false;
 
 loadButton.addEventListener("click", async () => {
-  await loadPublicListings();
+  await loadSelectedView();
 });
 
 retryButton.addEventListener("click", async () => {
-  await loadPublicListings(requestedUrl);
+  await loadSelectedView(requestedUrl);
 });
 
 previousButton.addEventListener("click", async () => {
@@ -32,7 +38,60 @@ nextButton.addEventListener("click", async () => {
   }
 });
 
-await loadPublicListings();
+paginationElement.hidden = isDetailView;
+backLink.hidden = !isDetailView;
+headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
+loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
+await loadSelectedView();
+
+async function loadSelectedView(url = collectionUrl) {
+  if (isDetailView) {
+    await loadPublicListing();
+  } else {
+    await loadPublicListings(url);
+  }
+}
+
+function isListingId(value) {
+  return typeof value === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+async function loadPublicListing() {
+  if (isLoading) {
+    return;
+  }
+
+  gridElement.replaceChildren();
+  if (!isListingId(selectedListingId)) {
+    setReadyState("Invalid listing link. Return to public listings.");
+    loadButton.disabled = true;
+    return;
+  }
+
+  isLoading = true;
+  setLoadingState();
+  statusElement.textContent = "Loading listing details...";
+  try {
+    const response = await fetch(`${collectionUrl}/${encodeURIComponent(selectedListingId)}`);
+    if (response.status === 404) {
+      setReadyState("Listing not found or no longer public.");
+      return;
+    }
+    if (!response.ok) {
+      setErrorState(`Unable to load listing. HTTP ${response.status}.`);
+      return;
+    }
+
+    const listing = await response.json();
+    gridElement.append(createListingCard(listing, true));
+    setReadyState("Listing details loaded.");
+  } catch {
+    setErrorState("Unable to reach the API. Check that Diyarak.Api is running.");
+  } finally {
+    isLoading = false;
+  }
+}
 
 async function loadPublicListings(url = collectionUrl) {
   if (isLoading) {
@@ -116,11 +175,27 @@ function updatePagination() {
   nextButton.disabled = isLoading || !nextUrl;
 }
 
-function createListingCard(listing) {
+function createListingCard(listing, showDetails = false) {
   const fragment = template.content.cloneNode(true);
   const card = fragment.querySelector(".listing-card");
   const property = listing.property ?? {};
   const location = property.location ?? {};
+  const detailLink = card.querySelector(".listing-card__detail-link");
+  detailLink.hidden = showDetails || !isListingId(listing.listingId);
+  if (!detailLink.hidden) {
+    detailLink.href = `./index.html?listingId=${encodeURIComponent(listing.listingId)}`;
+  }
+
+  for (const [field, value] of [
+    ["publishingRole", listing.context?.publishingRole],
+    ["transactionIntent", listing.context?.transactionIntent],
+    ["furnishingQuality", property.furnishingQuality],
+    ["commercialSubtype", property.commercialSubtype],
+  ]) {
+    const fact = card.querySelector(`[data-detail="${field}"]`);
+    fact.hidden = !showDetails;
+    fact.querySelector("dd").textContent = value ?? "Unknown";
+  }
 
   card.querySelector(".listing-card__location").textContent = formatLocation(location);
   card.querySelector(".listing-card__headline").textContent = listing.headline ?? "Untitled listing";

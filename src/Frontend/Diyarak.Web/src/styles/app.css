@@ -133,3 +133,12 @@ button:disabled {
 .listing-card__facts {
   row-gap: 0.75rem;
 }
+
+[hidden] {
+  display: none !important;
+}
+
+.listing-card__detail-link {
+  display: inline-block;
+  margin-top: 20px;
+}

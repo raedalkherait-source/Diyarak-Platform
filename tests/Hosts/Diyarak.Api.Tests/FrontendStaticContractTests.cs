@@ -89,6 +89,20 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"current-page\"", html);
     }
 
+    [Fact]
+    public void Index_contains_public_listing_detail_navigation_and_facts()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("listing-card__detail-link", html);
+        Assert.Contains("id=\"back-to-listings\"", html);
+        Assert.Contains("id=\"listing-heading\"", html);
+        Assert.Contains("data-detail=\"publishingRole\"", html);
+        Assert.Contains("data-detail=\"transactionIntent\"", html);
+        Assert.Contains("data-detail=\"furnishingQuality\"", html);
+        Assert.Contains("data-detail=\"commercialSubtype\"", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

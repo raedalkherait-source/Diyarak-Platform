@@ -26,8 +26,9 @@
     </section>
 
     <section>
-      <h2>Public listings</h2>
-      <nav class="toolbar" aria-label="Listing pages">
+      <h2 id="listing-heading">Public listings</h2>
+      <a id="back-to-listings" class="secondary-button" href="./index.html" hidden>Back to listings</a>
+      <nav id="listing-pagination" class="toolbar" aria-label="Listing pages">
         <button id="previous-page" class="secondary-button" type="button" disabled>Previous page</button>
         <span id="current-page" aria-live="polite"></span>
         <button id="next-page" class="secondary-button" type="button" disabled>Next page</button>
@@ -78,7 +79,24 @@
           <dt>Available</dt>
           <dd data-field="available"></dd>
         </div>
+        <div data-detail="publishingRole" hidden>
+          <dt>Publishing role</dt>
+          <dd></dd>
+        </div>
+        <div data-detail="transactionIntent" hidden>
+          <dt>Transaction intent</dt>
+          <dd></dd>
+        </div>
+        <div data-detail="furnishingQuality" hidden>
+          <dt>Furnishing quality</dt>
+          <dd></dd>
+        </div>
+        <div data-detail="commercialSubtype" hidden>
+          <dt>Commercial subtype</dt>
+          <dd></dd>
+        </div>
       </dl>
+      <a class="listing-card__detail-link" href="./index.html" hidden>View listing details</a>
     </article>
   </template>
 

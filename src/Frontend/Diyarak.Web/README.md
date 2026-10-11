@@ -13,7 +13,7 @@ Backend integration references:
 Initial scope:
 
 - public listing collection page;
-- public listing detail page placeholder;
+- public listing detail view;
 - safe rendering of public Listing and Property fields;
 - no authentication;
 - no contact, favorites, analytics, maps, or agent/company workflows.
@@ -48,3 +48,18 @@ Run the frontend behavior tests with Node.js (no package installation needed):
 ```sh
 node --test tests/Frontend/public-listing-pagination.test.cjs
 ```
+
+## Public listing details
+
+Cards link to `/app/index.html?listingId=<listingId>`. This URL can be opened
+or bookmarked directly. The detail view loads the anonymous detail endpoint
+and reuses the safe public card renderer, adding publishing role, transaction
+intent, furnishing quality, and commercial subtype. Optional values remain
+unknown; no private fields are rendered.
+
+Malformed identifiers do not trigger an API request. A 404 shows a not-found
+message; HTTP and network failures offer Retry for the same listing.
+Refresh listing reloads the current detail. Back to listings opens the initial
+collection. This view uses the existing development-only static hosting.
+
+The frontend behavior test file covers pagination and detail loading.
