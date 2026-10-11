@@ -112,6 +112,8 @@ public sealed class FrontendStaticContractTests
 
         Assert.DoesNotContain("https://", html);
         Assert.DoesNotContain("http://", html);
+        Assert.DoesNotContain("integrity=", html);
+        Assert.DoesNotContain("crossorigin=", html);
         Assert.Contains("href=\"./src/styles/app.css\"", html);
         Assert.Contains("src=\"./src/app.js\"", html);
     }
