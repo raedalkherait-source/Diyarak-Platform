@@ -195,6 +195,19 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("aria-describedby=\"year-parking-filter-help filter-error\"", html);
     }
 
+    [Fact]
+    public void Index_contains_labeled_furnishing_quality_filter()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("for=\"filter-furnishing\"", html);
+        Assert.Contains("name=\"furnishingQuality\"", html);
+        foreach (string quality in new[] { "Simple", "Normal", "Upscale", "Luxury" })
+        {
+            Assert.Contains($"value=\"{quality}\"", html);
+        }
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

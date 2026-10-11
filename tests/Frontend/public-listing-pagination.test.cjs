@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing"]) {
     elements.set(`#${id}`, element());
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
@@ -1022,4 +1022,78 @@ test("loading prevents submitting or clearing year and parking edits", async () 
   assert.deepEqual(app.requests,[endpoint,`${endpoint}?constructionYearMin=2000&parkingSpaceCountMin=0`]);
   resolveResponse(response(1,false));await loading;
   assert.equal(app.get("listing-filter-fields").disabled,false);
+});
+
+test("furnishing filter sends each supported quality and omits Any quality", async () => {
+  for(const quality of ["","Simple","Normal","Upscale","Luxury"]) {
+    const app=await createApp([response(1,false),response(1,false)]);
+    app.get("filter-furnishing").value=quality;
+    await app.submit();
+    assert.equal(app.requests.at(-1),quality?`${endpoint}?furnishingQuality=${quality}`:endpoint);
+  }
+});
+
+test("furnishing combines with existing filters and resets page coordinates", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?page=3&pageSize=5");
+  for(const [id,value] of [["city","Berlin"],["intent","Sell"],["category","House"],["furnishing","Luxury"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) app.get(`filter-${id}`).value=value;
+  await app.submit();
+  const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(Object.fromEntries(query),{city:"Berlin",transactionIntent:"Sell",propertyCategory:"House",furnishingQuality:"Luxury",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0"});
+});
+
+test("furnishing bookmark reload and details restore the applied quality", async () => {
+  const query="city=Berlin&furnishingQuality=Upscale&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.equal(app.get("filter-furnishing").value,"Upscale");
+  const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(detailLink.searchParams.get("returnSearch"),query);
+  const detail=await createApp([detailResponse({listingId})],detailLink.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("listing-filters").hidden,true);
+  const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
+  assert.equal(reload.get("filter-furnishing").value,"Upscale");
+});
+
+test("furnishing navigation Retry and Refresh preserve applied choice over edits", async () => {
+  const filters="furnishingQuality=Normal&pageSize=1";
+  const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  app.get("filter-furnishing").value="Luxury";
+  await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);
+  assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
+});
+
+test("Clear resets furnishing and other filters and dismisses validation", async () => {
+  const app=await createApp([response(1,false),response(1,false)],"?furnishingQuality=Luxury&constructionYearMin=0");
+  await app.submit();assert.equal(app.get("filter-error").hidden,false);
+  await app.click("clear-filters");
+  assert.equal(app.get("filter-furnishing").value,"");
+  assert.equal(app.get("filter-year-min").value,"");
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.requests.at(-1),endpoint);
+  assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("loading blocks furnishing submission and Clear", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);
+  app.get("filter-furnishing").value="Simple";
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("filter-furnishing").value="Luxury";
+  await app.submit();await app.click("clear-filters");
+  assert.equal(app.get("filter-furnishing").value,"Luxury");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?furnishingQuality=Simple`]);
+  resolveResponse(response(1,false));await loading;
+  assert.equal(app.get("listing-filter-fields").disabled,false);
+});
+
+test("malformed bookmarked furnishing value remains subject to API validation", async () => {
+  const query="furnishingQuality=Unknown&page=2";
+  const app=await createApp([{ok:false,status:400},response(2,false)],`?${query}`);
+  assert.equal(app.get("status").dataset.state,"error");
+  assert.equal(app.historyUrls.at(-1),`./index.html?${query}`);
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
 });

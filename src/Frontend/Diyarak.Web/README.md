@@ -117,7 +117,7 @@ The form does not add ranking or total-count semantics.
 
 ## Shareable search and return navigation
 
-Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `page`,
+Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `furnishingQuality`, `page`,
 `pageSize`, `priceMin`, `priceMax`, `priceCurrency`, `livingAreaMin`, `livingAreaMax`, `livingAreaUnit`, `totalRoomsMin`, `totalRoomsMax`, `bedroomCountMin`,
 `bedroomCountMax`, `bathroomCountMin`, `bathroomCountMax`, `constructionYearMin`, `constructionYearMax`,
 `parkingSpaceCountMin`, and `parkingSpaceCountMax`, including their filter form values. Applying filters, clearing,
@@ -196,3 +196,17 @@ validation retains current results and URL. Bookmarks remain subject to
 API validation. All four fields restore from URLs and persist through page
 links, Refresh, Retry and detail return links. Clear resets them; loading
 disables the form and details keep it hidden.
+
+## Furnishing quality filter
+
+The optional single-choice `furnishingQuality` filter uses the existing API
+values Simple, Normal, Upscale, and Luxury. Any quality omits the parameter.
+The backend filters the property's furnishing quality; properties without a
+matching value are excluded when a quality is selected.
+
+This filter combines with all existing discovery and numeric filters.
+Applying starts on page one; the choice restores from bookmarks and persists
+through server page links, Refresh, Retry, and detail return navigation.
+Clear returns to Any quality. Unsubmitted edits leave applied search intact.
+Loading disables the form, which remains hidden on details. The API validates
+supported query values; no ranking or new backend behavior is introduced.
