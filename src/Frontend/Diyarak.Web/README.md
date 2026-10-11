@@ -24,6 +24,7 @@ When `Diyarak.Api` runs in `Development`, the static frontend is available at:
 - `/app` - static frontend shell.
 - `/api/market/public/listings` - public listings JSON used by the frontend.
 - `/openapi/v1.json` - OpenAPI document for local API contract inspection.
+
 ## Local assets only
 
 The static frontend currently uses only local HTML, CSS, and JavaScript assets. It intentionally avoids CDN-hosted libraries or external runtime dependencies.
