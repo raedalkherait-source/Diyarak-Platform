@@ -28,6 +28,7 @@ When `Diyarak.Api` runs in `Development`, the static frontend is available at:
 ## Local assets only
 
 The static frontend currently uses only local HTML, CSS, and JavaScript assets. It intentionally avoids CDN-hosted libraries or external runtime dependencies.
+
 ## External asset attributes
 
 Because the static frontend uses only local assets, `index.html` should not include external asset markers such as `integrity` or `crossorigin` unless the architecture explicitly changes.
