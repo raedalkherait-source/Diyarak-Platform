@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max"]) {
     elements.set(`#${id}`, element());
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
@@ -780,6 +780,134 @@ test("loading prevents applying or clearing edited area fields", async () => {
   await app.click("clear-filters");
   assert.equal(app.get("filter-area-min").value,"30");
   assert.deepEqual(app.requests,[endpoint,`${endpoint}?livingAreaMin=20&livingAreaUnit=SquareMeter`]);
+  resolveResponse(response(1,false));
+  await loading;
+  assert.equal(app.get("listing-filter-fields").disabled,false);
+});
+
+const roomRanges=[["rooms","totalRooms"],["bedrooms","bedroomCount"],["bathrooms","bathroomCount"]];
+
+test("room ranges combine with city, category, price and living area filters", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?page=3");
+  app.get("filter-city").value=" دمشق ";
+  app.get("filter-intent").value="Rent";
+  app.get("filter-category").value="Apartment";
+  app.get("filter-price-max").value="500";
+  app.get("filter-price-currency").value="USD";
+  app.get("filter-area-min").value="50";
+  app.get("filter-area-unit").value="SquareMeter";
+  for(const [control] of roomRanges) {
+    app.get(`filter-${control}-min`).value=control==="rooms"?" 2.5 ":"0";
+    app.get(`filter-${control}-max`).value=control==="rooms"?"4.5":"2";
+  }
+  await app.submit();
+  const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(Object.fromEntries(query),{city:"دمشق",transactionIntent:"Rent",propertyCategory:"Apartment",priceMax:"500",priceCurrency:"USD",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",totalRoomsMax:"4.5",bedroomCountMin:"0",bedroomCountMax:"2",bathroomCountMin:"0",bathroomCountMax:"2"});
+  assert.equal(app.get("filter-error").hidden,true);
+});
+
+test("each room range accepts a single bound and omits unused bounds", async () => {
+  for(const [control,key] of roomRanges) for(const bound of ["min","max"]) {
+    const app=await createApp([response(1,false),response(1,false)]);
+    app.get(`filter-${control}-${bound}`).value=control==="rooms"?".5":"2";
+    await app.submit();
+    const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+    assert.deepEqual(Object.fromEntries(query),{[`${key}${bound==="min"?"Min":"Max"}`]:control==="rooms"?".5":"2"});
+  }
+});
+
+test("room validation rejects malformed, negative, inverted and fractional integer counts", async () => {
+  for(const [control] of roomRanges) {
+    const cases=[["4","2"],["-1",""],["","-1"],["oops",""],["1e2",""],["Infinity",""],["9".repeat(310),""]];
+    if(control!=="rooms") cases.push(["1.5",""],["","2.5"],["2147483648",""],["","2147483648"],["2.0",""]);
+    for(const [min,max] of cases) {
+      const app=await createApp([response(2,false)],"?city=Berlin&page=2");
+      app.get(`filter-${control}-min`).value=min;
+      app.get(`filter-${control}-max`).value=max;
+      await app.submit();
+      assert.deepEqual(app.requests,[`${endpoint}?city=Berlin&page=2`]);
+      assert.deepEqual(app.historyUrls,["./index.html?city=Berlin&page=2"]);
+      assert.equal(app.get("listing-grid").children.length,1);
+      assert.equal(app.get("filter-error").hidden,false);
+      assert.notEqual(app.get("filter-error").textContent,"");
+    }
+  }
+});
+
+test("room validation can be corrected and integer upper boundary is accepted", async () => {
+  const app=await createApp([response(1,false),response(1,false)]);
+  app.get("filter-bedrooms-min").value="1.5";
+  await app.submit();
+  assert.match(app.get("filter-error").textContent,/whole-number/);
+  app.get("filter-bedrooms-min").value="1";
+  app.get("filter-bedrooms-max").value="2147483647";
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.get("filter-error").textContent,"");
+  assert.equal(app.requests.at(-1),`${endpoint}?bedroomCountMin=1&bedroomCountMax=2147483647`);
+});
+
+test("room controls omit blanks and accept zero and equal bounds", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false)]);
+  await app.submit();
+  assert.equal(app.requests.at(-1),endpoint);
+  for(const [control] of roomRanges) for(const bound of ["min","max"]) app.get(`filter-${control}-${bound}`).value="0";
+  await app.submit();
+  assert.equal(app.requests.at(-1),`${endpoint}?totalRoomsMin=0&totalRoomsMax=0&bedroomCountMin=0&bedroomCountMax=0&bathroomCountMin=0&bathroomCountMax=0`);
+});
+
+test("room bookmark reload and detail return preserve all six bounds", async () => {
+  const query="totalRoomsMin=2.5&totalRoomsMax=4.5&bedroomCountMin=0&bedroomCountMax=3&bathroomCountMin=1&bathroomCountMax=2&page=3&pageSize=5";
+  const app=await createApp([response(3,false,null,[{listingId}])],`?${query}`);
+  const params=new URLSearchParams(query);
+  for(const [control,key] of roomRanges) for(const bound of ["min","max"]) assert.equal(app.get(`filter-${control}-${bound}`).value,params.get(`${key}${bound==="min"?"Min":"Max"}`));
+  const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(detailLink.searchParams.get("returnSearch"),query);
+  const detail=await createApp([detailResponse({listingId})],detailLink.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("listing-filters").hidden,true);
+  const reload=await createApp([response(3,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
+});
+
+test("room pagination, Retry and Refresh retain applied bounds", async () => {
+  const filters="totalRoomsMin=2.5&bedroomCountMax=3&bathroomCountMin=1&pageSize=1";
+  const next=`${endpoint}?${filters}&page=2`;
+  const previous=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),new Error("offline"),
+    response(2,false,link(previous,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  await app.click("next-page");
+  await app.click("retry-listings");
+  await app.click("previous-page");
+  app.get("filter-rooms-min").value="99";
+  await app.click("load-listings");
+  assert.deepEqual(app.requests,[previous,next,next,previous,`${endpoint}?${filters}`]);
+  assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
+});
+
+test("clear resets all room controls and dismisses validation", async () => {
+  const app=await createApp([response(2,false),response(1,false)],"?totalRoomsMin=4&totalRoomsMax=2&bedroomCountMin=0&bedroomCountMax=3&bathroomCountMin=1&bathroomCountMax=2&page=2");
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden,false);
+  await app.click("clear-filters");
+  for(const [control] of roomRanges) for(const bound of ["min","max"]) assert.equal(app.get(`filter-${control}-${bound}`).value,"");
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.requests.at(-1),endpoint);
+  assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("loading blocks submitting or clearing edited room filters", async () => {
+  let resolveResponse;
+  const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);
+  app.get("filter-rooms-min").value="2.5";
+  const loading=app.submit();
+  assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("filter-rooms-min").value="3.5";
+  await app.submit();
+  await app.click("clear-filters");
+  assert.equal(app.get("filter-rooms-min").value,"3.5");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?totalRoomsMin=2.5`]);
   resolveResponse(response(1,false));
   await loading;
   assert.equal(app.get("listing-filter-fields").disabled,false);

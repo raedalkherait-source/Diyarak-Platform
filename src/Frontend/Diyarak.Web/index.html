@@ -76,6 +76,25 @@
           </select>
         </label>
         <p id="area-filter-help" class="filter-message">Enter at least one living area bound and choose its unit. The API compares areas across units; listings without a known living area are excluded.</p>
+        <label for="filter-rooms-min">Minimum total rooms
+          <input id="filter-rooms-min" name="totalRoomsMin" type="number" min="0" step="any" aria-describedby="room-filter-help filter-error">
+        </label>
+        <label for="filter-rooms-max">Maximum total rooms
+          <input id="filter-rooms-max" name="totalRoomsMax" type="number" min="0" step="any" aria-describedby="room-filter-help filter-error">
+        </label>
+        <label for="filter-bedrooms-min">Minimum bedrooms
+          <input id="filter-bedrooms-min" name="bedroomCountMin" type="number" min="0" step="1" max="2147483647" aria-describedby="room-filter-help filter-error">
+        </label>
+        <label for="filter-bedrooms-max">Maximum bedrooms
+          <input id="filter-bedrooms-max" name="bedroomCountMax" type="number" min="0" step="1" max="2147483647" aria-describedby="room-filter-help filter-error">
+        </label>
+        <label for="filter-bathrooms-min">Minimum bathrooms
+          <input id="filter-bathrooms-min" name="bathroomCountMin" type="number" min="0" step="1" max="2147483647" aria-describedby="room-filter-help filter-error">
+        </label>
+        <label for="filter-bathrooms-max">Maximum bathrooms
+          <input id="filter-bathrooms-max" name="bathroomCountMax" type="number" min="0" step="1" max="2147483647" aria-describedby="room-filter-help filter-error">
+        </label>
+        <p id="room-filter-help" class="filter-message">Total rooms may include fractions. Bedrooms and bathrooms must be whole numbers. Each range accepts one or both bounds and excludes listings missing that count.</p>
         <p id="filter-error" class="filter-message" role="alert" hidden></p>
         <div class="filter-actions">
           <button type="submit">Apply filters</button>

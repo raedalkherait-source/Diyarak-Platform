@@ -154,6 +154,27 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"area-filter-help\"", html);
     }
 
+    [Fact]
+    public void Index_contains_labeled_room_ranges_with_accessible_help()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        foreach (var (control, parameter) in new[]
+        {
+            ("rooms", "totalRooms"),
+            ("bedrooms", "bedroomCount"),
+            ("bathrooms", "bathroomCount")
+        })
+        {
+            Assert.Contains($"for=\"filter-{control}-min\"", html);
+            Assert.Contains($"for=\"filter-{control}-max\"", html);
+            Assert.Contains($"name=\"{parameter}Min\"", html);
+            Assert.Contains($"name=\"{parameter}Max\"", html);
+        }
+        Assert.Contains("id=\"room-filter-help\"", html);
+        Assert.Contains("aria-describedby=\"room-filter-help filter-error\"", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

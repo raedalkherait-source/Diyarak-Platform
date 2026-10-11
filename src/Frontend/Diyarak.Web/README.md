@@ -118,7 +118,8 @@ The form does not add ranking or total-count semantics.
 ## Shareable search and return navigation
 
 Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `page`,
-`pageSize`, `priceMin`, `priceMax`, `priceCurrency`, `livingAreaMin`, `livingAreaMax`, and `livingAreaUnit`, including their filter form values. Applying filters, clearing,
+`pageSize`, `priceMin`, `priceMax`, `priceCurrency`, `livingAreaMin`, `livingAreaMax`, `livingAreaUnit`, `totalRoomsMin`, `totalRoomsMax`, `bedroomCountMin`,
+`bedroomCountMax`, `bathroomCountMin`, and `bathroomCountMax`, including their filter form values. Applying filters, clearing,
 or following server page links replaces the current URL without a document
 reload. Browser reload/bookmarks preserve the current page; Refresh listings
 still starts on page one with the applied filters. Unsubmitted form edits are
@@ -161,3 +162,20 @@ with city, transaction, category, and price filters and persist through page
 navigation, Refresh, Retry, reload, and detail return links. Clear resets
 all area controls and dismisses validation. Controls are disabled during
 loading and the form stays hidden in the detail view.
+
+## Room count range filters
+
+The form sends optional `totalRoomsMin`/`totalRoomsMax`,
+`bedroomCountMin`/`bedroomCountMax`, and `bathroomCountMin`/`bathroomCountMax`.
+Each range accepts one or both bounds. Bounds are non-negative and minimum
+must not exceed maximum. Total rooms supports decimals; bedrooms and bathrooms
+require whole numbers within the API's Int32 range (0 to 2147483647).
+Zero is sent explicitly, while blank inputs are omitted. No rounding occurs.
+
+These filters combine with discovery, price, and area filters. The backend
+excludes listings missing the count being filtered. Invalid form values show
+an inline alert without clearing results or changing the URL. Supported values
+from bookmarks remain subject to API validation. All six controls restore
+from URLs, persist in pagination and detail return links, reset with Clear,
+and stay disabled during loading. Refresh retains applied filters and returns
+to page one; Retry repeats the failed request.
