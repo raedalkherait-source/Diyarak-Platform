@@ -128,4 +128,11 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("## Local assets only", readme);
         Assert.Contains("## External asset attributes", readme);
     }
-}
+
+    [Fact]
+    public void Index_keeps_diyarak_page_title()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("<title>Diyarak</title>", html);
+    }}
