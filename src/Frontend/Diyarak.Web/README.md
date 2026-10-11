@@ -75,3 +75,14 @@ policy; the static frontend remains unavailable in Production.
 Open `http://localhost:<port>/app/` through the running API, rather than opening
 HTML from disk. If the page remains unstyled or stuck on Ready, check the browser
 console and Network panel for CSP violations and failed local asset requests.
+
+## Public field formatting
+
+Known public enum values have explicit English display labels in both collection
+cards and details. For example, `FittedKitchen` displays as Fitted kitchen and
+`Sell` as For sale. Unknown or missing enum values display Unknown.
+Area units display as m², ft², ha, or dunum without converting the stored value.
+An absent or unknown unit is marked unit unknown. Room counts and areas follow
+the browser's number locale, retain fractional values, and preserve zero.
+Construction years remain ungrouped. Missing or invalid numeric values display
+Unknown; empty feature lists display None listed. Price/date formatting is unchanged.

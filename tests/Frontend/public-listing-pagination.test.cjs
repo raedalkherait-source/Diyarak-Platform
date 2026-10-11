@@ -45,8 +45,8 @@ async function createApp(responses, search = "") {
       if (result instanceof Error) throw result;
       return typeof result === "function" ? result() : result;
     } });
-  await vm.runInContext(`(async () => { ${source}\n })()`, context);
-  return { requests, get: id => elements.get(`#${id}`),
+  await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures}; })()`, context);
+  return { requests, formatters: context.formatters, get: id => elements.get(`#${id}`),
     click: id => elements.get(`#${id}`).listeners.click() };
 }
 
@@ -176,7 +176,7 @@ test("direct detail URL loads the selected listing and renders public fields as 
   assert.equal(card.querySelector(".listing-card__headline").textContent, headline);
   assert.equal(card.querySelector(".listing-card__location").textContent, "Berlin, 10115");
   assert.equal(card.querySelector(".listing-card__detail-link").hidden, true);
-  assert.equal(card.querySelector('[data-detail="transactionIntent"]').querySelector("dd").textContent, "Rent");
+  assert.equal(card.querySelector('[data-detail="transactionIntent"]').querySelector("dd").textContent, "For rent");
   assert.equal(card.querySelector('[data-detail="commercialSubtype"]').querySelector("dd").textContent, "Unknown");
   assert.equal(card.querySelector('[data-detail="publishingRole"]').hidden, false);
   assert.equal(app.get("status").dataset.state, "ready");
@@ -231,4 +231,86 @@ test("detail refresh cannot start overlapping requests", async () => {
   resolveResponse(detailResponse({ listingId }));
   await loading;
   assert.equal(app.get("load-listings").disabled, false);
+});
+
+test("public enum labels cover all currently supported domain values", async () => {
+  const app = await createApp([response(1, false, null, [])]);
+  const expected = {
+    category: { Apartment: "Apartment", House: "House", Plot: "Plot",
+      InvestmentProperty: "Investment property", GarageOrParkingSpace: "Garage or parking space",
+      CommercialProperty: "Commercial property" },
+    features: { FittedKitchen: "Fitted kitchen", Elevator: "Elevator", BalconyOrTerrace: "Balcony or terrace",
+      GuestToilet: "Guest toilet", GardenOrSharedGardenUse: "Garden or shared garden use", Basement: "Basement",
+      StepFreeAccess: "Step-free access", SuitableForVacationRental: "Suitable for vacation rental",
+      HistoricMonument: "Historic monument", GarageOrParkingSpace: "Garage or parking space" },
+    publishingRole: { Owner: "Owner", Tenant: "Tenant", ProfessionalOrAgent: "Professional or agent" },
+    transactionIntent: { Rent: "For rent", Sell: "For sale", RentForLimitedPeriod: "For rent for a limited period" },
+    furnishingQuality: { Simple: "Simple", Normal: "Normal", Upscale: "Upscale", Luxury: "Luxury" },
+    commercialSubtype: { OfficeOrPractice: "Office or practice", RestaurantOrHotel: "Restaurant or hotel",
+      HallOrProduction: "Hall or production", Retail: "Retail", CommercialPlot: "Commercial plot" },
+    areaUnit: { SquareMeter: "m²", SquareFoot: "ft²", Hectare: "ha", Dunum: "dunum" },
+  };
+  for (const [field, values] of Object.entries(expected)) {
+    for (const [value, label] of Object.entries(values)) {
+      assert.equal(app.formatters.formatLabel(field, value), label, `${field}/${value}`);
+    }
+  }
+});
+
+test("unknown enums and inherited property names never become display labels", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  for (const value of [null, undefined, "", "FutureValue", "toString", "constructor", "__proto__", 1]) {
+    assert.equal(f.formatLabel("features", value), "Unknown");
+  }
+  assert.equal(f.formatLabel("toString", "Owner"), "Unknown");
+  assert.equal(f.formatLabel("missing", "Owner"), "Unknown");
+});
+
+test("areas keep their values while units become symbols without conversion", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  const number = new Intl.NumberFormat(undefined, {maximumFractionDigits: 20});
+  for (const [unit, symbol] of [["SquareMeter", "m²"], ["SquareFoot", "ft²"], ["Hectare", "ha"], ["Dunum", "dunum"]]) {
+    assert.equal(f.formatLivingArea({value: 82.5, unit}), `${number.format(82.5)} ${symbol}`);
+  }
+  assert.equal(f.formatLivingArea({value: 0, unit: "SquareMeter"}), `${number.format(0)} m²`);
+  for (const unit of [null, undefined, "FutureUnit"]) {
+    assert.equal(f.formatLivingArea({value: 12.25, unit}), `${number.format(12.25)} (unit unknown)`);
+  }
+  for (const value of [null, undefined, NaN, Infinity, "82.5"]) {
+    assert.equal(f.formatLivingArea({value, unit: "SquareMeter"}), "Unknown");
+  }
+});
+
+test("numeric counts preserve fractions and zero while years remain ungrouped", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  const number = new Intl.NumberFormat(undefined, {maximumFractionDigits: 20});
+  for (const value of [0, 3.5, 1234.56789]) assert.equal(f.formatNumber(value), number.format(value));
+  for (const value of [null, undefined, Infinity, NaN, "3.5"]) assert.equal(f.formatNumber(value), "Unknown");
+  assert.equal(f.formatYear(1998), "1998");
+  assert.equal(f.formatYear(null), "Unknown");
+  assert.equal(f.formatYear(1998.5), "Unknown");
+});
+
+test("feature labels retain order and distinguish empty from unknown", async () => {
+  const {formatters: f} = await createApp([response(1, false, null, [])]);
+  assert.equal(f.formatFeatures(["FittedKitchen", "BalconyOrTerrace"]), "Fitted kitchen, Balcony or terrace");
+  assert.equal(f.formatFeatures(["FutureFeature"]), "Unknown");
+  for (const value of [[], null, undefined]) assert.equal(f.formatFeatures(value), "None listed");
+});
+
+test("collection and detail render the same formatted property facts", async () => {
+  const listing = {listingId, context:{transactionIntent:"Sell",publishingRole:"ProfessionalOrAgent"},
+    property:{category:"InvestmentProperty",livingArea:{value:82.5,unit:"SquareMeter"},
+      features:["FittedKitchen","BalconyOrTerrace"],totalRooms:3.5,parkingSpaceCount:0,constructionYear:1998}};
+  const collection = await createApp([response(1, false, null, [listing])]);
+  const detail = await createApp([detailResponse(listing)], detailQuery);
+  for (const app of [collection, detail]) {
+    const card = cardOf(app);
+    assert.equal(card.querySelector("[data-field='category']").textContent,"Investment property");
+    assert.equal(card.querySelector("[data-field='features']").textContent,"Fitted kitchen, Balcony or terrace");
+    assert.equal(card.querySelector("[data-field='constructionYear']").textContent,"1998");
+    assert.equal(card.querySelector("[data-field='parking']").textContent,new Intl.NumberFormat().format(0));
+  }
+  assert.equal(cardOf(detail).querySelector('[data-detail="transactionIntent"]').querySelector("dd").textContent,"For sale");
+  assert.equal(cardOf(detail).querySelector('[data-detail="publishingRole"]').querySelector("dd").textContent,"Professional or agent");
 });

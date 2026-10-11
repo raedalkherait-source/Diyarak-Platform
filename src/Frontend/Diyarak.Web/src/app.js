@@ -1,3 +1,56 @@
+const publicLabels = {
+  category: {
+    Apartment: "Apartment",
+    House: "House",
+    Plot: "Plot",
+    InvestmentProperty: "Investment property",
+    GarageOrParkingSpace: "Garage or parking space",
+    CommercialProperty: "Commercial property",
+  },
+  features: {
+    FittedKitchen: "Fitted kitchen",
+    Elevator: "Elevator",
+    BalconyOrTerrace: "Balcony or terrace",
+    GuestToilet: "Guest toilet",
+    GardenOrSharedGardenUse: "Garden or shared garden use",
+    Basement: "Basement",
+    StepFreeAccess: "Step-free access",
+    SuitableForVacationRental: "Suitable for vacation rental",
+    HistoricMonument: "Historic monument",
+    GarageOrParkingSpace: "Garage or parking space",
+  },
+  publishingRole: {
+    Owner: "Owner",
+    Tenant: "Tenant",
+    ProfessionalOrAgent: "Professional or agent",
+  },
+  transactionIntent: {
+    Rent: "For rent",
+    Sell: "For sale",
+    RentForLimitedPeriod: "For rent for a limited period",
+  },
+  furnishingQuality: {
+    Simple: "Simple",
+    Normal: "Normal",
+    Upscale: "Upscale",
+    Luxury: "Luxury",
+  },
+  commercialSubtype: {
+    OfficeOrPractice: "Office or practice",
+    RestaurantOrHotel: "Restaurant or hotel",
+    HallOrProduction: "Hall or production",
+    Retail: "Retail",
+    CommercialPlot: "Commercial plot",
+  },
+  areaUnit: {
+    SquareMeter: "m²",
+    SquareFoot: "ft²",
+    Hectare: "ha",
+    Dunum: "dunum",
+  },
+};
+const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 20 });
+
 const statusElement = document.querySelector("#status");
 const gridElement = document.querySelector("#listing-grid");
 const template = document.querySelector("#listing-card-template");
@@ -194,19 +247,19 @@ function createListingCard(listing, showDetails = false) {
   ]) {
     const fact = card.querySelector(`[data-detail="${field}"]`);
     fact.hidden = !showDetails;
-    fact.querySelector("dd").textContent = value ?? "Unknown";
+    fact.querySelector("dd").textContent = formatLabel(field, value);
   }
 
   card.querySelector(".listing-card__location").textContent = formatLocation(location);
   card.querySelector(".listing-card__headline").textContent = listing.headline ?? "Untitled listing";
   card.querySelector(".listing-card__price").textContent = formatPrice(listing.price);
-  card.querySelector("[data-field='category']").textContent = property.category ?? "Unknown";
+  card.querySelector("[data-field='category']").textContent = formatLabel("category", property.category);
   card.querySelector("[data-field='livingArea']").textContent = formatLivingArea(property.livingArea);
   card.querySelector("[data-field='rooms']").textContent = formatNumber(property.totalRooms);
   card.querySelector("[data-field='bedrooms']").textContent = formatNumber(property.bedroomCount);
   card.querySelector("[data-field='bathrooms']").textContent = formatNumber(property.bathroomCount);
   card.querySelector("[data-field='features']").textContent = formatFeatures(property.features);
-  card.querySelector("[data-field='constructionYear']").textContent = formatNumber(property.constructionYear);
+  card.querySelector("[data-field='constructionYear']").textContent = formatYear(property.constructionYear);
   card.querySelector("[data-field='parking']").textContent = formatNumber(property.parkingSpaceCount);
   card.querySelector("[data-field='available']").textContent = formatDate(listing.availableFromDate);
 
@@ -238,20 +291,32 @@ function formatPrice(price) {
   }
 }
 
+function formatLabel(field, value) {
+  if (!Object.hasOwn(publicLabels, field)) {
+    return "Unknown";
+  }
+  const labels = publicLabels[field];
+  return typeof value === "string" && Object.hasOwn(labels, value)
+    ? labels[value]
+    : "Unknown";
+}
+
 function formatLivingArea(livingArea) {
-  if (!livingArea || livingArea.value === null || livingArea.value === undefined) {
+  if (!livingArea || !Number.isFinite(livingArea.value)) {
     return "Unknown";
   }
 
-  return livingArea.unit ? `${livingArea.value} ${livingArea.unit}` : String(livingArea.value);
+  const amount = formatNumber(livingArea.value);
+  const unit = formatLabel("areaUnit", livingArea.unit);
+  return unit === "Unknown" ? `${amount} (unit unknown)` : `${amount} ${unit}`;
 }
 
 function formatNumber(value) {
-  if (value === null || value === undefined) {
-    return "Unknown";
-  }
+  return Number.isFinite(value) ? numberFormatter.format(value) : "Unknown";
+}
 
-  return String(value);
+function formatYear(value) {
+  return Number.isInteger(value) ? String(value) : "Unknown";
 }
 
 function formatFeatures(features) {
@@ -259,7 +324,7 @@ function formatFeatures(features) {
     return "None listed";
   }
 
-  return features.join(", ");
+  return features.map(value => formatLabel("features", value)).join(", ");
 }
 
 function formatDate(value) {
