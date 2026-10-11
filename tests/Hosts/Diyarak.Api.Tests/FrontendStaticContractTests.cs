@@ -135,4 +135,5 @@ public sealed class FrontendStaticContractTests
         string html = ReadFrontendFile("index.html");
 
         Assert.Contains("<title>Diyarak</title>", html);
-    }}
+    }
+}
