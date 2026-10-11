@@ -44,7 +44,7 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("setReadyState", javascript);
         Assert.Contains("listingCount", javascript);
         Assert.Contains("listingLabel", javascript);
-        Assert.Contains("More pages are available; pagination controls are coming soon", javascript);
+        Assert.Contains("More pages are available.", javascript);
         Assert.Contains("No public listings found. Try again later or adjust your filters.", javascript);
         Assert.Contains("setErrorState", javascript);
         Assert.Contains("retryButton.hidden = false", javascript);
@@ -76,6 +76,17 @@ public sealed class FrontendStaticContractTests
         Assert.Contains(".listing-card__facts", css);
         Assert.Contains("row-gap: 0.75rem", css);
         Assert.Contains("#status[data-state=\"error\"]", css);
+    }
+
+    [Fact]
+    public void Index_contains_accessible_listing_page_controls()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("aria-label=\"Listing pages\"", html);
+        Assert.Contains("id=\"previous-page\"", html);
+        Assert.Contains("id=\"next-page\"", html);
+        Assert.Contains("id=\"current-page\"", html);
     }
 
     private static string ReadFrontendFile(params string[] relativeParts)

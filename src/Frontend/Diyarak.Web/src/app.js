@@ -3,23 +3,53 @@ const gridElement = document.querySelector("#listing-grid");
 const template = document.querySelector("#listing-card-template");
 const loadButton = document.querySelector("#load-listings");
 const retryButton = document.querySelector("#retry-listings");
+const previousButton = document.querySelector("#previous-page");
+const nextButton = document.querySelector("#next-page");
+const pageElement = document.querySelector("#current-page");
+const collectionUrl = "/api/market/public/listings";
+let requestedUrl = collectionUrl;
+let previousUrl = null;
+let nextUrl = null;
+let isLoading = false;
 
 loadButton.addEventListener("click", async () => {
   await loadPublicListings();
 });
 
 retryButton.addEventListener("click", async () => {
-  await loadPublicListings();
+  await loadPublicListings(requestedUrl);
+});
+
+previousButton.addEventListener("click", async () => {
+  if (previousUrl) {
+    await loadPublicListings(previousUrl);
+  }
+});
+
+nextButton.addEventListener("click", async () => {
+  if (nextUrl) {
+    await loadPublicListings(nextUrl);
+  }
 });
 
 await loadPublicListings();
 
-async function loadPublicListings() {
+async function loadPublicListings(url = collectionUrl) {
+  if (isLoading) {
+    return;
+  }
+
+  requestedUrl = url;
+  isLoading = true;
+  previousUrl = null;
+  nextUrl = null;
+  pageElement.textContent = "";
+  updatePagination();
   setLoadingState();
   gridElement.replaceChildren();
 
   try {
-    const response = await fetch("/api/market/public/listings");
+    const response = await fetch(requestedUrl);
 
     if (!response.ok) {
       setErrorState(`Unable to load listings. HTTP ${response.status}.`);
@@ -28,6 +58,10 @@ async function loadPublicListings() {
 
     const payload = await response.json();
     const items = Array.isArray(payload.items) ? payload.items : [];
+    const linkHeader = response.headers.get("Link");
+    previousUrl = getPageLink(linkHeader, "prev");
+    nextUrl = payload.hasMore === true ? getPageLink(linkHeader, "next") : null;
+    pageElement.textContent = `Page ${payload.page}`;
 
     if (items.length === 0) {
       setReadyState("No public listings found. Try again later or adjust your filters.");
@@ -42,12 +76,44 @@ async function loadPublicListings() {
     const listingLabel = listingCount === 1 ? "listing" : "listings";
     setReadyState(
       payload.hasMore
-        ? `Loaded ${listingCount} ${listingLabel}. More pages are available; pagination controls are coming soon.`
+        ? `Loaded ${listingCount} ${listingLabel}. More pages are available.`
         : `Loaded ${listingCount} ${listingLabel}.`,
     );
   } catch {
+    previousUrl = null;
+    nextUrl = null;
+    pageElement.textContent = "";
     setErrorState("Unable to reach the API. Check that Diyarak.Api is running.");
+  } finally {
+    isLoading = false;
+    updatePagination();
   }
+}
+
+function getPageLink(header, relation) {
+  for (const match of (header ?? "").matchAll(/<([^>]+)>;\s*rel="(prev|next)"/g)) {
+    if (match[2] !== relation) {
+      continue;
+    }
+
+    try {
+      const url = new URL(match[1], window.location.origin);
+      if (url.origin === window.location.origin
+          && url.pathname === collectionUrl
+          && !url.username && !url.password && !url.hash) {
+        return url.pathname + url.search;
+      }
+    } catch {
+      // Ignore malformed navigation links.
+    }
+  }
+
+  return null;
+}
+
+function updatePagination() {
+  previousButton.disabled = isLoading || !previousUrl;
+  nextButton.disabled = isLoading || !nextUrl;
 }
 
 function createListingCard(listing) {
