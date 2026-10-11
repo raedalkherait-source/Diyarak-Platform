@@ -63,3 +63,15 @@ Refresh listing reloads the current detail. Back to listings opens the initial
 collection. This view uses the existing development-only static hosting.
 
 The frontend behavior test file covers pagination and detail loading.
+
+## Development content security policy
+
+Development responses under `/app` allow scripts, styles, and API connections
+from the same origin. Other resource types are blocked by `default-src 'none'`;
+inline scripts/styles and external dependencies are not enabled. Frame embedding
+and form submission are blocked. API and other routes retain the restrictive
+policy; the static frontend remains unavailable in Production.
+
+Open `http://localhost:<port>/app/` through the running API, rather than opening
+HTML from disk. If the page remains unstyled or stuck on Ready, check the browser
+console and Network panel for CSP violations and failed local asset requests.

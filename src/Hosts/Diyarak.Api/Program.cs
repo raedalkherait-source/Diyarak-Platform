@@ -167,8 +167,14 @@ app.Use(async (context, next) =>
     context.Response.Headers["Permissions-Policy"] =
         "camera=(), microphone=(), geolocation=()";
 
+    bool isDevelopmentFrontend =
+        app.Environment.IsDevelopment() &&
+        context.Request.Path.StartsWithSegments("/app");
+
     context.Response.Headers["Content-Security-Policy"] =
-        "default-src 'none'; frame-ancestors 'none'";
+        isDevelopmentFrontend
+            ? "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+            : "default-src 'none'; frame-ancestors 'none'";
 
     await next(context);
 });
