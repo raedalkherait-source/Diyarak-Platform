@@ -119,7 +119,8 @@ The form does not add ranking or total-count semantics.
 
 Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `page`,
 `pageSize`, `priceMin`, `priceMax`, `priceCurrency`, `livingAreaMin`, `livingAreaMax`, `livingAreaUnit`, `totalRoomsMin`, `totalRoomsMax`, `bedroomCountMin`,
-`bedroomCountMax`, `bathroomCountMin`, and `bathroomCountMax`, including their filter form values. Applying filters, clearing,
+`bedroomCountMax`, `bathroomCountMin`, `bathroomCountMax`, `constructionYearMin`, `constructionYearMax`,
+`parkingSpaceCountMin`, and `parkingSpaceCountMax`, including their filter form values. Applying filters, clearing,
 or following server page links replaces the current URL without a document
 reload. Browser reload/bookmarks preserve the current page; Refresh listings
 still starts on page one with the applied filters. Unsubmitted form edits are
@@ -179,3 +180,19 @@ from bookmarks remain subject to API validation. All six controls restore
 from URLs, persist in pagination and detail return links, reset with Clear,
 and stay disabled during loading. Refresh retains applied filters and returns
 to page one; Retry repeats the failed request.
+
+## Construction year and parking filters
+
+Optional `constructionYearMin`/`constructionYearMax` and
+`parkingSpaceCountMin`/`parkingSpaceCountMax` accept one or both bounds.
+Years must be whole numbers from 1; parking counts must be whole numbers from
+0. Both use the API Int32 upper bound of 2147483647, and minimum must not
+exceed maximum. No current-year limit is added to the API contract.
+Blank values are omitted; parking zero is transmitted explicitly.
+
+Filters combine with existing discovery, price, area and room ranges.
+The backend excludes missing values for the field being filtered. Inline
+validation retains current results and URL. Bookmarks remain subject to
+API validation. All four fields restore from URLs and persist through page
+links, Refresh, Retry and detail return links. Clear resets them; loading
+disables the form and details keep it hidden.

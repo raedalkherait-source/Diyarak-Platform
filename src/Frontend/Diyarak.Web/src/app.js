@@ -73,7 +73,7 @@ const priceCurrencyInput = document.querySelector("#filter-price-currency");
 const areaMinInput = document.querySelector("#filter-area-min");
 const areaMaxInput = document.querySelector("#filter-area-max");
 const areaUnitInput = document.querySelector("#filter-area-unit");
-const roomFilterRanges = [
+const numericFilterRanges = [
   { key: "totalRooms", label: "total rooms", integer: false,
     minimum: document.querySelector("#filter-rooms-min"),
     maximum: document.querySelector("#filter-rooms-max") },
@@ -84,6 +84,14 @@ const roomFilterRanges = [
     minimum: document.querySelector("#filter-bathrooms-min"),
     maximum: document.querySelector("#filter-bathrooms-max") },
 ];
+numericFilterRanges.push(
+  { key: "constructionYear", label: "construction year", integer: true, lowerBound: 1,
+    minimum: document.querySelector("#filter-year-min"),
+    maximum: document.querySelector("#filter-year-max") },
+  { key: "parkingSpaceCount", label: "parking spaces", integer: true,
+    minimum: document.querySelector("#filter-parking-min"),
+    maximum: document.querySelector("#filter-parking-max") },
+);
 const filterError = document.querySelector("#filter-error");
 const clearFiltersButton = document.querySelector("#clear-filters");
 const parameters = new URLSearchParams(window.location.search);
@@ -128,7 +136,7 @@ filterForm.addEventListener("submit", async event => {
     return;
   }
 
-  const validationError = validatePriceFilters() ?? validateAreaFilters() ?? validateRoomFilters();
+  const validationError = validatePriceFilters() ?? validateAreaFilters() ?? validateNumericFilters();
   filterError.textContent = validationError ?? "";
   filterError.hidden = !validationError;
   if (validationError) {
@@ -153,7 +161,7 @@ clearFiltersButton.addEventListener("click", async () => {
   areaMinInput.value = "";
   areaMaxInput.value = "";
   areaUnitInput.value = "";
-  for (const range of roomFilterRanges) {
+  for (const range of numericFilterRanges) {
     range.minimum.value = "";
     range.maximum.value = "";
   }
@@ -172,7 +180,7 @@ priceCurrencyInput.value = initialSearch.get("priceCurrency") ?? "";
 areaMinInput.value = initialSearch.get("livingAreaMin") ?? "";
 areaMaxInput.value = initialSearch.get("livingAreaMax") ?? "";
 areaUnitInput.value = initialSearch.get("livingAreaUnit") ?? "";
-for (const range of roomFilterRanges) {
+for (const range of numericFilterRanges) {
   range.minimum.value = initialSearch.get(`${range.key}Min`) ?? "";
   range.maximum.value = initialSearch.get(`${range.key}Max`) ?? "";
 }
@@ -195,7 +203,7 @@ async function loadSelectedView(url = firstPageUrl) {
 function getSupportedSearch(query) {
   const supported = new URLSearchParams();
   for (const [key, value] of query) {
-    if (["city", "transactionIntent", "propertyCategory", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax", "bathroomCountMin", "bathroomCountMax", "page", "pageSize"].includes(key)) {
+    if (["city", "transactionIntent", "propertyCategory", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax", "bathroomCountMin", "bathroomCountMax", "constructionYearMin", "constructionYearMax", "parkingSpaceCountMin", "parkingSpaceCountMax", "page", "pageSize"].includes(key)) {
       supported.append(key, value);
     }
   }
@@ -256,16 +264,17 @@ function validateAreaFilters() {
   return null;
 }
 
-function validateRoomFilters() {
-  for (const range of roomFilterRanges) {
+function validateNumericFilters() {
+  for (const range of numericFilterRanges) {
     const minimum = range.minimum.value.trim();
     const maximum = range.maximum.value.trim();
     const pattern = range.integer ? /^\d+$/ : /^(?:\d+(?:\.\d*)?|\.\d+)$/;
     for (const [value, bound] of [[minimum, "minimum"], [maximum, "maximum"]]) {
       if (value && (!pattern.test(value) || !Number.isFinite(Number(value))
-          || (range.integer && Number(value) > 2147483647))) {
+          || (range.integer && (Number(value) < (range.lowerBound ?? 0)
+            || Number(value) > 2147483647)))) {
         return range.integer
-          ? `Enter a whole-number ${bound} ${range.label} count between 0 and 2147483647.`
+          ? `Enter a whole-number ${bound} ${range.label} between ${range.lowerBound ?? 0} and 2147483647.`
           : `Enter a valid non-negative ${bound} ${range.label} count.`;
       }
     }
@@ -313,7 +322,7 @@ function buildFilteredCollectionUrl() {
     query.set("livingAreaUnit", areaUnitInput.value);
   }
 
-  for (const range of roomFilterRanges) {
+  for (const range of numericFilterRanges) {
     const minimum = range.minimum.value.trim();
     const maximum = range.maximum.value.trim();
     if (minimum) {

@@ -175,6 +175,26 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("aria-describedby=\"room-filter-help filter-error\"", html);
     }
 
+    [Fact]
+    public void Index_contains_labeled_construction_year_and_parking_ranges()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        foreach (var (control, parameter) in new[]
+        {
+            ("year", "constructionYear"),
+            ("parking", "parkingSpaceCount")
+        })
+        {
+            Assert.Contains($"for=\"filter-{control}-min\"", html);
+            Assert.Contains($"for=\"filter-{control}-max\"", html);
+            Assert.Contains($"name=\"{parameter}Min\"", html);
+            Assert.Contains($"name=\"{parameter}Max\"", html);
+        }
+        Assert.Contains("id=\"year-parking-filter-help\"", html);
+        Assert.Contains("aria-describedby=\"year-parking-filter-help filter-error\"", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

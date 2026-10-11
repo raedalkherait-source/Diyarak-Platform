@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max"]) {
     elements.set(`#${id}`, element());
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
@@ -910,5 +910,116 @@ test("loading blocks submitting or clearing edited room filters", async () => {
   assert.deepEqual(app.requests,[endpoint,`${endpoint}?totalRoomsMin=2.5`]);
   resolveResponse(response(1,false));
   await loading;
+  assert.equal(app.get("listing-filter-fields").disabled,false);
+});
+
+const yearParkingRanges=[["year","constructionYear",1],["parking","parkingSpaceCount",0]];
+
+test("year and parking ranges combine with all existing filter groups", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?page=3");
+  for(const [id,value] of [["city","Berlin"],["intent","Sell"],["category","House"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["bedrooms-min","1"],["bathrooms-min","1"],["year-min"," 2000 "],["year-max","2020"],["parking-min","0"],["parking-max","2"]]) app.get(`filter-${id}`).value=value;
+  await app.submit();
+  const params=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(Object.fromEntries(params),{city:"Berlin",transactionIntent:"Sell",propertyCategory:"House",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",bedroomCountMin:"1",bathroomCountMin:"1",constructionYearMin:"2000",constructionYearMax:"2020",parkingSpaceCountMin:"0",parkingSpaceCountMax:"2"});
+  assert.equal(app.get("filter-error").hidden,true);
+});
+
+test("year and parking single bounds, equal bounds and integer boundaries are accepted", async () => {
+  for(const [control,key,lower] of yearParkingRanges) {
+    for(const bound of ["min","max"]) for(const value of [String(lower),"2147483647"]) {
+      const app=await createApp([response(1,false),response(1,false)]);
+      app.get(`filter-${control}-${bound}`).value=value;
+      await app.submit();
+      assert.equal(app.requests.at(-1),`${endpoint}?${key}${bound==="min"?"Min":"Max"}=${value}`);
+    }
+    const app=await createApp([response(1,false),response(1,false)]);
+    app.get(`filter-${control}-min`).value=String(lower);
+    app.get(`filter-${control}-max`).value=String(lower);
+    await app.submit();
+    assert.equal(app.requests.at(-1),`${endpoint}?${key}Min=${lower}&${key}Max=${lower}`);
+  }
+});
+
+test("invalid year and parking forms retain cards, requests and URL", async () => {
+  for(const [control] of yearParkingRanges) {
+    const cases=[["4","2"],["-1",""],["","-1"],["1.5",""],["","2.5"],["1e3",""],["oops",""],["2147483648",""],["","2147483648"],["9".repeat(310),""]];
+    if(control==="year") cases.push(["0",""],["","0"]);
+    for(const [min,max] of cases) {
+      const app=await createApp([response(2,false)],"?city=Berlin&page=2");
+      app.get(`filter-${control}-min`).value=min;
+      app.get(`filter-${control}-max`).value=max;
+      await app.submit();
+      assert.deepEqual(app.requests,[`${endpoint}?city=Berlin&page=2`]);
+      assert.deepEqual(app.historyUrls,["./index.html?city=Berlin&page=2"]);
+      assert.equal(app.get("listing-grid").children.length,1);
+      assert.equal(app.get("filter-error").hidden,false);
+    }
+  }
+});
+
+test("correcting year validation submits and clears the inline alert", async () => {
+  const app=await createApp([response(1,false),response(1,false)]);
+  app.get("filter-year-min").value="0";
+  await app.submit();
+  assert.match(app.get("filter-error").textContent,/between 1/);
+  app.get("filter-year-min").value="2000";
+  app.get("filter-parking-max").value="0";
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.get("filter-error").textContent,"");
+  assert.equal(app.requests.at(-1),`${endpoint}?constructionYearMin=2000&parkingSpaceCountMax=0`);
+});
+
+test("year and parking bookmarks reload and return from details with all four values", async () => {
+  const query="constructionYearMin=2000&constructionYearMax=2020&parkingSpaceCountMin=0&parkingSpaceCountMax=2&page=3&pageSize=5";
+  const app=await createApp([response(3,false,null,[{listingId}])],`?${query}`);
+  const params=new URLSearchParams(query);
+  for(const [control,key] of yearParkingRanges) for(const bound of ["min","max"]) assert.equal(app.get(`filter-${control}-${bound}`).value,params.get(`${key}${bound==="min"?"Min":"Max"}`));
+  const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(detailLink.searchParams.get("returnSearch"),query);
+  const detail=await createApp([detailResponse({listingId})],detailLink.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("listing-filters").hidden,true);
+  const reload=await createApp([response(3,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
+});
+
+test("year and parking pagination Retry and Refresh keep applied values", async () => {
+  const filters="constructionYearMin=2000&parkingSpaceCountMax=0&pageSize=1";
+  const next=`${endpoint}?${filters}&page=2`;
+  const prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");
+  app.get("filter-year-min").value="2025";
+  await app.click("load-listings");
+  assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);
+  assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
+});
+
+test("blank year and parking controls omit parameters and Clear resets invalid values", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false)]);
+  await app.submit();assert.equal(app.requests.at(-1),endpoint);
+  app.get("filter-year-min").value="2000";
+  app.get("filter-year-max").value="1990";
+  app.get("filter-parking-min").value="0";
+  app.get("filter-parking-max").value="2";
+  await app.submit();assert.equal(app.get("filter-error").hidden,false);
+  await app.click("clear-filters");
+  for(const [control] of yearParkingRanges) for(const bound of ["min","max"]) assert.equal(app.get(`filter-${control}-${bound}`).value,"");
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.requests.at(-1),endpoint);
+  assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("loading prevents submitting or clearing year and parking edits", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);
+  app.get("filter-year-min").value="2000";app.get("filter-parking-min").value="0";
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("filter-year-min").value="2010";app.get("filter-parking-min").value="1";
+  await app.submit();await app.click("clear-filters");
+  assert.equal(app.get("filter-year-min").value,"2010");assert.equal(app.get("filter-parking-min").value,"1");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?constructionYearMin=2000&parkingSpaceCountMin=0`]);
+  resolveResponse(response(1,false));await loading;
   assert.equal(app.get("listing-filter-fields").disabled,false);
 });

@@ -95,6 +95,19 @@
           <input id="filter-bathrooms-max" name="bathroomCountMax" type="number" min="0" step="1" max="2147483647" aria-describedby="room-filter-help filter-error">
         </label>
         <p id="room-filter-help" class="filter-message">Total rooms may include fractions. Bedrooms and bathrooms must be whole numbers. Each range accepts one or both bounds and excludes listings missing that count.</p>
+        <label for="filter-year-min">Minimum construction year
+          <input id="filter-year-min" name="constructionYearMin" type="number" min="1" max="2147483647" step="1" aria-describedby="year-parking-filter-help filter-error">
+        </label>
+        <label for="filter-year-max">Maximum construction year
+          <input id="filter-year-max" name="constructionYearMax" type="number" min="1" max="2147483647" step="1" aria-describedby="year-parking-filter-help filter-error">
+        </label>
+        <label for="filter-parking-min">Minimum parking spaces
+          <input id="filter-parking-min" name="parkingSpaceCountMin" type="number" min="0" max="2147483647" step="1" aria-describedby="year-parking-filter-help filter-error">
+        </label>
+        <label for="filter-parking-max">Maximum parking spaces
+          <input id="filter-parking-max" name="parkingSpaceCountMax" type="number" min="0" max="2147483647" step="1" aria-describedby="year-parking-filter-help filter-error">
+        </label>
+        <p id="year-parking-filter-help" class="filter-message">Construction years start at 1; parking spaces may be 0. Use whole numbers and one or both bounds. Listings missing the filtered value are excluded.</p>
         <p id="filter-error" class="filter-message" role="alert" hidden></p>
         <div class="filter-actions">
           <button type="submit">Apply filters</button>
