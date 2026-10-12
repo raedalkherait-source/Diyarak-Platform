@@ -117,7 +117,7 @@ The form does not add ranking or total-count semantics.
 
 ## Shareable search and return navigation
 
-Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `commercialSubtype`, `furnishingQuality`, `page`,
+Collection URLs restore `city`, `postalCode`, `transactionIntent`, `propertyCategory`, `commercialSubtype`, `furnishingQuality`, `page`,
 `pageSize`, `priceMin`, `priceMax`, `priceCurrency`, `livingAreaMin`, `livingAreaMax`, `livingAreaUnit`, `totalRoomsMin`, `totalRoomsMax`, `bedroomCountMin`,
 `bedroomCountMax`, `bathroomCountMin`, `bathroomCountMax`, `constructionYearMin`, `constructionYearMax`,
 `parkingSpaceCountMin`, and `parkingSpaceCountMax`, including their filter form values. Applying filters, clearing,
@@ -224,3 +224,18 @@ filters, restores from bookmarks and persists through pagination, Refresh,
 Retry, and detail return links. Clear resets it; loading disables the form
 and details keep it hidden. Unsubmitted edits do not change applied search.
 The API validates supported values; no backend changes are introduced.
+
+## Postal code filter
+
+The optional text field sends `postalCode` using the existing API contract.
+Surrounding whitespace is trimmed; blank values omit the parameter.
+Leading zeros, letters, internal spaces and punctuation are preserved and
+URL-encoded. The backend matches the entire value without letter-case
+sensitivity; wildcard characters are treated literally. No numeric coercion
+or country-specific format restriction is added.
+
+Postal code combines with city and all existing filters. Applying starts
+at page one; the field restores from bookmarks and persists through server
+page links, Refresh, Retry and detail return navigation. Clear resets it.
+Unsubmitted edits do not change applied search; loading disables the form
+and detail views keep it hidden. The API validates supported query values.

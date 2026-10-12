@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal"]) {
     elements.set(`#${id}`, element());
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
@@ -1171,6 +1171,77 @@ test("loading blocks commercial submission and Clear", async () => {
 
 test("invalid bookmarked commercial subtype remains subject to API validation", async () => {
   const query="commercialSubtype=Unknown&page=2";
+  const app=await createApp([{ok:false,status:400},response(2,false)],`?${query}`);
+  assert.equal(app.get("status").dataset.state,"error");assert.equal(app.historyUrls.at(-1),`./index.html?${query}`);
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
+});
+
+test("postal submit preserves leading zeros, letters, spaces and literal special characters", async () => {
+  for(const value of [" 00123 "," SW1A 1AA "," A+B & 10%_ "," ٠٠١٢٣ "]) {
+    const app=await createApp([response(1,false),response(1,false)]);
+    app.get("filter-postal").value=value;await app.submit();
+    const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+    assert.deepEqual(Object.fromEntries(query),{postalCode:value.trim()});
+    assert.equal(app.historyUrls.at(-1),`./index.html?${new URLSearchParams({postalCode:value.trim()})}`);
+  }
+});
+
+test("blank postal values omit the parameter and combine with previous filters", async () => {
+  const app=await createApp([response(3,false),response(1,false),response(1,false)],"?page=3&pageSize=5");
+  app.get("filter-postal").value="  ";await app.submit();assert.equal(app.requests.at(-1),endpoint);
+  for(const [id,value] of [["city","Berlin"],["postal"," 00123 "],["intent","Rent"],["category","CommercialProperty"],["commercial","Retail"],["furnishing","Normal"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) app.get(`filter-${id}`).value=value;
+  await app.submit();
+  assert.deepEqual(Object.fromEntries(new URL(app.requests.at(-1),"https://diyarak.example").searchParams),{city:"Berlin",postalCode:"00123",transactionIntent:"Rent",propertyCategory:"CommercialProperty",commercialSubtype:"Retail",furnishingQuality:"Normal",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0"});
+});
+
+test("postal bookmark reload and details return preserve the complete search", async () => {
+  const query=new URLSearchParams({city:"London",postalCode:"SW1A 1AA",page:"2",pageSize:"5"}).toString();
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.equal(app.get("filter-postal").value,"SW1A 1AA");
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(anchor.searchParams.get("returnSearch"),query);
+  const detail=await createApp([detailResponse({listingId})],anchor.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("listing-filters").hidden,true);
+  const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
+  assert.equal(reload.get("filter-postal").value,"SW1A 1AA");
+});
+
+test("postal pagination Retry and Refresh retain the applied code over edits", async () => {
+  const filters="postalCode=00123&pageSize=1";
+  const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),new Error("offline"),response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  app.get("filter-postal").value="00999";
+  await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);
+  assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
+});
+
+test("Clear resets postal code and dismisses invalid range validation", async () => {
+  const app=await createApp([response(1,false),response(1,false)],"?postalCode=00123&constructionYearMin=0");
+  await app.submit();assert.equal(app.get("filter-error").hidden,false);
+  await app.click("clear-filters");
+  assert.equal(app.get("filter-postal").value,"");assert.equal(app.get("filter-year-min").value,"");
+  assert.equal(app.get("filter-error").hidden,true);assert.equal(app.requests.at(-1),endpoint);
+  assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("loading blocks applying or clearing postal edits", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);
+  app.get("filter-postal").value="00123";
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("filter-postal").value="00999";await app.submit();await app.click("clear-filters");
+  assert.equal(app.get("filter-postal").value,"00999");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?postalCode=00123`]);
+  resolveResponse(response(1,false));await loading;
+  assert.equal(app.get("listing-filter-fields").disabled,false);
+});
+
+test("duplicate postal bookmark parameters are passed to the API for validation", async () => {
+  const query="postalCode=00123&postalCode=00999&page=2";
   const app=await createApp([{ok:false,status:400},response(2,false)],`?${query}`);
   assert.equal(app.get("status").dataset.state,"error");assert.equal(app.historyUrls.at(-1),`./index.html?${query}`);
   await app.click("retry-listings");

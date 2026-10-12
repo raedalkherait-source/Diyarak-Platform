@@ -31,6 +31,10 @@
         <label for="filter-city">City
           <input id="filter-city" name="city" type="text" autocomplete="address-level2">
         </label>
+        <label for="filter-postal">Postal code
+          <input id="filter-postal" name="postalCode" type="text" autocomplete="postal-code" aria-describedby="postal-filter-help">
+        </label>
+        <p id="postal-filter-help" class="filter-message">Matches the full postal code, ignoring letter case. Leading zeros and internal spaces are preserved.</p>
         <label for="filter-intent">Transaction intent
           <select id="filter-intent" name="transactionIntent">
             <option value="">Any transaction</option>

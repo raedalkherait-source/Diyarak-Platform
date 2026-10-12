@@ -226,6 +226,19 @@ public sealed class FrontendStaticContractTests
         }
     }
 
+    [Fact]
+    public void Index_contains_labeled_text_postal_code_filter_and_help()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("for=\"filter-postal\"", html);
+        Assert.Contains("name=\"postalCode\"", html);
+        Assert.Contains("id=\"filter-postal\" name=\"postalCode\" type=\"text\"", html);
+        Assert.Contains("autocomplete=\"postal-code\"", html);
+        Assert.Contains("aria-describedby=\"postal-filter-help\"", html);
+        Assert.Contains("id=\"postal-filter-help\"", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

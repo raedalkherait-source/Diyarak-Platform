@@ -65,6 +65,7 @@ const backLink = document.querySelector("#back-to-listings");
 const filterForm = document.querySelector("#listing-filters");
 const filterFields = document.querySelector("#listing-filter-fields");
 const cityInput = document.querySelector("#filter-city");
+const postalInput = document.querySelector("#filter-postal");
 const intentInput = document.querySelector("#filter-intent");
 const categoryInput = document.querySelector("#filter-category");
 const commercialInput = document.querySelector("#filter-commercial");
@@ -155,6 +156,7 @@ clearFiltersButton.addEventListener("click", async () => {
   }
 
   cityInput.value = "";
+  postalInput.value = "";
   intentInput.value = "";
   categoryInput.value = "";
   furnishingInput.value = "";
@@ -176,6 +178,7 @@ clearFiltersButton.addEventListener("click", async () => {
 });
 
 cityInput.value = initialSearch.get("city") ?? "";
+postalInput.value = initialSearch.get("postalCode") ?? "";
 intentInput.value = initialSearch.get("transactionIntent") ?? "";
 categoryInput.value = initialSearch.get("propertyCategory") ?? "";
 commercialInput.value = initialSearch.get("commercialSubtype") ?? "";
@@ -209,7 +212,7 @@ async function loadSelectedView(url = firstPageUrl) {
 function getSupportedSearch(query) {
   const supported = new URLSearchParams();
   for (const [key, value] of query) {
-    if (["city", "transactionIntent", "propertyCategory", "commercialSubtype", "furnishingQuality", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax", "bathroomCountMin", "bathroomCountMax", "constructionYearMin", "constructionYearMax", "parkingSpaceCountMin", "parkingSpaceCountMax", "page", "pageSize"].includes(key)) {
+    if (["city", "postalCode", "transactionIntent", "propertyCategory", "commercialSubtype", "furnishingQuality", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax", "bathroomCountMin", "bathroomCountMax", "constructionYearMin", "constructionYearMax", "parkingSpaceCountMin", "parkingSpaceCountMax", "page", "pageSize"].includes(key)) {
       supported.append(key, value);
     }
   }
@@ -296,6 +299,10 @@ function buildFilteredCollectionUrl() {
   const city = cityInput.value.trim();
   if (city) {
     query.set("city", city);
+  }
+  const postalCode = postalInput.value.trim();
+  if (postalCode) {
+    query.set("postalCode", postalCode);
   }
   if (intentInput.value) {
     query.set("transactionIntent", intentInput.value);
