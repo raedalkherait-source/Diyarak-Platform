@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -1325,4 +1325,68 @@ test("applying duplicate bookmarked features sends each supported choice once an
   const app=await createApp([response(1,false),response(1,false),response(1,false)],"?propertyFeature=Elevator&propertyFeature=Elevator&propertyFeature=Basement");
   await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyFeature=Elevator&propertyFeature=Basement`);
   app.get("filter-feature-Elevator").checked=false;await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyFeature=Basement`);
+});
+
+test("unfiltered searches and page coordinates show no applied filters", async () => {
+  for(const query of ["","?page=2&pageSize=5","?unknown=value"]) {
+    const app=await createApp([response(2,false)],query);
+    assert.equal(app.get("applied-filter-summary").textContent,"No filters applied.");
+    assert.equal(app.get("applied-filter-summary").hidden,false);
+  }
+});
+
+test("summary describes every supported filter using public labels and exact bounds", async () => {
+  const query="city=Berlin&postalCode=00123&transactionIntent=Sell&propertyCategory=CommercialProperty&commercialSubtype=OfficeOrPractice&furnishingQuality=Upscale&priceMin=0&priceMax=100.25&priceCurrency=EUR&livingAreaMin=0&livingAreaMax=50.5&livingAreaUnit=SquareMeter&totalRoomsMin=2.5&totalRoomsMax=4.5&bedroomCountMin=0&bedroomCountMax=2&bathroomCountMin=1&bathroomCountMax=2&constructionYearMin=2000&constructionYearMax=2020&parkingSpaceCountMin=0&parkingSpaceCountMax=2&propertyFeature=Elevator&propertyFeature=StepFreeAccess&page=2&pageSize=5";
+  const app=await createApp([response(2,false)],`?${query}`);
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Berlin · Postal code: 00123 · Transaction: For sale · Category: Commercial property · Commercial type: Office or practice · Furnishing: Upscale · Minimum price: 0 · Maximum price: 100.25 · Price currency: EUR · Minimum living area: 0 · Maximum living area: 50.5 · Area unit: m² · Minimum total rooms: 2.5 · Maximum total rooms: 4.5 · Minimum bedrooms: 0 · Maximum bedrooms: 2 · Minimum bathrooms: 1 · Maximum bathrooms: 2 · Minimum construction year: 2000 · Maximum construction year: 2020 · Minimum parking spaces: 0 · Maximum parking spaces: 2 · Required features: Elevator, Step-free access");
+});
+
+test("summary follows applied form values but ignores unsubmitted and invalid edits", async () => {
+  const app=await createApp([response(1,false),response(1,false)],"?city=Berlin");
+  app.get("filter-city").value="Paris";
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Berlin");
+  app.get("filter-year-min").value="0";await app.submit();
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Berlin");
+  app.get("filter-year-min").value="2000";await app.submit();
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Paris · Minimum construction year: 2000");
+});
+
+test("summary describes requested server filters through loading failure Retry and Refresh", async () => {
+  const next=`${endpoint}?city=Paris&propertyFeature=Elevator&page=2`;
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,true,link(next,"next")),()=>pending,response(2,false),response(1,false)],"?city=Berlin");
+  const loading=app.click("next-page");
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Paris · Required features: Elevator");
+  resolveResponse({ok:false,status:503});await loading;
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Paris · Required features: Elevator");
+  await app.click("retry-listings");
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Paris · Required features: Elevator");
+  await app.click("load-listings");
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Berlin");
+});
+
+test("Clear restores unfiltered summary and details hide it", async () => {
+  const app=await createApp([response(1,false),response(1,false)],"?propertyFeature=Basement&priceMin=0&priceCurrency=EUR");
+  await app.click("clear-filters");assert.equal(app.get("applied-filter-summary").textContent,"No filters applied.");
+  const params=new URLSearchParams({listingId,returnSearch:"city=Berlin"});
+  const detail=await createApp([detailResponse({listingId})],`?${params}`);
+  assert.equal(detail.get("applied-filter-summary").hidden,true);
+  assert.equal(detail.get("back-to-listings").href,"./index.html?city=Berlin");
+});
+
+test("untrusted location values become literal summary text and unknown enums use Unknown", async () => {
+  const city='<img src=x onerror="alert(1)">';
+  const query=new URLSearchParams({city,postalCode:"<script>test</script>",transactionIntent:"toString",propertyFeature:"Unknown"});
+  const app=await createApp([{ok:false,status:400}],`?${query}`);
+  assert.equal(app.get("applied-filter-summary").textContent,`Search filters: City: ${city} · Postal code: <script>test</script> · Transaction: Unknown · Required features: Unknown`);
+  assert.equal(app.get("applied-filter-summary").children.length,0);
+  assert.equal(app.get("applied-filter-summary").innerHTML,undefined);
+});
+
+test("summary retains repeated enum and feature selections from bookmarks", async () => {
+  const query="propertyCategory=Apartment&propertyCategory=House&propertyFeature=Basement&propertyFeature=Elevator";
+  const app=await createApp([response(1,false)],`?${query}`);
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: Category: Apartment, House · Required features: Basement, Elevator");
+  const reload=await createApp([response(1,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.equal(reload.get("applied-filter-summary").textContent,app.get("applied-filter-summary").textContent);
 });

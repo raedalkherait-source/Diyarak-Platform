@@ -60,6 +60,7 @@ const previousButton = document.querySelector("#previous-page");
 const nextButton = document.querySelector("#next-page");
 const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
+const filterSummary = document.querySelector("#applied-filter-summary");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
 const filterForm = document.querySelector("#listing-filters");
@@ -204,6 +205,7 @@ for (const range of numericFilterRanges) {
   range.maximum.value = initialSearch.get(`${range.key}Max`) ?? "";
 }
 backLink.href = collectionPageUrl(initialSearch);
+filterSummary.hidden = isDetailView;
 filterForm.hidden = isDetailView;
 paginationElement.hidden = isDetailView;
 backLink.hidden = !isDetailView;
@@ -227,6 +229,37 @@ function getSupportedSearch(query) {
     }
   }
   return supported;
+}
+
+function describeAppliedFilters(query) {
+  const fields = [
+    ["city", "City"],
+    ["postalCode", "Postal code"],
+    ["transactionIntent", "Transaction", "transactionIntent"],
+    ["propertyCategory", "Category", "category"],
+    ["commercialSubtype", "Commercial type", "commercialSubtype"],
+    ["furnishingQuality", "Furnishing", "furnishingQuality"],
+    ["priceMin", "Minimum price"],
+    ["priceMax", "Maximum price"],
+    ["priceCurrency", "Price currency"],
+    ["livingAreaMin", "Minimum living area"],
+    ["livingAreaMax", "Maximum living area"],
+    ["livingAreaUnit", "Area unit", "areaUnit"],
+    ...numericFilterRanges.flatMap(range => [
+      [`${range.key}Min`, `Minimum ${range.label}`],
+      [`${range.key}Max`, `Maximum ${range.label}`],
+    ]),
+    ["propertyFeature", "Required features", "features"],
+  ];
+  const parts = [];
+  for (const [key, label, enumField] of fields) {
+    const values = query.getAll(key);
+    if (values.length > 0) {
+      const displayValues = values.map(value => enumField ? formatLabel(enumField, value) : value);
+      parts.push(`${label}: ${displayValues.join(", ")}`);
+    }
+  }
+  return parts.length ? `Search filters: ${parts.join(" · ")}` : "No filters applied.";
 }
 
 function collectionRequestUrl(query) {
@@ -422,6 +455,7 @@ async function loadPublicListings(url = collectionUrl) {
 
   requestedUrl = url;
   const currentSearch = getSupportedSearch(new URL(url, window.location.origin).searchParams);
+  filterSummary.textContent = describeAppliedFilters(currentSearch);
   window.history.replaceState(null, "", collectionPageUrl(currentSearch));
   isLoading = true;
   previousUrl = null;

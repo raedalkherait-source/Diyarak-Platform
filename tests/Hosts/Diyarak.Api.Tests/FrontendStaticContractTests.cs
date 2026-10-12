@@ -258,6 +258,16 @@ public sealed class FrontendStaticContractTests
         }
     }
 
+    [Fact]
+    public void Index_contains_accessible_applied_filter_summary()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("id=\"applied-filter-summary\"", html);
+        Assert.Contains("class=\"applied-filter-summary\" aria-live=\"polite\"", html);
+        Assert.Contains("No filters applied.</p>", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

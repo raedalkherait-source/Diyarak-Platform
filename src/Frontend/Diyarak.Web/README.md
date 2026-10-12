@@ -254,3 +254,19 @@ The outer disabled fieldset disables checkboxes during loading, and detail views
 hide the form. Unknown bookmark values remain subject to API validation;
 only supported values are shown as checkbox choices. Applying the form sends
 only its supported selected choices. No backend changes are introduced.
+
+## Applied search filter summary
+
+An accessible text summary above the collection shows the filters in the
+current API request, using public enum labels and all repeated feature values.
+Numeric bounds preserve their entered strings, including zero and fractions.
+Page and page size are not filters and do not appear in the summary.
+Unfiltered searches show No filters applied.
+
+The summary follows bookmarks, applied form values, server page links,
+Refresh and Retry. It describes the requested search even when loading or
+when the API rejects it; it does not claim that results loaded successfully.
+Unsubmitted form edits and invalid submissions leave the summary unchanged.
+Clear restores No filters applied. Details hide the summary. All content is
+assigned with textContent, including city and postal values; query content
+cannot create markup. No new API behavior or navigation state is introduced.
