@@ -132,6 +132,52 @@
           <input id="filter-parking-max" name="parkingSpaceCountMax" type="number" min="0" max="2147483647" step="1" aria-describedby="year-parking-filter-help filter-error">
         </label>
         <p id="year-parking-filter-help" class="filter-message">Construction years start at 1; parking spaces may be 0. Use whole numbers and one or both bounds. Listings missing the filtered value are excluded.</p>
+        <fieldset id="feature-filter-fields" aria-describedby="feature-filter-help">
+          <legend>Required property features</legend>
+          <p id="feature-filter-help">Listings must include all selected features. Leave all unchecked for any features.</p>
+          <div class="feature-choices">
+            <label class="feature-choice" for="filter-feature-FittedKitchen">
+              <input id="filter-feature-FittedKitchen" name="propertyFeature" type="checkbox" value="FittedKitchen">
+              <span>Fitted kitchen</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-Elevator">
+              <input id="filter-feature-Elevator" name="propertyFeature" type="checkbox" value="Elevator">
+              <span>Elevator</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-BalconyOrTerrace">
+              <input id="filter-feature-BalconyOrTerrace" name="propertyFeature" type="checkbox" value="BalconyOrTerrace">
+              <span>Balcony or terrace</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-GuestToilet">
+              <input id="filter-feature-GuestToilet" name="propertyFeature" type="checkbox" value="GuestToilet">
+              <span>Guest toilet</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-GardenOrSharedGardenUse">
+              <input id="filter-feature-GardenOrSharedGardenUse" name="propertyFeature" type="checkbox" value="GardenOrSharedGardenUse">
+              <span>Garden or shared garden use</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-Basement">
+              <input id="filter-feature-Basement" name="propertyFeature" type="checkbox" value="Basement">
+              <span>Basement</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-StepFreeAccess">
+              <input id="filter-feature-StepFreeAccess" name="propertyFeature" type="checkbox" value="StepFreeAccess">
+              <span>Step-free access</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-SuitableForVacationRental">
+              <input id="filter-feature-SuitableForVacationRental" name="propertyFeature" type="checkbox" value="SuitableForVacationRental">
+              <span>Suitable for vacation rental</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-HistoricMonument">
+              <input id="filter-feature-HistoricMonument" name="propertyFeature" type="checkbox" value="HistoricMonument">
+              <span>Historic monument</span>
+            </label>
+            <label class="feature-choice" for="filter-feature-GarageOrParkingSpace">
+              <input id="filter-feature-GarageOrParkingSpace" name="propertyFeature" type="checkbox" value="GarageOrParkingSpace">
+              <span>Garage or parking space</span>
+            </label>
+          </div>
+        </fieldset>
         <p id="filter-error" class="filter-message" role="alert" hidden></p>
         <div class="filter-actions">
           <button type="submit">Apply filters</button>

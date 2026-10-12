@@ -117,7 +117,7 @@ The form does not add ranking or total-count semantics.
 
 ## Shareable search and return navigation
 
-Collection URLs restore `city`, `postalCode`, `transactionIntent`, `propertyCategory`, `commercialSubtype`, `furnishingQuality`, `page`,
+Collection URLs restore `city`, `postalCode`, `transactionIntent`, `propertyCategory`, `commercialSubtype`, `furnishingQuality`, repeated `propertyFeature`, `page`,
 `pageSize`, `priceMin`, `priceMax`, `priceCurrency`, `livingAreaMin`, `livingAreaMax`, `livingAreaUnit`, `totalRoomsMin`, `totalRoomsMax`, `bedroomCountMin`,
 `bedroomCountMax`, `bathroomCountMin`, `bathroomCountMax`, `constructionYearMin`, `constructionYearMax`,
 `parkingSpaceCountMin`, and `parkingSpaceCountMax`, including their filter form values. Applying filters, clearing,
@@ -239,3 +239,18 @@ at page one; the field restores from bookmarks and persists through server
 page links, Refresh, Retry and detail return navigation. Clear resets it.
 Unsubmitted edits do not change applied search; loading disables the form
 and detail views keep it hidden. The API validates supported query values.
+
+## Required property features
+
+Ten labeled checkboxes use the existing `propertyFeature` API parameter.
+Each selected feature becomes a separate repeated parameter (not a comma list).
+The API requires all selected features; no selection omits this filter.
+The choices use the same known enum values and display labels as property cards.
+
+Selections combine with other filters, restore from repeated URL parameters,
+and persist through pagination, Refresh, Retry, reload and detail return links.
+Clear unchecks every feature. Unsubmitted edits leave applied search unchanged.
+The outer disabled fieldset disables checkboxes during loading, and detail views
+hide the form. Unknown bookmark values remain subject to API validation;
+only supported values are shown as checkbox choices. Applying the form sends
+only its supported selected choices. No backend changes are introduced.

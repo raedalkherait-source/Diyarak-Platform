@@ -239,6 +239,25 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"postal-filter-help\"", html);
     }
 
+    [Fact]
+    public void Index_contains_labeled_required_feature_checkboxes_and_all_match_help()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("id=\"feature-filter-fields\"", html);
+        Assert.Contains("aria-describedby=\"feature-filter-help\"", html);
+        Assert.Contains("Listings must include all selected features.", html);
+        foreach (string feature in new[]
+        {
+            "FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse",
+            "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"
+        })
+        {
+            Assert.Contains($"for=\"filter-feature-{feature}\"", html);
+            Assert.Contains($"id=\"filter-feature-{feature}\" name=\"propertyFeature\" type=\"checkbox\" value=\"{feature}\"", html);
+        }
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

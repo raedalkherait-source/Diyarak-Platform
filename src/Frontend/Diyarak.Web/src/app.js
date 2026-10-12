@@ -70,6 +70,9 @@ const intentInput = document.querySelector("#filter-intent");
 const categoryInput = document.querySelector("#filter-category");
 const commercialInput = document.querySelector("#filter-commercial");
 const furnishingInput = document.querySelector("#filter-furnishing");
+const featureInputs = Object.keys(publicLabels.features).map(value => ({
+  value, input: document.querySelector(`#filter-feature-${value}`),
+}));
 const priceMinInput = document.querySelector("#filter-price-min");
 const priceMaxInput = document.querySelector("#filter-price-max");
 const priceCurrencyInput = document.querySelector("#filter-price-currency");
@@ -161,6 +164,9 @@ clearFiltersButton.addEventListener("click", async () => {
   categoryInput.value = "";
   furnishingInput.value = "";
   commercialInput.value = "";
+  for (const feature of featureInputs) {
+    feature.input.checked = false;
+  }
   priceMinInput.value = "";
   priceMaxInput.value = "";
   priceCurrencyInput.value = "";
@@ -181,6 +187,10 @@ cityInput.value = initialSearch.get("city") ?? "";
 postalInput.value = initialSearch.get("postalCode") ?? "";
 intentInput.value = initialSearch.get("transactionIntent") ?? "";
 categoryInput.value = initialSearch.get("propertyCategory") ?? "";
+const initialFeatures = new Set(initialSearch.getAll("propertyFeature"));
+for (const feature of featureInputs) {
+  feature.input.checked = initialFeatures.has(feature.value);
+}
 commercialInput.value = initialSearch.get("commercialSubtype") ?? "";
 furnishingInput.value = initialSearch.get("furnishingQuality") ?? "";
 priceMinInput.value = initialSearch.get("priceMin") ?? "";
@@ -212,7 +222,7 @@ async function loadSelectedView(url = firstPageUrl) {
 function getSupportedSearch(query) {
   const supported = new URLSearchParams();
   for (const [key, value] of query) {
-    if (["city", "postalCode", "transactionIntent", "propertyCategory", "commercialSubtype", "furnishingQuality", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax", "bathroomCountMin", "bathroomCountMax", "constructionYearMin", "constructionYearMax", "parkingSpaceCountMin", "parkingSpaceCountMax", "page", "pageSize"].includes(key)) {
+    if (["city", "postalCode", "transactionIntent", "propertyCategory", "commercialSubtype", "furnishingQuality", "propertyFeature", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax", "bathroomCountMin", "bathroomCountMax", "constructionYearMin", "constructionYearMax", "parkingSpaceCountMin", "parkingSpaceCountMax", "page", "pageSize"].includes(key)) {
       supported.append(key, value);
     }
   }
@@ -309,6 +319,12 @@ function buildFilteredCollectionUrl() {
   }
   if (categoryInput.value) {
     query.set("propertyCategory", categoryInput.value);
+  }
+
+  for (const feature of featureInputs) {
+    if (feature.input.checked) {
+      query.append("propertyFeature", feature.value);
+    }
   }
 
   if (commercialInput.value) {

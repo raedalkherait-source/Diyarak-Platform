@@ -35,6 +35,9 @@ async function createApp(responses, search = "") {
     "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal"]) {
     elements.set(`#${id}`, element());
   }
+  for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
+    elements.set(`#filter-feature-${value}`, element());
+  }
   elements.get("#listing-card-template").content = { cloneNode: element };
   const requests = [];
   const historyUrls = [];
@@ -1246,4 +1249,80 @@ test("duplicate postal bookmark parameters are passed to the API for validation"
   assert.equal(app.get("status").dataset.state,"error");assert.equal(app.historyUrls.at(-1),`./index.html?${query}`);
   await app.click("retry-listings");
   assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
+});
+
+const featureValues=["FittedKitchen","Elevator","BalconyOrTerrace","GuestToilet","GardenOrSharedGardenUse","Basement","StepFreeAccess","SuitableForVacationRental","HistoricMonument","GarageOrParkingSpace"];
+
+test("feature checkboxes support every domain value and omit unchecked choices", async () => {
+  for(const value of featureValues) {
+    const app=await createApp([response(1,false),response(1,false)]);
+    app.get(`filter-feature-${value}`).checked=true;await app.submit();
+    assert.equal(app.requests.at(-1),`${endpoint}?propertyFeature=${value}`);
+  }
+  const app=await createApp([response(1,false),response(1,false)]);
+  await app.submit();assert.equal(app.requests.at(-1),endpoint);
+});
+
+test("multiple features use repeated parameters and combine with existing filters", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?page=3&pageSize=5");
+  app.get("filter-city").value="Berlin";app.get("filter-postal").value="00123";
+  app.get("filter-category").value="House";app.get("filter-price-min").value="100";app.get("filter-price-currency").value="EUR";
+  for(const value of ["Elevator","GardenOrSharedGardenUse","StepFreeAccess"]) app.get(`filter-feature-${value}`).checked=true;
+  await app.submit();
+  const q=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(q.getAll("propertyFeature"),["Elevator","GardenOrSharedGardenUse","StepFreeAccess"]);
+  assert.equal(q.get("city"),"Berlin");assert.equal(q.get("postalCode"),"00123");assert.equal(q.get("propertyCategory"),"House");
+  assert.equal(q.get("priceMin"),"100");assert.equal(q.get("priceCurrency"),"EUR");assert.equal(q.has("page"),false);
+});
+
+test("feature bookmarks restore checkboxes, reload and return from details", async () => {
+  const query="propertyFeature=StepFreeAccess&propertyFeature=Elevator&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  for(const value of featureValues) assert.equal(app.get(`filter-feature-${value}`).checked,["StepFreeAccess","Elevator"].includes(value));
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(anchor.searchParams.get("returnSearch"),query);
+  const detail=await createApp([detailResponse({listingId})],anchor.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);assert.equal(detail.get("listing-filters").hidden,true);
+  const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);assert.equal(reload.get("filter-feature-Elevator").checked,true);
+});
+
+test("feature pagination Retry and Refresh preserve applied selections over checkbox edits", async () => {
+  const filters="propertyFeature=Elevator&propertyFeature=Basement&pageSize=1";
+  const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  app.get("filter-feature-Elevator").checked=false;app.get("filter-feature-GuestToilet").checked=true;
+  await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
+});
+
+test("Clear unchecks every feature and dismisses range errors", async () => {
+  const app=await createApp([response(1,false),response(1,false)],"?propertyFeature=Elevator&propertyFeature=Basement&constructionYearMin=0");
+  for(const value of featureValues) app.get(`filter-feature-${value}`).checked=true;
+  await app.submit();assert.equal(app.get("filter-error").hidden,false);await app.click("clear-filters");
+  for(const value of featureValues) assert.equal(app.get(`filter-feature-${value}`).checked,false);
+  assert.equal(app.get("filter-error").hidden,true);assert.equal(app.requests.at(-1),endpoint);assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("loading blocks applying or clearing edited feature selections", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);app.get("filter-feature-Elevator").checked=true;
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("filter-feature-Basement").checked=true;await app.submit();await app.click("clear-filters");
+  assert.equal(app.get("filter-feature-Basement").checked,true);assert.deepEqual(app.requests,[endpoint,`${endpoint}?propertyFeature=Elevator`]);
+  resolveResponse(response(1,false));await loading;assert.equal(app.get("listing-filter-fields").disabled,false);
+});
+
+test("unknown feature bookmarks remain subject to API validation without invented choices", async () => {
+  const query="propertyFeature=Unknown&propertyFeature=Elevator&page=2";
+  const app=await createApp([{ok:false,status:400},response(2,false)],`?${query}`);
+  assert.equal(app.get("status").dataset.state,"error");assert.equal(app.get("filter-feature-Elevator").checked,true);
+  for(const value of featureValues.filter(v=>v!=="Elevator")) assert.equal(app.get(`filter-feature-${value}`).checked,false);
+  await app.click("retry-listings");assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
+});
+
+test("applying duplicate bookmarked features sends each supported choice once and supports removal", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false)],"?propertyFeature=Elevator&propertyFeature=Elevator&propertyFeature=Basement");
+  await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyFeature=Elevator&propertyFeature=Basement`);
+  app.get("filter-feature-Elevator").checked=false;await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyFeature=Basement`);
 });
