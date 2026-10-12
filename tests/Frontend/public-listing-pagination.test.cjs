@@ -13,7 +13,7 @@ const link = (url, rel) => `<${url}>; rel="${rel}"`;
 
 function response(page, hasMore, links = null, items = [{}]) {
   return { ok: true, headers: { get: () => links },
-    json: async () => ({ page, hasMore, items }) };
+    json: async () => ({ page, pageSize: 20, hasMore, items }) };
 }
 
 async function createApp(responses, search = "", clock = { setTimeout, clearTimeout }) {
@@ -1684,4 +1684,75 @@ test("corrected validation and Clear dismiss alerts without refocusing hidden me
   app.get("filter-price-currency").value="EUR";await app.submit();assert.equal(app.get("filter-error").focusCount,1);
   app.get("filter-price-min").value="10";await app.submit();assert.equal(app.get("filter-error").hidden,true);
   assert.equal(app.get("filter-error").focusCount,1);await app.click("clear-filters");assert.equal(app.get("filter-error").focusCount,1);
+});
+
+const payloadResponse=payload=>({ok:true,headers:{get:()=>null},json:async()=>payload});
+const validPage=()=>({items:[{}],page:1,pageSize:20,hasMore:false});
+
+test("invalid collection roots and items show retryable error rather than empty results", async () => {
+  for(const payload of [null,[],"text",{}, {...validPage(),items:null},{...validPage(),items:"bad"},
+    {...validPage(),items:[null]},{...validPage(),items:["bad"]},{...validPage(),items:[[]]}]) {
+    const app=await createApp([payloadResponse(payload)],"?city=Berlin&page=2");
+    assert.equal(app.get("status").dataset.state,"error");assert.match(app.get("status").textContent,/invalid listing response/);
+    assert.equal(app.get("retry-listings").hidden,false);assert.equal(app.get("listing-grid").children.length,0);
+    assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");assert.equal(app.historyUrls.at(-1),"./index.html?city=Berlin&page=2");
+  }
+});
+
+test("invalid page metadata and oversize result arrays are rejected", async () => {
+  const payloads=[];
+  for(const page of [undefined,null,0,-1,1.5,"1",2147483648]) payloads.push({...validPage(),page});
+  for(const pageSize of [undefined,null,0,-1,1.5,"20",101]) payloads.push({...validPage(),pageSize});
+  for(const hasMore of [undefined,null,"false",0]) payloads.push({...validPage(),hasMore});
+  payloads.push({...validPage(),pageSize:1,items:[{},{}]});
+  for(const payload of payloads) {
+    const app=await createApp([payloadResponse(payload)]);assert.equal(app.get("status").dataset.state,"error");
+    assert.equal(app.get("current-page").textContent,"");assert.equal(app.get("next-page").disabled,true);assert.equal(app.get("previous-page").disabled,true);
+  }
+});
+
+test("invalid later collection item never leaves partially rendered cards or links", async () => {
+  const bad={...validPage(),items:[{headline:"Valid first item"},null]};
+  const result=payloadResponse(bad);result.headers.get=()=>link(`${endpoint}?page=2`,"next");
+  const app=await createApp([result]);assert.equal(app.get("listing-grid").children.length,0);
+  assert.equal(app.get("next-page").disabled,true);assert.equal(app.get("status").dataset.state,"error");
+});
+
+test("valid empty and optional-field collections retain normal behavior", async () => {
+  for(const payload of [{items:[],page:2,pageSize:1,hasMore:false},validPage(),{...validPage(),page:2147483647,pageSize:100}]) {
+    const app=await createApp([payloadResponse(payload)]);assert.equal(app.get("status").dataset.state,"ready");
+    assert.equal(app.get("current-page").textContent,`Page ${payload.page}`);
+    assert.equal(app.get("listing-grid").children.length,payload.items.length);
+  }
+});
+
+test("invalid collection response Retry repeats exact filtered request and recovers", async () => {
+  const query="priceMin=0&priceCurrency=EUR&propertyFeature=Elevator&pageSize=7&page=3";
+  const app=await createApp([payloadResponse({items:[]}),response(3,false)],`?${query}`);
+  await app.click("retry-listings");assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
+  assert.equal(app.get("status").dataset.state,"ready");assert.equal(app.get("current-page").textContent,"Page 3");
+});
+
+test("detail responses reject malformed roots, missing IDs and mismatched listing IDs", async () => {
+  for(const payload of [null,[],"text",{}, {listingId:"bad"},{listingId:"87654321-1234-1234-1234-123456789abc"}]) {
+    const app=await createApp([detailResponse(payload),detailResponse({listingId})],detailQuery);
+    assert.match(app.get("status").textContent,/invalid listing response/);assert.equal(app.get("listing-grid").children.length,0);
+    assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");
+    await app.click("retry-listings");assert.deepEqual(app.requests,[detailUrl,detailUrl]);assert.equal(app.get("status").textContent,"Listing details loaded.");
+  }
+});
+
+test("matching detail IDs accept letter case and preserve optional field fallbacks", async () => {
+  const app=await createApp([detailResponse({listingId:listingId.toUpperCase()})],detailQuery);
+  assert.equal(app.get("status").textContent,"Listing details loaded.");
+  assert.equal(cardOf(app).querySelector(".listing-card__headline").textContent,"Untitled listing");
+});
+
+test("malformed JSON gets a specific retryable response error for collection and detail", async () => {
+  for(const search of ["",detailQuery]) {
+    const clock=manualClock();const bad={ok:true,json:async()=>{throw new SyntaxError("bad JSON");}};
+    const app=await createApp([bad],search,clock);assert.match(app.get("status").textContent,/invalid listing response/);
+    assert.equal(app.get("retry-listings").hidden,false);assert.equal(app.get("load-listings").disabled,false);
+    assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");assert.equal(clock.count(),0);
+  }
 });

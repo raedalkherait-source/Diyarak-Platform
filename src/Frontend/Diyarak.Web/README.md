@@ -328,3 +328,19 @@ find its message. The alerts do not add normal Tab stops. Browser-native input
 constraints continue to provide their own validation. Successful requests,
 Refresh, Retry and normal navigation do not move focus. Search state, request
 semantics and timeout behavior remain unchanged.
+
+## Public response validation
+
+Successful collection responses must be objects with an item array of objects,
+integer page (1 to Int32 maximum), integer page size (1 to 100), boolean hasMore,
+and no more items than page size. Missing or malformed collection metadata
+shows an invalid-response message instead of an empty result or undefined page.
+Detail responses must be objects with a valid listingId matching the requested
+identifier (case-insensitive). Optional display fields retain existing Unknown
+or unavailable fallbacks; this is not a full replacement for API schema validation.
+
+Malformed JSON and rejected shapes offer Retry for the exact request, release
+busy state and keep applied URL/search intact. Collection navigation remains
+disabled until a valid response supplies links. The whole collection is checked
+before any cards are appended, preventing partial rendering. HTTP and timeout
+handling remain unchanged. No API or database changes are introduced.

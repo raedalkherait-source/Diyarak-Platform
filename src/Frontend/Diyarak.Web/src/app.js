@@ -475,7 +475,30 @@ async function fetchPublicResource(url) {
   }
 }
 
+function isResponseObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function invalidPublicResponse() {
+  const error = new Error("Invalid public API response.");
+  error.name = "InvalidPublicResponse";
+  return error;
+}
+
+function validateCollectionResponse(payload) {
+  if (!isResponseObject(payload)
+      || !Array.isArray(payload.items) || !payload.items.every(isResponseObject)
+      || !Number.isInteger(payload.page) || payload.page < 1 || payload.page > 2147483647
+      || !Number.isInteger(payload.pageSize) || payload.pageSize < 1 || payload.pageSize > 100
+      || payload.items.length > payload.pageSize || typeof payload.hasMore !== "boolean") {
+    throw invalidPublicResponse();
+  }
+}
+
 function publicRequestError(error) {
+  if (error?.name === "InvalidPublicResponse" || error?.name === "SyntaxError") {
+    return "The API returned an invalid listing response. Try again.";
+  }
   return error?.name === "PublicRequestTimeout"
     ? "The API request took longer than 15 seconds. Try again."
     : "Unable to reach the API. Check that Diyarak.Api is running.";
@@ -507,6 +530,10 @@ async function loadPublicListing() {
       return;
     }
 
+    if (!isResponseObject(listing) || !isListingId(listing.listingId)
+        || listing.listingId.toLowerCase() !== selectedListingId.toLowerCase()) {
+      throw invalidPublicResponse();
+    }
     gridElement.append(createListingCard(listing, true));
     setReadyState("Listing details loaded.");
   } catch (error) {
@@ -544,7 +571,8 @@ async function loadPublicListings(url = collectionUrl) {
       return;
     }
 
-    const items = Array.isArray(payload.items) ? payload.items : [];
+    validateCollectionResponse(payload);
+    const items = payload.items;
     const linkHeader = response.headers.get("Link");
     previousUrl = getPageLink(linkHeader, "prev");
     nextUrl = payload.hasMore === true ? getPageLink(linkHeader, "next") : null;
