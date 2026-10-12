@@ -67,6 +67,7 @@ const filterFields = document.querySelector("#listing-filter-fields");
 const cityInput = document.querySelector("#filter-city");
 const intentInput = document.querySelector("#filter-intent");
 const categoryInput = document.querySelector("#filter-category");
+const commercialInput = document.querySelector("#filter-commercial");
 const furnishingInput = document.querySelector("#filter-furnishing");
 const priceMinInput = document.querySelector("#filter-price-min");
 const priceMaxInput = document.querySelector("#filter-price-max");
@@ -157,6 +158,7 @@ clearFiltersButton.addEventListener("click", async () => {
   intentInput.value = "";
   categoryInput.value = "";
   furnishingInput.value = "";
+  commercialInput.value = "";
   priceMinInput.value = "";
   priceMaxInput.value = "";
   priceCurrencyInput.value = "";
@@ -176,6 +178,7 @@ clearFiltersButton.addEventListener("click", async () => {
 cityInput.value = initialSearch.get("city") ?? "";
 intentInput.value = initialSearch.get("transactionIntent") ?? "";
 categoryInput.value = initialSearch.get("propertyCategory") ?? "";
+commercialInput.value = initialSearch.get("commercialSubtype") ?? "";
 furnishingInput.value = initialSearch.get("furnishingQuality") ?? "";
 priceMinInput.value = initialSearch.get("priceMin") ?? "";
 priceMaxInput.value = initialSearch.get("priceMax") ?? "";
@@ -206,7 +209,7 @@ async function loadSelectedView(url = firstPageUrl) {
 function getSupportedSearch(query) {
   const supported = new URLSearchParams();
   for (const [key, value] of query) {
-    if (["city", "transactionIntent", "propertyCategory", "furnishingQuality", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax", "bathroomCountMin", "bathroomCountMax", "constructionYearMin", "constructionYearMax", "parkingSpaceCountMin", "parkingSpaceCountMax", "page", "pageSize"].includes(key)) {
+    if (["city", "transactionIntent", "propertyCategory", "commercialSubtype", "furnishingQuality", "priceMin", "priceMax", "priceCurrency", "livingAreaMin", "livingAreaMax", "livingAreaUnit", "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax", "bathroomCountMin", "bathroomCountMax", "constructionYearMin", "constructionYearMax", "parkingSpaceCountMin", "parkingSpaceCountMax", "page", "pageSize"].includes(key)) {
       supported.append(key, value);
     }
   }
@@ -299,6 +302,10 @@ function buildFilteredCollectionUrl() {
   }
   if (categoryInput.value) {
     query.set("propertyCategory", categoryInput.value);
+  }
+
+  if (commercialInput.value) {
+    query.set("commercialSubtype", commercialInput.value);
   }
 
   if (furnishingInput.value) {

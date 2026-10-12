@@ -50,6 +50,17 @@
             <option value="CommercialProperty">Commercial property</option>
           </select>
         </label>
+        <label for="filter-commercial">Commercial property type
+          <select id="filter-commercial" name="commercialSubtype" aria-describedby="commercial-filter-help">
+            <option value="">Any commercial type</option>
+            <option value="OfficeOrPractice">Office or practice</option>
+            <option value="RestaurantOrHotel">Restaurant or hotel</option>
+            <option value="HallOrProduction">Hall or production</option>
+            <option value="Retail">Retail</option>
+            <option value="CommercialPlot">Commercial plot</option>
+          </select>
+        </label>
+        <p id="commercial-filter-help" class="filter-message">Selecting a commercial type searches commercial properties. Use Any category or Commercial property; another category may return no results.</p>
         <label for="filter-furnishing">Furnishing quality
           <select id="filter-furnishing" name="furnishingQuality">
             <option value="">Any quality</option>

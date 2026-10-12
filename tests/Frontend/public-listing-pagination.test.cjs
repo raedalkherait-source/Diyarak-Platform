@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial"]) {
     elements.set(`#${id}`, element());
   }
   elements.get("#listing-card-template").content = { cloneNode: element };
@@ -1094,6 +1094,85 @@ test("malformed bookmarked furnishing value remains subject to API validation", 
   const app=await createApp([{ok:false,status:400},response(2,false)],`?${query}`);
   assert.equal(app.get("status").dataset.state,"error");
   assert.equal(app.historyUrls.at(-1),`./index.html?${query}`);
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
+});
+
+test("commercial filter sends all supported subtypes and omits the blank choice", async () => {
+  for(const subtype of ["","OfficeOrPractice","RestaurantOrHotel","HallOrProduction","Retail","CommercialPlot"]) {
+    const app=await createApp([response(1,false),response(1,false)]);
+    app.get("filter-commercial").value=subtype;await app.submit();
+    assert.equal(app.requests.at(-1),subtype?`${endpoint}?commercialSubtype=${subtype}`:endpoint);
+    assert.equal(app.get("filter-category").value,"");
+  }
+});
+
+test("commercial subtype combines with the chosen category and previous filters", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?page=3&pageSize=5");
+  for(const [id,value] of [["city","Berlin"],["intent","Rent"],["category","CommercialProperty"],["commercial","OfficeOrPractice"],["furnishing","Upscale"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) app.get(`filter-${id}`).value=value;
+  await app.submit();
+  assert.deepEqual(Object.fromEntries(new URL(app.requests.at(-1),"https://diyarak.example").searchParams),{city:"Berlin",transactionIntent:"Rent",propertyCategory:"CommercialProperty",commercialSubtype:"OfficeOrPractice",furnishingQuality:"Upscale",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0"});
+});
+
+test("commercial subtype respects a different category and handles empty results", async () => {
+  const app=await createApp([response(1,false),response(1,false,null,[])]);
+  app.get("filter-category").value="Apartment";app.get("filter-commercial").value="Retail";
+  await app.submit();
+  assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&commercialSubtype=Retail`);
+  assert.equal(app.get("filter-category").value,"Apartment");
+  assert.equal(app.get("status").dataset.state,"ready");
+  assert.match(app.get("status").textContent,/No public listings/);
+});
+
+test("commercial bookmarks reload and details return to the same subtype search", async () => {
+  const query="city=Berlin&commercialSubtype=CommercialPlot&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.equal(app.get("filter-commercial").value,"CommercialPlot");
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(anchor.searchParams.get("returnSearch"),query);
+  const detail=await createApp([detailResponse({listingId})],anchor.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("listing-filters").hidden,true);
+  const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
+  assert.equal(reload.get("filter-commercial").value,"CommercialPlot");
+});
+
+test("commercial pagination Retry and Refresh preserve applied subtype over edits", async () => {
+  const filters="commercialSubtype=HallOrProduction&pageSize=1";
+  const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  app.get("filter-commercial").value="Retail";
+  await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);
+  assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
+});
+
+test("Clear resets commercial subtype and dismisses other validation", async () => {
+  const app=await createApp([response(1,false),response(1,false)],"?commercialSubtype=Retail&constructionYearMin=0");
+  await app.submit();assert.equal(app.get("filter-error").hidden,false);
+  await app.click("clear-filters");
+  assert.equal(app.get("filter-commercial").value,"");assert.equal(app.get("filter-year-min").value,"");
+  assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.requests.at(-1),endpoint);assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("loading blocks commercial submission and Clear", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);
+  app.get("filter-commercial").value="RestaurantOrHotel";
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("filter-commercial").value="Retail";await app.submit();await app.click("clear-filters");
+  assert.equal(app.get("filter-commercial").value,"Retail");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?commercialSubtype=RestaurantOrHotel`]);
+  resolveResponse(response(1,false));await loading;
+  assert.equal(app.get("listing-filter-fields").disabled,false);
+});
+
+test("invalid bookmarked commercial subtype remains subject to API validation", async () => {
+  const query="commercialSubtype=Unknown&page=2";
+  const app=await createApp([{ok:false,status:400},response(2,false)],`?${query}`);
+  assert.equal(app.get("status").dataset.state,"error");assert.equal(app.historyUrls.at(-1),`./index.html?${query}`);
   await app.click("retry-listings");
   assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
 });

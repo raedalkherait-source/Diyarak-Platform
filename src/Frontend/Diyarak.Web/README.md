@@ -117,7 +117,7 @@ The form does not add ranking or total-count semantics.
 
 ## Shareable search and return navigation
 
-Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `furnishingQuality`, `page`,
+Collection URLs restore `city`, `transactionIntent`, `propertyCategory`, `commercialSubtype`, `furnishingQuality`, `page`,
 `pageSize`, `priceMin`, `priceMax`, `priceCurrency`, `livingAreaMin`, `livingAreaMax`, `livingAreaUnit`, `totalRoomsMin`, `totalRoomsMax`, `bedroomCountMin`,
 `bedroomCountMax`, `bathroomCountMin`, `bathroomCountMax`, `constructionYearMin`, `constructionYearMax`,
 `parkingSpaceCountMin`, and `parkingSpaceCountMax`, including their filter form values. Applying filters, clearing,
@@ -210,3 +210,17 @@ through server page links, Refresh, Retry, and detail return navigation.
 Clear returns to Any quality. Unsubmitted edits leave applied search intact.
 Loading disables the form, which remains hidden on details. The API validates
 supported query values; no ranking or new backend behavior is introduced.
+
+## Commercial property type filter
+
+Optional `commercialSubtype` uses OfficeOrPractice, RestaurantOrHotel,
+HallOrProduction, Retail, or CommercialPlot. Any commercial type omits the
+parameter. Selecting a subtype searches commercial properties with that
+subtype. The category remains the user's choice; a different category can
+produce an empty intersection. The help text explains this behavior.
+
+This single-choice filter combines with existing discovery and numeric
+filters, restores from bookmarks and persists through pagination, Refresh,
+Retry, and detail return links. Clear resets it; loading disables the form
+and details keep it hidden. Unsubmitted edits do not change applied search.
+The API validates supported values; no backend changes are introduced.

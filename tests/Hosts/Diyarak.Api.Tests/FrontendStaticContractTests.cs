@@ -208,6 +208,24 @@ public sealed class FrontendStaticContractTests
         }
     }
 
+    [Fact]
+    public void Index_contains_labeled_commercial_subtype_filter_and_help()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("for=\"filter-commercial\"", html);
+        Assert.Contains("name=\"commercialSubtype\"", html);
+        Assert.Contains("aria-describedby=\"commercial-filter-help\"", html);
+        Assert.Contains("id=\"commercial-filter-help\"", html);
+        foreach (string subtype in new[]
+        {
+            "OfficeOrPractice", "RestaurantOrHotel", "HallOrProduction", "Retail", "CommercialPlot"
+        })
+        {
+            Assert.Contains($"value=\"{subtype}\"", html);
+        }
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(
