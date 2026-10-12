@@ -284,3 +284,19 @@ Invalid form values retain results, URL and filter summary. Supported bookmark
 parameters remain subject to API validation. Loading disables the field and
 details hide it with the form. Page size remains excluded from the filter
 summary because it controls pagination rather than matching properties.
+
+## Go to listing page
+
+The separate Go to page form changes only `page` on the current requested
+collection query, retaining filters, repeated feature values and page size.
+The input accepts whole numbers from 1 to the API Int32 limit; the API remains
+authoritative for the page-size-dependent skip limit. No total or last page
+is inferred. Empty pages use the normal empty result message and any server
+previous-page link. Refresh still returns to the first page of applied search.
+
+Unsubmitted filter and size edits are ignored. Invalid page input leaves
+results, URL and summary intact and shows a separate alert. The form is disabled
+while loading, hidden on details, and available after failures so users can
+correct a rejected page. Retry repeats the same failed request. The input
+tracks the requested page and then the API's returned page. Applying filters
+or Clear resets the page through the normal collection request.

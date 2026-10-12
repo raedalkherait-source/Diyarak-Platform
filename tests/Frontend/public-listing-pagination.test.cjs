@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -53,6 +53,7 @@ async function createApp(responses, search = "") {
     } });
   await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
   return { requests, historyUrls, formatters: context.formatters, get: id => elements.get(`#${id}`),
+    jump: () => elements.get("#page-jump-form").listeners.submit({ preventDefault() {} }),
     submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
     click: id => elements.get(`#${id}`).listeners.click() };
 }
@@ -1462,4 +1463,76 @@ test("invalid bookmarked page size remains an API-validated request until correc
   assert.equal(app.get("filter-page-size").value,"101");await app.click("retry-listings");
   assert.deepEqual(app.requests,[`${endpoint}?pageSize=101&page=2`,`${endpoint}?pageSize=101&page=2`]);
   app.get("filter-page-size").value="5";await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?pageSize=5`);
+});
+
+test("page jump changes only page while preserving applied filters and repeated features", async () => {
+  const query="city=Berlin&priceMin=0&priceCurrency=EUR&propertyFeature=Elevator&propertyFeature=Basement&pageSize=7&page=2";
+  const app=await createApp([response(2,false),response(5,false)],`?${query}`);
+  const summary=app.get("applied-filter-summary").textContent;
+  app.get("filter-city").value="Paris";app.get("filter-page-size").value="50";
+  app.get("filter-feature-Elevator").checked=false;app.get("page-jump-input").value=" 005 ";await app.jump();
+  const expected=query.replace("page=2","page=5");
+  assert.equal(app.requests.at(-1),`${endpoint}?${expected}`);assert.equal(app.historyUrls.at(-1),`./index.html?${expected}`);
+  assert.equal(app.get("applied-filter-summary").textContent,summary);assert.equal(app.get("page-jump-input").value,"5");
+});
+
+test("page jump rejects invalid values without changing results or URL", async () => {
+  for(const value of ["","0","-1","1.5","1e2","oops","2147483648","9".repeat(310)]) {
+    const app=await createApp([response(2,false)],"?city=Berlin&page=2");app.get("page-jump-input").value=value;await app.jump();
+    assert.deepEqual(app.requests,[`${endpoint}?city=Berlin&page=2`]);assert.deepEqual(app.historyUrls,["./index.html?city=Berlin&page=2"]);
+    assert.equal(app.get("listing-grid").children.length,1);assert.equal(app.get("page-jump-error").hidden,false);
+    assert.equal(app.get("applied-filter-summary").textContent,"Search filters: City: Berlin");
+  }
+});
+
+test("correcting page jump validation succeeds and boundary pages are sent to API", async () => {
+  const app=await createApp([response(1,false),{ok:false,status:400},response(1,false)]);
+  app.get("page-jump-input").value="0";await app.jump();assert.equal(app.get("page-jump-error").hidden,false);
+  app.get("page-jump-input").value="2147483647";await app.jump();assert.equal(app.requests.at(-1),`${endpoint}?page=2147483647`);
+  assert.equal(app.get("page-jump-error").hidden,true);assert.equal(app.get("status").dataset.state,"error");
+  app.get("page-jump-input").value="1";await app.jump();assert.equal(app.requests.at(-1),`${endpoint}?page=1`);
+});
+
+test("empty jumped page retains server previous link and Refresh returns to first page", async () => {
+  const app=await createApp([response(1,false),response(99,false,link(`${endpoint}?city=Berlin&pageSize=5&page=98`,"prev"),[]),response(98,false),response(1,false)],"?city=Berlin&pageSize=5");
+  app.get("page-jump-input").value="99";await app.jump();assert.match(app.get("status").textContent,/No public listings/);
+  assert.equal(app.get("previous-page").disabled,false);await app.click("previous-page");await app.click("load-listings");
+  assert.deepEqual(app.requests,[`${endpoint}?city=Berlin&pageSize=5`,`${endpoint}?city=Berlin&pageSize=5&page=99`,`${endpoint}?city=Berlin&pageSize=5&page=98`,`${endpoint}?city=Berlin&pageSize=5`]);
+  assert.equal(app.get("page-jump-input").value,"1");
+});
+
+test("page jump HTTP and network failures Retry the exact requested page", async () => {
+  for(const failure of [{ok:false,status:503},new Error("offline")]) {
+    const app=await createApp([response(1,false),failure,response(3,false)],"?pageSize=10");
+    app.get("page-jump-input").value="3";await app.jump();assert.equal(app.get("page-jump-fields").disabled,false);
+    await app.click("retry-listings");assert.deepEqual(app.requests,[`${endpoint}?pageSize=10`,`${endpoint}?pageSize=10&page=3`,`${endpoint}?pageSize=10&page=3`]);
+  }
+});
+
+test("loading blocks page jumps and overlapping filter submissions", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);app.get("page-jump-input").value="2";
+  const loading=app.jump();assert.equal(app.get("page-jump-fields").disabled,true);assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("page-jump-input").value="3";await app.jump();await app.submit();await app.click("clear-filters");
+  assert.deepEqual(app.requests,[endpoint,`${endpoint}?page=2`]);resolveResponse(response(2,false));await loading;
+  assert.equal(app.get("page-jump-fields").disabled,false);assert.equal(app.get("page-jump-input").value,"2");
+});
+
+test("jumped page survives reload and detail return while details hide page form", async () => {
+  const app=await createApp([response(1,false),response(4,false,null,[{listingId}])],"?city=Berlin&pageSize=7");
+  app.get("page-jump-input").value="4";await app.jump();const query="city=Berlin&pageSize=7&page=4";
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(anchor.searchParams.get("returnSearch"),query);
+  const detail=await createApp([detailResponse({listingId})],anchor.search);assert.equal(detail.get("page-jump-form").hidden,true);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  const reload=await createApp([response(4,false)],`?${query}`);assert.equal(reload.get("page-jump-input").value,"4");
+  assert.equal(reload.get("page-jump-form").hidden,false);
+});
+
+test("Apply and Clear reset page jump number and dismiss its validation", async () => {
+  const app=await createApp([response(4,false),response(1,false),response(1,false)],"?city=Berlin&page=4");
+  app.get("page-jump-input").value="0";await app.jump();assert.equal(app.get("page-jump-error").hidden,false);
+  app.get("filter-city").value="Paris";await app.submit();assert.equal(app.get("page-jump-input").value,"1");assert.equal(app.get("page-jump-error").hidden,true);
+  app.get("page-jump-input").value="0";await app.jump();await app.click("clear-filters");
+  assert.equal(app.get("page-jump-input").value,"1");assert.equal(app.get("page-jump-error").hidden,true);assert.equal(app.requests.at(-1),endpoint);
 });

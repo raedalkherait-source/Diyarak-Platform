@@ -279,6 +279,19 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"page-size-help\"", html);
     }
 
+    [Fact]
+    public void Index_contains_accessible_page_jump_form()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("id=\"page-jump-form\"", html);
+        Assert.Contains("id=\"page-jump-fields\"", html);
+        Assert.Contains("for=\"page-jump-input\"", html);
+        Assert.Contains("aria-describedby=\"page-jump-help page-jump-error\"", html);
+        Assert.Contains("id=\"page-jump-help\"", html);
+        Assert.Contains("id=\"page-jump-error\" role=\"alert\"", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

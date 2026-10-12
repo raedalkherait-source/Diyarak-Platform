@@ -199,6 +199,16 @@
         <span id="current-page" aria-live="polite"></span>
         <button id="next-page" class="secondary-button" type="button" disabled>Next page</button>
       </nav>
+      <form id="page-jump-form" aria-label="Go to listing page">
+        <fieldset id="page-jump-fields">
+          <legend>Go to page</legend>
+          <label for="page-jump-input">Page number</label>
+          <input id="page-jump-input" name="page" type="number" min="1" max="2147483647" step="1" required aria-describedby="page-jump-help page-jump-error">
+          <button type="submit">Go</button>
+          <p id="page-jump-help">Keeps your applied filters and page size. A page may have no results.</p>
+          <p id="page-jump-error" role="alert" hidden></p>
+        </fieldset>
+      </form>
       <div id="listing-grid" class="listing-grid" aria-live="polite"></div>
     </section>
   </main>

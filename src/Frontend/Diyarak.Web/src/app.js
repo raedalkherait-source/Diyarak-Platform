@@ -58,6 +58,10 @@ const loadButton = document.querySelector("#load-listings");
 const retryButton = document.querySelector("#retry-listings");
 const previousButton = document.querySelector("#previous-page");
 const nextButton = document.querySelector("#next-page");
+const pageJumpForm = document.querySelector("#page-jump-form");
+const pageJumpFields = document.querySelector("#page-jump-fields");
+const pageJumpInput = document.querySelector("#page-jump-input");
+const pageJumpError = document.querySelector("#page-jump-error");
 const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
 const filterSummary = document.querySelector("#applied-filter-summary");
@@ -138,6 +142,23 @@ nextButton.addEventListener("click", async () => {
   }
 });
 
+pageJumpForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (isLoading || isDetailView) {
+    return;
+  }
+  const value = pageJumpInput.value.trim();
+  const valid = /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 2147483647;
+  pageJumpError.textContent = valid ? "" : "Enter a whole-number page between 1 and 2147483647.";
+  pageJumpError.hidden = valid;
+  if (!valid) {
+    return;
+  }
+  const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
+  query.set("page", String(Number(value)));
+  await loadPublicListings(collectionRequestUrl(query));
+});
+
 filterForm.addEventListener("submit", async event => {
   event.preventDefault();
   if (isLoading || isDetailView) {
@@ -210,6 +231,7 @@ for (const range of numericFilterRanges) {
 backLink.href = collectionPageUrl(initialSearch);
 filterSummary.hidden = isDetailView;
 filterForm.hidden = isDetailView;
+pageJumpForm.hidden = isDetailView;
 paginationElement.hidden = isDetailView;
 backLink.hidden = !isDetailView;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
@@ -471,6 +493,9 @@ async function loadPublicListings(url = collectionUrl) {
 
   requestedUrl = url;
   const currentSearch = getSupportedSearch(new URL(url, window.location.origin).searchParams);
+  pageJumpError.textContent = "";
+  pageJumpError.hidden = true;
+  pageJumpInput.value = currentSearch.get("page") ?? "1";
   filterSummary.textContent = describeAppliedFilters(currentSearch);
   window.history.replaceState(null, "", collectionPageUrl(currentSearch));
   isLoading = true;
@@ -495,6 +520,7 @@ async function loadPublicListings(url = collectionUrl) {
     previousUrl = getPageLink(linkHeader, "prev");
     nextUrl = payload.hasMore === true ? getPageLink(linkHeader, "next") : null;
     pageElement.textContent = `Page ${payload.page}`;
+    pageJumpInput.value = String(payload.page);
 
     if (items.length === 0) {
       setReadyState("No public listings found. Try again later or adjust your filters.");
@@ -545,6 +571,7 @@ function getPageLink(header, relation) {
 }
 
 function updatePagination() {
+  pageJumpFields.disabled = isLoading;
   filterFields.disabled = isLoading;
   previousButton.disabled = isLoading || !previousUrl;
   nextButton.disabled = isLoading || !nextUrl;
