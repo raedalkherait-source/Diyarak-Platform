@@ -300,3 +300,16 @@ while loading, hidden on details, and available after failures so users can
 correct a rejected page. Retry repeats the same failed request. The input
 tracks the requested page and then the API's returned page. Applying filters
 or Clear resets the page through the normal collection request.
+
+## Public request timeout
+
+Collection and detail requests have a 15-second deadline covering fetch and
+JSON body reading. Timeout aborts the request, shows a specific message and
+re-enables Refresh, filters and page navigation controls as appropriate.
+Retry repeats the exact failed page/search or listing. Timeout does not
+clear search state from the URL or change applied filter semantics.
+
+Timers are cleared after success, HTTP failure, network failure and invalid
+JSON. Late completion cannot render stale data or change controls after a
+new request begins. HTTP statuses and ordinary network failures retain their
+existing messages; no automatic retry or backend changes are introduced.

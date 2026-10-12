@@ -450,6 +450,35 @@ function isListingId(value) {
     && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
+async function fetchPublicResource(url) {
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error("Public API request timed out.");
+      error.name = "PublicRequestTimeout";
+      reject(error);
+      controller.abort();
+    }, 15000);
+  });
+  const request = (async () => {
+    const response = await fetch(url, { signal: controller.signal });
+    const payload = response.ok ? await response.json() : null;
+    return { response, payload };
+  })();
+  try {
+    return await Promise.race([request, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function publicRequestError(error) {
+  return error?.name === "PublicRequestTimeout"
+    ? "The API request took longer than 15 seconds. Try again."
+    : "Unable to reach the API. Check that Diyarak.Api is running.";
+}
+
 async function loadPublicListing() {
   if (isLoading) {
     return;
@@ -466,7 +495,7 @@ async function loadPublicListing() {
   setLoadingState();
   statusElement.textContent = "Loading listing details...";
   try {
-    const response = await fetch(`${collectionUrl}/${encodeURIComponent(selectedListingId)}`);
+    const { response, payload: listing } = await fetchPublicResource(`${collectionUrl}/${encodeURIComponent(selectedListingId)}`);
     if (response.status === 404) {
       setReadyState("Listing not found or no longer public.");
       return;
@@ -476,11 +505,10 @@ async function loadPublicListing() {
       return;
     }
 
-    const listing = await response.json();
     gridElement.append(createListingCard(listing, true));
     setReadyState("Listing details loaded.");
-  } catch {
-    setErrorState("Unable to reach the API. Check that Diyarak.Api is running.");
+  } catch (error) {
+    setErrorState(publicRequestError(error));
   } finally {
     isLoading = false;
   }
@@ -507,14 +535,13 @@ async function loadPublicListings(url = collectionUrl) {
   gridElement.replaceChildren();
 
   try {
-    const response = await fetch(requestedUrl);
+    const { response, payload } = await fetchPublicResource(requestedUrl);
 
     if (!response.ok) {
       setErrorState(`Unable to load listings. HTTP ${response.status}.`);
       return;
     }
 
-    const payload = await response.json();
     const items = Array.isArray(payload.items) ? payload.items : [];
     const linkHeader = response.headers.get("Link");
     previousUrl = getPageLink(linkHeader, "prev");
@@ -538,11 +565,11 @@ async function loadPublicListings(url = collectionUrl) {
         ? `Loaded ${listingCount} ${listingLabel}. More pages are available.`
         : `Loaded ${listingCount} ${listingLabel}.`,
     );
-  } catch {
+  } catch (error) {
     previousUrl = null;
     nextUrl = null;
     pageElement.textContent = "";
-    setErrorState("Unable to reach the API. Check that Diyarak.Api is running.");
+    setErrorState(publicRequestError(error));
   } finally {
     isLoading = false;
     updatePagination();

@@ -16,7 +16,7 @@ function response(page, hasMore, links = null, items = [{}]) {
     json: async () => ({ page, hasMore, items }) };
 }
 
-async function createApp(responses, search = "") {
+async function createApp(responses, search = "", clock = { setTimeout, clearTimeout }) {
   const elements = new Map();
   function element() {
     return { disabled: false, hidden: false, value: "", textContent: "", dataset: {},
@@ -41,18 +41,21 @@ async function createApp(responses, search = "") {
   elements.get("#listing-card-template").content = { cloneNode: element };
   const requests = [];
   const historyUrls = [];
-  const context = vm.createContext({ URL, URLSearchParams, Intl, Date,
+  const signals = [];
+  const context = vm.createContext({ URL, URLSearchParams, Intl, Date, AbortController,
+    setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout,
     window: { location: { origin: "https://diyarak.example", search },
       history: { replaceState: (_state, _title, url) => historyUrls.push(url) } },
     document: { querySelector: id => elements.get(id) },
-    fetch: async url => {
+    fetch: async (url, options) => {
       requests.push(url);
+      signals.push(options?.signal);
       const result = responses.shift();
       if (result instanceof Error) throw result;
       return typeof result === "function" ? result() : result;
     } });
   await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
-  return { requests, historyUrls, formatters: context.formatters, get: id => elements.get(`#${id}`),
+  return { requests, historyUrls, signals, formatters: context.formatters, get: id => elements.get(`#${id}`),
     jump: () => elements.get("#page-jump-form").listeners.submit({ preventDefault() {} }),
     submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
     click: id => elements.get(`#${id}`).listeners.click() };
@@ -1535,4 +1538,92 @@ test("Apply and Clear reset page jump number and dismiss its validation", async 
   app.get("filter-city").value="Paris";await app.submit();assert.equal(app.get("page-jump-input").value,"1");assert.equal(app.get("page-jump-error").hidden,true);
   app.get("page-jump-input").value="0";await app.jump();await app.click("clear-filters");
   assert.equal(app.get("page-jump-input").value,"1");assert.equal(app.get("page-jump-error").hidden,true);assert.equal(app.requests.at(-1),endpoint);
+});
+
+function manualClock() {
+  let nextId=0;const pending=new Map();const delays=[];
+  return { delays,
+    setTimeout(callback,delay) {const id=++nextId;pending.set(id,callback);delays.push(delay);return id;},
+    clearTimeout(id) {pending.delete(id);},
+    count:()=>pending.size,
+    expire() {const [id,callback]=pending.entries().next().value;pending.delete(id);callback();},
+  };
+}
+
+const neverRespond=()=>new Promise(()=>{});
+
+test("collection timeout aborts request, restores controls and retries bookmarked search", async () => {
+  const clock=manualClock();const query="city=Berlin&propertyFeature=Elevator&page=2&pageSize=7";
+  const boot=createApp([neverRespond,response(2,false)],`?${query}`,clock);
+  assert.equal(clock.count(),1);assert.deepEqual(clock.delays,[15000]);clock.expire();const app=await boot;
+  assert.equal(app.signals[0].aborted,true);assert.equal(clock.count(),0);
+  assert.match(app.get("status").textContent,/longer than 15 seconds/);
+  assert.equal(app.get("retry-listings").hidden,false);assert.equal(app.get("load-listings").disabled,false);
+  assert.equal(app.get("listing-filter-fields").disabled,false);assert.equal(app.get("page-jump-fields").disabled,false);
+  assert.equal(app.get("next-page").disabled,true);assert.equal(app.get("previous-page").disabled,true);
+  assert.equal(app.historyUrls.at(-1),`./index.html?${query}`);
+  await app.click("retry-listings");assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
+  assert.equal(app.get("status").dataset.state,"ready");assert.equal(clock.count(),0);
+});
+
+test("detail timeout aborts and retries the same listing without changing return state", async () => {
+  const clock=manualClock();const query=new URLSearchParams({listingId,returnSearch:"city=Berlin&page=2"});
+  const boot=createApp([neverRespond,detailResponse({listingId})],`?${query}`,clock);clock.expire();const app=await boot;
+  assert.equal(app.signals[0].aborted,true);assert.match(app.get("status").textContent,/longer than 15 seconds/);
+  assert.equal(app.get("back-to-listings").href,"./index.html?city=Berlin&page=2");
+  await app.click("retry-listings");assert.deepEqual(app.requests,[detailUrl,detailUrl]);
+  assert.equal(app.get("status").textContent,"Listing details loaded.");assert.equal(clock.count(),0);
+});
+
+test("deadline also covers slow JSON body reading", async () => {
+  const clock=manualClock();const boot=createApp([{ok:true,headers:{get:()=>null},json:neverRespond}],"",clock);
+  clock.expire();const app=await boot;
+  assert.equal(app.signals[0].aborted,true);assert.match(app.get("status").textContent,/longer than 15 seconds/);
+  assert.equal(app.get("listing-grid").children.length,0);assert.equal(clock.count(),0);
+});
+
+test("successful HTTP network and JSON failures always clear request timers", async () => {
+  for(const result of [response(1,false),{ok:false,status:503},new Error("offline"),
+    {ok:true,json:async()=>{throw new Error("invalid JSON");}}]) {
+    const clock=manualClock();const app=await createApp([result],"",clock);
+    assert.equal(clock.count(),0);assert.equal(app.signals[0].aborted,false);
+    assert.equal(app.get("load-listings").disabled,false);
+    if(!result.ok||result instanceof Error) assert.doesNotMatch(app.get("status").textContent,/longer than 15 seconds/);
+  }
+});
+
+test("later-page timeout Retry preserves exact server pagination URL", async () => {
+  const clock=manualClock();const next=`${endpoint}?priceMin=0&priceCurrency=EUR&pageSize=5&page=3`;
+  const app=await createApp([response(2,true,link(next,"next")),neverRespond,response(3,false)],"?priceMin=0&priceCurrency=EUR&pageSize=5&page=2",clock);
+  const loading=app.click("next-page");clock.expire();await loading;
+  assert.equal(app.signals[1].aborted,true);assert.equal(app.get("current-page").textContent,"");
+  await app.click("retry-listings");assert.equal(app.requests.at(-2),next);assert.equal(app.requests.at(-1),next);
+  assert.equal(app.get("current-page").textContent,"Page 3");assert.equal(clock.count(),0);
+});
+
+test("late collection response after timeout cannot overwrite successful Retry", async () => {
+  const clock=manualClock();let resolveOld;const old=new Promise(resolve=>{resolveOld=resolve;});
+  const boot=createApp([()=>old,response(1,false,null,[{headline:"Current result"}])],"",clock);clock.expire();const app=await boot;
+  await app.click("retry-listings");resolveOld(response(99,true,link(`${endpoint}?page=100`,"next"),[{headline:"Stale result"}]));
+  for(let i=0;i<5;i++) await Promise.resolve();
+  assert.equal(cardOf(app).querySelector(".listing-card__headline").textContent,"Current result");
+  assert.equal(app.get("current-page").textContent,"Page 1");assert.equal(app.get("next-page").disabled,true);
+  assert.equal(app.get("status").dataset.state,"ready");assert.equal(clock.count(),0);
+});
+
+test("late detail body after timeout cannot overwrite successful Retry", async () => {
+  const clock=manualClock();let resolveOld;const oldBody=new Promise(resolve=>{resolveOld=resolve;});
+  const boot=createApp([{ok:true,json:()=>oldBody},detailResponse({listingId,headline:"Current detail"})],detailQuery,clock);
+  clock.expire();const app=await boot;await app.click("retry-listings");resolveOld({listingId,headline:"Stale detail"});
+  for(let i=0;i<5;i++) await Promise.resolve();
+  assert.equal(cardOf(app).querySelector(".listing-card__headline").textContent,"Current detail");
+  assert.equal(app.get("status").textContent,"Listing details loaded.");assert.equal(clock.count(),0);
+});
+
+test("each request has its own deadline and loading still prevents duplicate requests", async () => {
+  const clock=manualClock();const app=await createApp([response(1,false),neverRespond,response(1,false)],"",clock);
+  const loading=app.click("load-listings");assert.equal(clock.count(),1);
+  await app.click("load-listings");await app.submit();assert.equal(app.requests.length,2);assert.equal(clock.count(),1);
+  clock.expire();await loading;await app.click("load-listings");
+  assert.equal(app.requests.length,3);assert.deepEqual(clock.delays,[15000,15000,15000]);assert.equal(clock.count(),0);
 });
