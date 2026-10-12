@@ -32,7 +32,7 @@ async function createApp(responses, search = "") {
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -520,7 +520,7 @@ test("apply and clear update the URL without retaining old page coordinates", as
   const app=await createApp([response(4,false),response(1,false),response(1,false)],"?city=Berlin&page=4&pageSize=5");
   app.get("filter-city").value="Paris";
   await app.submit();
-  assert.equal(app.historyUrls.at(-1),"./index.html?city=Paris");
+  assert.equal(app.historyUrls.at(-1),"./index.html?city=Paris&pageSize=5");
   await app.click("clear-filters");
   assert.equal(app.historyUrls.at(-1),"./index.html");
   assert.equal(app.requests.at(-1),endpoint);
@@ -1041,7 +1041,7 @@ test("furnishing combines with existing filters and resets page coordinates", as
   for(const [id,value] of [["city","Berlin"],["intent","Sell"],["category","House"],["furnishing","Luxury"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) app.get(`filter-${id}`).value=value;
   await app.submit();
   const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
-  assert.deepEqual(Object.fromEntries(query),{city:"Berlin",transactionIntent:"Sell",propertyCategory:"House",furnishingQuality:"Luxury",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0"});
+  assert.deepEqual(Object.fromEntries(query),{city:"Berlin",transactionIntent:"Sell",propertyCategory:"House",furnishingQuality:"Luxury",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0",pageSize:"5"});
 });
 
 test("furnishing bookmark reload and details restore the applied quality", async () => {
@@ -1114,7 +1114,7 @@ test("commercial subtype combines with the chosen category and previous filters"
   const app=await createApp([response(3,false),response(1,false)],"?page=3&pageSize=5");
   for(const [id,value] of [["city","Berlin"],["intent","Rent"],["category","CommercialProperty"],["commercial","OfficeOrPractice"],["furnishing","Upscale"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) app.get(`filter-${id}`).value=value;
   await app.submit();
-  assert.deepEqual(Object.fromEntries(new URL(app.requests.at(-1),"https://diyarak.example").searchParams),{city:"Berlin",transactionIntent:"Rent",propertyCategory:"CommercialProperty",commercialSubtype:"OfficeOrPractice",furnishingQuality:"Upscale",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0"});
+  assert.deepEqual(Object.fromEntries(new URL(app.requests.at(-1),"https://diyarak.example").searchParams),{city:"Berlin",transactionIntent:"Rent",propertyCategory:"CommercialProperty",commercialSubtype:"OfficeOrPractice",furnishingQuality:"Upscale",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0",pageSize:"5"});
 });
 
 test("commercial subtype respects a different category and handles empty results", async () => {
@@ -1192,10 +1192,10 @@ test("postal submit preserves leading zeros, letters, spaces and literal special
 
 test("blank postal values omit the parameter and combine with previous filters", async () => {
   const app=await createApp([response(3,false),response(1,false),response(1,false)],"?page=3&pageSize=5");
-  app.get("filter-postal").value="  ";await app.submit();assert.equal(app.requests.at(-1),endpoint);
+  app.get("filter-postal").value="  ";await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?pageSize=5`);
   for(const [id,value] of [["city","Berlin"],["postal"," 00123 "],["intent","Rent"],["category","CommercialProperty"],["commercial","Retail"],["furnishing","Normal"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) app.get(`filter-${id}`).value=value;
   await app.submit();
-  assert.deepEqual(Object.fromEntries(new URL(app.requests.at(-1),"https://diyarak.example").searchParams),{city:"Berlin",postalCode:"00123",transactionIntent:"Rent",propertyCategory:"CommercialProperty",commercialSubtype:"Retail",furnishingQuality:"Normal",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0"});
+  assert.deepEqual(Object.fromEntries(new URL(app.requests.at(-1),"https://diyarak.example").searchParams),{city:"Berlin",postalCode:"00123",transactionIntent:"Rent",propertyCategory:"CommercialProperty",commercialSubtype:"Retail",furnishingQuality:"Normal",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0",pageSize:"5"});
 });
 
 test("postal bookmark reload and details return preserve the complete search", async () => {
@@ -1389,4 +1389,77 @@ test("summary retains repeated enum and feature selections from bookmarks", asyn
   assert.equal(app.get("applied-filter-summary").textContent,"Search filters: Category: Apartment, House · Required features: Basement, Elevator");
   const reload=await createApp([response(1,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.equal(reload.get("applied-filter-summary").textContent,app.get("applied-filter-summary").textContent);
+});
+
+test("page size accepts all public API sizes and leaves default unspecified", async () => {
+  for(const value of ["","1","5","20","50","100"," 10 "]) {
+    const app=await createApp([response(1,false),response(1,false)]);
+    app.get("filter-page-size").value=value;await app.submit();
+    assert.equal(app.requests.at(-1),value.trim()?`${endpoint}?pageSize=${value.trim()}`:endpoint);
+    assert.equal(app.get("filter-error").hidden,true);
+    assert.equal(app.get("applied-filter-summary").textContent,"No filters applied.");
+  }
+});
+
+test("page size combines with filters and repeated features while resetting page", async () => {
+  const app=await createApp([response(4,false),response(1,false)],"?city=Berlin&page=4&pageSize=5");
+  app.get("filter-page-size").value="50";app.get("filter-feature-Elevator").checked=true;app.get("filter-feature-Basement").checked=true;
+  await app.submit();
+  assert.equal(app.requests.at(-1),`${endpoint}?city=Berlin&propertyFeature=Elevator&propertyFeature=Basement&pageSize=50`);
+  assert.equal(app.historyUrls.at(-1),"./index.html?city=Berlin&propertyFeature=Elevator&propertyFeature=Basement&pageSize=50");
+});
+
+test("invalid page size retains current cards URL and summary", async () => {
+  for(const value of ["0","101","-1","1.5","1e2","oops","Infinity","9".repeat(310)]) {
+    const app=await createApp([response(2,false)],"?city=Berlin&page=2&pageSize=5");
+    const summary=app.get("applied-filter-summary").textContent;
+    app.get("filter-page-size").value=value;await app.submit();
+    assert.deepEqual(app.requests,[`${endpoint}?city=Berlin&page=2&pageSize=5`]);
+    assert.deepEqual(app.historyUrls,["./index.html?city=Berlin&page=2&pageSize=5"]);
+    assert.equal(app.get("listing-grid").children.length,1);assert.equal(app.get("applied-filter-summary").textContent,summary);
+    assert.equal(app.get("filter-error").hidden,false);
+  }
+});
+
+test("correcting invalid page size clears validation and Clear restores default", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false)]);
+  app.get("filter-page-size").value="101";await app.submit();assert.equal(app.get("filter-error").hidden,false);
+  app.get("filter-page-size").value="100";await app.submit();
+  assert.equal(app.get("filter-error").hidden,true);assert.equal(app.requests.at(-1),`${endpoint}?pageSize=100`);
+  await app.click("clear-filters");assert.equal(app.get("filter-page-size").value,"");
+  assert.equal(app.requests.at(-1),endpoint);assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("bookmarked page size reload and details return retain arbitrary supported size", async () => {
+  const query="city=Berlin&pageSize=7&page=3";
+  const app=await createApp([response(3,false,null,[{listingId}])],`?${query}`);
+  assert.equal(app.get("filter-page-size").value,"7");
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  const detail=await createApp([detailResponse({listingId})],anchor.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);assert.equal(detail.get("listing-filters").hidden,true);
+  const reload=await createApp([response(3,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
+  assert.equal(reload.get("filter-page-size").value,"7");assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
+});
+
+test("page size pagination Retry and Refresh retain applied size over edits", async () => {
+  const filters="city=Berlin&pageSize=50";const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  app.get("filter-page-size").value="10";await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);
+});
+
+test("loading blocks applying or clearing edited page size", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);app.get("filter-page-size").value="10";
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);
+  app.get("filter-page-size").value="50";await app.submit();await app.click("clear-filters");
+  assert.equal(app.get("filter-page-size").value,"50");assert.deepEqual(app.requests,[endpoint,`${endpoint}?pageSize=10`]);
+  resolveResponse(response(1,false));await loading;assert.equal(app.get("listing-filter-fields").disabled,false);
+});
+
+test("invalid bookmarked page size remains an API-validated request until corrected", async () => {
+  const app=await createApp([{ok:false,status:400},{ok:false,status:400},response(1,false)],"?pageSize=101&page=2");
+  assert.equal(app.get("filter-page-size").value,"101");await app.click("retry-listings");
+  assert.deepEqual(app.requests,[`${endpoint}?pageSize=101&page=2`,`${endpoint}?pageSize=101&page=2`]);
+  app.get("filter-page-size").value="5";await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?pageSize=5`);
 });

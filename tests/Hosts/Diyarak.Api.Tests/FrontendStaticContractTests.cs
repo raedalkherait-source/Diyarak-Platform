@@ -268,6 +268,17 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("No filters applied.</p>", html);
     }
 
+    [Fact]
+    public void Index_contains_labeled_page_size_control_and_accessible_help()
+    {
+        string html = ReadFrontendFile("index.html");
+
+        Assert.Contains("for=\"filter-page-size\"", html);
+        Assert.Contains("name=\"pageSize\" type=\"number\" min=\"1\" max=\"100\" step=\"1\"", html);
+        Assert.Contains("aria-describedby=\"page-size-help filter-error\"", html);
+        Assert.Contains("id=\"page-size-help\"", html);
+    }
+
     private static string ReadFrontendFile(params string[] relativeParts)
     {
         string path = Path.Combine(

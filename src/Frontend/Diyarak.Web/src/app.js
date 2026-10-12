@@ -66,6 +66,7 @@ const backLink = document.querySelector("#back-to-listings");
 const filterForm = document.querySelector("#listing-filters");
 const filterFields = document.querySelector("#listing-filter-fields");
 const cityInput = document.querySelector("#filter-city");
+const pageSizeInput = document.querySelector("#filter-page-size");
 const postalInput = document.querySelector("#filter-postal");
 const intentInput = document.querySelector("#filter-intent");
 const categoryInput = document.querySelector("#filter-category");
@@ -143,7 +144,7 @@ filterForm.addEventListener("submit", async event => {
     return;
   }
 
-  const validationError = validatePriceFilters() ?? validateAreaFilters() ?? validateNumericFilters();
+  const validationError = validatePageSize() ?? validatePriceFilters() ?? validateAreaFilters() ?? validateNumericFilters();
   filterError.textContent = validationError ?? "";
   filterError.hidden = !validationError;
   if (validationError) {
@@ -159,6 +160,7 @@ clearFiltersButton.addEventListener("click", async () => {
     return;
   }
 
+  pageSizeInput.value = "";
   cityInput.value = "";
   postalInput.value = "";
   intentInput.value = "";
@@ -184,6 +186,7 @@ clearFiltersButton.addEventListener("click", async () => {
   await loadPublicListings(firstPageUrl);
 });
 
+pageSizeInput.value = initialSearch.get("pageSize") ?? "";
 cityInput.value = initialSearch.get("city") ?? "";
 postalInput.value = initialSearch.get("postalCode") ?? "";
 intentInput.value = initialSearch.get("transactionIntent") ?? "";
@@ -337,6 +340,14 @@ function validateNumericFilters() {
   return null;
 }
 
+function validatePageSize() {
+  const value = pageSizeInput.value.trim();
+  if (value && (!/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 100)) {
+    return "Enter a whole-number page size between 1 and 100, or leave blank for 20.";
+  }
+  return null;
+}
+
 function buildFilteredCollectionUrl() {
   const query = new URLSearchParams();
   const city = cityInput.value.trim();
@@ -401,6 +412,11 @@ function buildFilteredCollectionUrl() {
     if (maximum) {
       query.set(`${range.key}Max`, maximum);
     }
+  }
+
+  const pageSize = pageSizeInput.value.trim();
+  if (pageSize) {
+    query.set("pageSize", pageSize);
   }
 
   const search = query.toString();

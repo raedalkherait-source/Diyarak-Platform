@@ -270,3 +270,17 @@ Unsubmitted form edits and invalid submissions leave the summary unchanged.
 Clear restores No filters applied. Details hide the summary. All content is
 assigned with textContent, including city and postal values; query content
 cannot create markup. No new API behavior or navigation state is introduced.
+
+## Listings per page
+
+An optional numeric `pageSize` control follows the public collection contract:
+whole numbers from 1 to 100, blank for the default of 20. Applying sends the
+entered size with all filters and starts at page one. Bookmarks restore any
+supported size. Clear resets both filters and size to the unfiltered default.
+
+The size persists through server page links, Refresh, Retry, reload and detail
+return navigation. Unsubmitted edits leave the applied request unchanged.
+Invalid form values retain results, URL and filter summary. Supported bookmark
+parameters remain subject to API validation. Loading disables the field and
+details hide it with the form. Page size remains excluded from the filter
+summary because it controls pagination rather than matching properties.
