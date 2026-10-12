@@ -182,7 +182,7 @@
           <input id="filter-page-size" name="pageSize" type="number" min="1" max="100" step="1" placeholder="20" aria-describedby="page-size-help filter-error">
         </label>
         <p id="page-size-help" class="filter-message">Choose 1 to 100 listings per page. Leave blank for the default of 20. Apply starts on the first page; Clear restores the default.</p>
-        <p id="filter-error" class="filter-message" role="alert" hidden></p>
+        <p id="filter-error" class="filter-message" role="alert" tabindex="-1" hidden></p>
         <div class="filter-actions">
           <button type="submit">Apply filters</button>
           <button id="clear-filters" class="secondary-button" type="button">Clear filters</button>
@@ -206,10 +206,10 @@
           <input id="page-jump-input" name="page" type="number" min="1" max="2147483647" step="1" required aria-describedby="page-jump-help page-jump-error">
           <button type="submit">Go</button>
           <p id="page-jump-help">Keeps your applied filters and page size. A page may have no results.</p>
-          <p id="page-jump-error" role="alert" hidden></p>
+          <p id="page-jump-error" role="alert" tabindex="-1" hidden></p>
         </fieldset>
       </form>
-      <div id="listing-grid" class="listing-grid" aria-live="polite"></div>
+      <div id="listing-grid" class="listing-grid" aria-live="polite" aria-busy="false"></div>
     </section>
   </main>
 

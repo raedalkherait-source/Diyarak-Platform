@@ -152,6 +152,7 @@ pageJumpForm.addEventListener("submit", async event => {
   pageJumpError.textContent = valid ? "" : "Enter a whole-number page between 1 and 2147483647.";
   pageJumpError.hidden = valid;
   if (!valid) {
+    pageJumpError.focus();
     return;
   }
   const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
@@ -169,6 +170,7 @@ filterForm.addEventListener("submit", async event => {
   filterError.textContent = validationError ?? "";
   filterError.hidden = !validationError;
   if (validationError) {
+    filterError.focus();
     return;
   }
 
@@ -734,6 +736,7 @@ function formatDate(value) {
 }
 
 function setLoadingState() {
+  gridElement.setAttribute("aria-busy", "true");
   loadButton.disabled = true;
   retryButton.hidden = true;
   statusElement.dataset.state = "loading";
@@ -741,6 +744,7 @@ function setLoadingState() {
 }
 
 function setReadyState(message) {
+  gridElement.setAttribute("aria-busy", "false");
   loadButton.disabled = false;
   retryButton.hidden = true;
   statusElement.dataset.state = "ready";
@@ -748,6 +752,7 @@ function setReadyState(message) {
 }
 
 function setErrorState(message) {
+  gridElement.setAttribute("aria-busy", "false");
   loadButton.disabled = false;
   retryButton.hidden = false;
   statusElement.dataset.state = "error";

@@ -313,3 +313,18 @@ Timers are cleared after success, HTTP failure, network failure and invalid
 JSON. Late completion cannot render stale data or change controls after a
 new request begins. HTTP statuses and ordinary network failures retain their
 existing messages; no automatic retry or backend changes are introduced.
+
+## Loading and validation accessibility
+
+The live results region uses `aria-busy` while collection or detail requests
+are pending. Success, empty results, HTTP errors, network failures and timeout
+all clear busy state. Invalid detail identifiers leave the region ready.
+This allows assistive technology to defer partial result announcements.
+
+Inline filter and page-jump validation alerts are programmatically focusable
+with `tabindex=-1`. When JavaScript validation rejects a submission, focus moves
+to the corresponding visible alert so keyboard and screen-reader users can
+find its message. The alerts do not add normal Tab stops. Browser-native input
+constraints continue to provide their own validation. Successful requests,
+Refresh, Retry and normal navigation do not move focus. Search state, request
+semantics and timeout behavior remain unchanged.

@@ -20,7 +20,10 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   const elements = new Map();
   function element() {
     return { disabled: false, hidden: false, value: "", textContent: "", dataset: {},
-      children: [], listeners: {}, nodes: new Map(),
+      children: [], listeners: {}, nodes: new Map(), attributes: {}, focusCount: 0,
+      setAttribute(name, value) { this.attributes[name] = value; },
+      getAttribute(name) { return this.attributes[name] ?? null; },
+      focus() { this.focusCount++; },
       addEventListener(event, callback) { this.listeners[event] = callback; },
       replaceChildren() { this.children = []; },
       append(child) { this.children.push(child); },
@@ -1626,4 +1629,59 @@ test("each request has its own deadline and loading still prevents duplicate req
   await app.click("load-listings");await app.submit();assert.equal(app.requests.length,2);assert.equal(clock.count(),1);
   clock.expire();await loading;await app.click("load-listings");
   assert.equal(app.requests.length,3);assert.deepEqual(clock.delays,[15000,15000,15000]);assert.equal(clock.count(),0);
+});
+
+test("invalid filter submissions focus their visible alert without changing results", async () => {
+  const app=await createApp([response(1,false)]);app.get("filter-price-min").value="10";
+  await app.submit();assert.equal(app.get("filter-error").focusCount,1);assert.equal(app.get("filter-error").hidden,false);
+  assert.equal(app.get("page-jump-error").focusCount,0);assert.equal(app.get("listing-grid").children.length,1);
+  assert.deepEqual(app.requests,[endpoint]);assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");
+});
+
+test("invalid jump submissions focus only the page alert without requesting another page", async () => {
+  const app=await createApp([response(2,false)],"?page=2");app.get("page-jump-input").value="0";await app.jump();
+  assert.equal(app.get("page-jump-error").focusCount,1);assert.equal(app.get("page-jump-error").hidden,false);
+  assert.equal(app.get("filter-error").focusCount,0);assert.equal(app.get("listing-grid").children.length,1);
+  assert.deepEqual(app.requests,[`${endpoint}?page=2`]);
+});
+
+test("collection loading marks results busy until completed without moving focus", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending]);const loading=app.click("load-listings");
+  assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"true");resolveResponse(response(1,false));await loading;
+  assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");
+  assert.equal(app.get("filter-error").focusCount,0);assert.equal(app.get("page-jump-error").focusCount,0);
+});
+
+test("empty HTTP network and JSON failure outcomes clear collection busy state", async () => {
+  for(const outcome of [response(1,false,null,[]),{ok:false,status:503},new Error("offline"),{ok:true,json:async()=>{throw new Error("bad JSON");}}]) {
+    const app=await createApp([outcome]);assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");
+    assert.equal(app.get("filter-error").focusCount,0);assert.equal(app.get("page-jump-error").focusCount,0);
+  }
+});
+
+test("detail loading clears busy after success not-found and malformed identifiers", async () => {
+  for(const outcome of [detailResponse({listingId}),{ok:false,status:404},new Error("offline")]) {
+    let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+    const app=await createApp([detailResponse({listingId}),()=>pending],detailQuery);
+    const loading=app.click("load-listings");assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"true");
+    resolveResponse(outcome);await loading;assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");
+  }
+  const invalid=await createApp([],"?listingId=bad");assert.equal(invalid.get("listing-grid").getAttribute("aria-busy"),"false");
+});
+
+test("collection and detail timeouts clear busy state and Retry keeps focus unchanged", async () => {
+  for(const search of ["",detailQuery]) {
+    const clock=manualClock();const boot=createApp([neverRespond,search?detailResponse({listingId}):response(1,false)],search,clock);
+    clock.expire();const app=await boot;assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");
+    await app.click("retry-listings");assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");
+    assert.equal(app.get("filter-error").focusCount,0);assert.equal(app.get("page-jump-error").focusCount,0);
+  }
+});
+
+test("corrected validation and Clear dismiss alerts without refocusing hidden messages", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false)]);
+  app.get("filter-price-currency").value="EUR";await app.submit();assert.equal(app.get("filter-error").focusCount,1);
+  app.get("filter-price-min").value="10";await app.submit();assert.equal(app.get("filter-error").hidden,true);
+  assert.equal(app.get("filter-error").focusCount,1);await app.click("clear-filters");assert.equal(app.get("filter-error").focusCount,1);
 });
