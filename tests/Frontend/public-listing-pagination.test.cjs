@@ -1756,3 +1756,65 @@ test("malformed JSON gets a specific retryable response error for collection and
     assert.equal(app.get("listing-grid").getAttribute("aria-busy"),"false");assert.equal(clock.count(),0);
   }
 });
+
+async function decimalRangeApp(control, minimum, maximum) {
+  const app=await createApp([response(1,false),response(1,false)],"?city=Berlin");
+  app.get(`filter-${control}-min`).value=minimum;app.get(`filter-${control}-max`).value=maximum;
+  if(control==="price") app.get("filter-price-currency").value="EUR";
+  if(control==="area") app.get("filter-area-unit").value="SquareMeter";
+  await app.submit();return app;
+}
+
+test("close inverted decimal bounds are rejected without losing current search", async () => {
+  for(const control of ["price","area","rooms"]) {
+    const app=await decimalRangeApp(control,"1.0000000000000000000000000001","1.0000000000000000000000000000");
+    assert.deepEqual(app.requests,[`${endpoint}?city=Berlin`]);assert.deepEqual(app.historyUrls,["./index.html?city=Berlin"]);
+    assert.equal(app.get("filter-error").hidden,false);assert.match(app.get("filter-error").textContent,/must not exceed/);
+    assert.equal(app.get("listing-grid").children.length,1);assert.equal(app.get("filter-error").focusCount,1);
+  }
+});
+
+test("large inverted bounds remain distinct despite JavaScript Number precision", async () => {
+  for(const control of ["price","area","rooms"]) {
+    const app=await decimalRangeApp(control,"9007199254740993","9007199254740992");
+    assert.equal(app.requests.length,1);assert.equal(app.get("filter-error").hidden,false);
+  }
+});
+
+test("valid close decimal ranges are transmitted without rounding", async () => {
+  const minimum="1.0000000000000000000000000000",maximum="1.0000000000000000000000000001";
+  for(const [control,key] of [["price","price"],["area","livingArea"],["rooms","totalRooms"]]) {
+    const app=await decimalRangeApp(control,minimum,maximum);
+    const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+    assert.equal(query.get(`${key}Min`),minimum);assert.equal(query.get(`${key}Max`),maximum);
+    assert.equal(app.get("filter-error").hidden,true);assert.equal(app.requests.length,2);
+  }
+});
+
+test("equivalent decimal spellings accept leading and trailing zeros without rewriting inputs", async () => {
+  for(const [minimum,maximum] of [[".5","000.500"],["0001.000","1."],["000.000","0"],["0.",".000"]]) {
+    const app=await decimalRangeApp("price",minimum,maximum);
+    assert.equal(app.get("filter-error").hidden,true);
+    const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+    assert.equal(query.get("priceMin"),minimum);assert.equal(query.get("priceMax"),maximum);
+  }
+});
+
+test("decimal comparison respects whole-part length and fractional padding", async () => {
+  for(const [minimum,maximum,valid] of [["2","10",true],["10","2",false],["0.09","0.1",true],
+    ["0.1","0.09",false],["0010.001","10.0001",false],["0009.999","10",true],
+    [".0000000000000000000000000001","0",false]]) {
+    const app=await decimalRangeApp("area",minimum,maximum);
+    assert.equal(app.get("filter-error").hidden,valid,`${minimum} to ${maximum}`);
+    assert.equal(app.requests.length,valid?2:1);
+  }
+});
+
+test("correcting a precise inverted range clears its validation error", async () => {
+  const app=await createApp([response(1,false),response(1,false)]);
+  app.get("filter-rooms-min").value="2.0000000000000000000000000001";
+  app.get("filter-rooms-max").value="2";await app.submit();assert.equal(app.get("filter-error").hidden,false);
+  app.get("filter-rooms-max").value="2.0000000000000000000000000002";await app.submit();
+  assert.equal(app.get("filter-error").hidden,true);assert.equal(app.get("filter-error").textContent,"");
+  assert.equal(app.requests.at(-1),`${endpoint}?totalRoomsMin=2.0000000000000000000000000001&totalRoomsMax=2.0000000000000000000000000002`);
+});

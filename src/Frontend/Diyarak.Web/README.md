@@ -344,3 +344,17 @@ busy state and keep applied URL/search intact. Collection navigation remains
 disabled until a valid response supplies links. The whole collection is checked
 before any cards are appended, preventing partial rendering. HTTP and timeout
 handling remain unchanged. No API or database changes are introduced.
+
+## Decimal range comparison
+
+Minimum/maximum comparisons use normalized decimal strings instead of converting
+bounds to JavaScript Number. This preserves ordering for very close fractions
+and large values that binary floating-point would otherwise treat as equal.
+Leading zeros and trailing fractional zeros compare by value; forms such as
+.5, 0.50 and 000.500 remain equivalent. Zero and a trailing decimal point are
+supported by the existing input syntax.
+
+The helper is used only after syntax validation and compares non-negative
+bounds. Input strings are still sent unchanged after trimming; no rounding or
+conversion is introduced. The API remains authoritative for decimal precision
+and allowed magnitude. Rendering of API numeric values is unchanged.

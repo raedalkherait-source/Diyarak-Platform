@@ -299,6 +299,25 @@ function collectionPageUrl(query) {
   return search ? `./index.html?${search}` : "./index.html";
 }
 
+function compareNonNegativeDecimals(left, right) {
+  const normalize = value => {
+    const [whole = "", fraction = ""] = value.split(".");
+    return { whole: whole.replace(/^0+/, "") || "0", fraction: fraction.replace(/0+$/, "") };
+  };
+  const a = normalize(left);
+  const b = normalize(right);
+  if (a.whole.length !== b.whole.length) {
+    return a.whole.length > b.whole.length ? 1 : -1;
+  }
+  if (a.whole !== b.whole) {
+    return a.whole > b.whole ? 1 : -1;
+  }
+  const width = Math.max(a.fraction.length, b.fraction.length);
+  const aFraction = a.fraction.padEnd(width, "0");
+  const bFraction = b.fraction.padEnd(width, "0");
+  return aFraction === bFraction ? 0 : aFraction > bFraction ? 1 : -1;
+}
+
 function validatePriceFilters() {
   const minimum = priceMinInput.value.trim();
   const maximum = priceMaxInput.value.trim();
@@ -309,7 +328,7 @@ function validatePriceFilters() {
       return `Enter a valid non-negative ${label} price.`;
     }
   }
-  if (minimum && maximum && Number(minimum) > Number(maximum)) {
+  if (minimum && maximum && compareNonNegativeDecimals(minimum, maximum) > 0) {
     return "Minimum price must not exceed maximum price.";
   }
   if ((minimum || maximum) && !/^[A-Z]{3}$/.test(currency)) {
@@ -331,7 +350,7 @@ function validateAreaFilters() {
       return `Enter a valid non-negative ${label} living area.`;
     }
   }
-  if (minimum && maximum && Number(minimum) > Number(maximum)) {
+  if (minimum && maximum && compareNonNegativeDecimals(minimum, maximum) > 0) {
     return "Minimum living area must not exceed maximum living area.";
   }
   if ((minimum || maximum) && !Object.hasOwn(publicLabels.areaUnit, unit)) {
@@ -357,7 +376,7 @@ function validateNumericFilters() {
           : `Enter a valid non-negative ${bound} ${range.label} count.`;
       }
     }
-    if (minimum && maximum && Number(minimum) > Number(maximum)) {
+    if (minimum && maximum && compareNonNegativeDecimals(minimum, maximum) > 0) {
       return `Minimum ${range.label} must not exceed maximum ${range.label}.`;
     }
   }
