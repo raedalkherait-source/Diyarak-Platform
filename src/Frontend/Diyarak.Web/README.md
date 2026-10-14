@@ -358,3 +358,19 @@ The helper is used only after syntax validation and compares non-negative
 bounds. Input strings are still sent unchanged after trimming; no rounding or
 conversion is introduced. The API remains authoritative for decimal precision
 and allowed magnitude. Rendering of API numeric values is unchanged.
+
+## Multiple transaction types
+
+Transaction intent now uses a native multiple select with Rent, Sell and
+RentForLimitedPeriod. Select one or more options, or none for any transaction.
+Each selection is sent as a repeated `transactionIntent` parameter. The backend
+matches any selected intent, unlike required property features which require
+all selected features. The help text explains mouse and keyboard selection.
+
+Bookmarks restore all supported choices. Page links, Refresh, Retry, reload
+and detail return navigation preserve repeated values; the applied summary
+shows all selected labels. Applying sends choices in control order, once per
+option, and retains other filters and size. Clear deselects all options.
+Unsubmitted edits leave the applied search intact. The outer disabled fieldset
+disables selection during loading, and details hide the form. Unknown bookmark
+values remain API-validated and are not added as choices. No backend changes.

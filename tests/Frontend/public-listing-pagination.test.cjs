@@ -19,7 +19,10 @@ function response(page, hasMore, links = null, items = [{}]) {
 async function createApp(responses, search = "", clock = { setTimeout, clearTimeout }) {
   const elements = new Map();
   function element() {
-    return { disabled: false, hidden: false, value: "", textContent: "", dataset: {},
+    return { disabled: false, hidden: false, _value: "", textContent: "", dataset: {},
+      get value() { return this.options ? (this.options.find(option => option.selected)?.value ?? "") : this._value; },
+      set value(value) { this._value = value; if (this.options) for (const option of this.options) option.selected = option.value === value; },
+      get selectedOptions() { return (this.options ?? []).filter(option => option.selected); },
       children: [], listeners: {}, nodes: new Map(), attributes: {}, focusCount: 0,
       setAttribute(name, value) { this.attributes[name] = value; },
       getAttribute(name) { return this.attributes[name] ?? null; },
@@ -41,6 +44,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
     elements.set(`#filter-feature-${value}`, element());
   }
+  elements.get("#filter-intent").options = ["Rent", "Sell", "RentForLimitedPeriod"].map(value => ({ value, selected: false }));
   elements.get("#listing-card-template").content = { cloneNode: element };
   const requests = [];
   const historyUrls = [];
@@ -1817,4 +1821,67 @@ test("correcting a precise inverted range clears its validation error", async ()
   app.get("filter-rooms-max").value="2.0000000000000000000000000002";await app.submit();
   assert.equal(app.get("filter-error").hidden,true);assert.equal(app.get("filter-error").textContent,"");
   assert.equal(app.requests.at(-1),`${endpoint}?totalRoomsMin=2.0000000000000000000000000001&totalRoomsMax=2.0000000000000000000000000002`);
+});
+
+function chooseIntents(app,values) {
+  for(const option of app.get("filter-intent").options) option.selected=values.includes(option.value);
+}
+
+test("multiple intents use repeated API parameters and combine with filters and size", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?city=Berlin&page=3&pageSize=7");
+  chooseIntents(app,["Rent","Sell"]);app.get("filter-feature-Elevator").checked=true;await app.submit();
+  const q=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(q.getAll("transactionIntent"),["Rent","Sell"]);
+  assert.equal(q.get("city"),"Berlin");assert.equal(q.get("pageSize"),"7");assert.deepEqual(q.getAll("propertyFeature"),["Elevator"]);assert.equal(q.has("page"),false);
+  assert.match(app.get("applied-filter-summary").textContent,/Transaction: For rent, For sale/);
+});
+
+test("multiple intent bookmarks restore every choice and survive detail return and reload", async () => {
+  const query="transactionIntent=RentForLimitedPeriod&transactionIntent=Rent&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.deepEqual(app.get("filter-intent").selectedOptions.map(o=>o.value),["Rent","RentForLimitedPeriod"]);
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  const reload=await createApp([response(2,false)],`?${query}`);
+  assert.deepEqual(reload.get("filter-intent").selectedOptions.map(o=>o.value),["Rent","RentForLimitedPeriod"]);
+});
+
+test("deselecting all intents omits the filter and single selections remain supported", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false)],"?transactionIntent=Rent&transactionIntent=Sell");
+  chooseIntents(app,[]);await app.submit();assert.equal(app.requests.at(-1),endpoint);
+  chooseIntents(app,["RentForLimitedPeriod"]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?transactionIntent=RentForLimitedPeriod`);
+});
+
+test("multiple intents retain server page queries Retry and Refresh despite unsubmitted edits", async () => {
+  const filters="transactionIntent=Rent&transactionIntent=Sell&pageSize=5";const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
+  chooseIntents(app,["RentForLimitedPeriod"]);await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);
+});
+
+test("Clear deselects all intent options and loading blocks multiple selection submissions", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending,response(1,false)]);
+  chooseIntents(app,["Rent","Sell","RentForLimitedPeriod"]);const loading=app.submit();
+  assert.equal(app.get("listing-filter-fields").disabled,true);await app.submit();await app.click("clear-filters");assert.equal(app.requests.length,2);
+  assert.deepEqual(new URL(app.requests.at(-1),"https://diyarak.example").searchParams.getAll("transactionIntent"),["Rent","Sell","RentForLimitedPeriod"]);
+  resolveResponse(response(1,false));await loading;await app.click("clear-filters");
+  assert.deepEqual(app.get("filter-intent").selectedOptions,[]);assert.equal(app.requests.at(-1),endpoint);
+});
+
+test("unknown and duplicate intent bookmarks remain API-validated and Apply sends supported choices once", async () => {
+  const query="transactionIntent=Unknown&transactionIntent=Rent&transactionIntent=Rent";
+  const app=await createApp([{ok:false,status:400},{ok:false,status:400},response(1,false)],`?${query}`);
+  assert.deepEqual(app.get("filter-intent").selectedOptions.map(o=>o.value),["Rent"]);
+  await app.click("retry-listings");assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
+  await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?transactionIntent=Rent`);
+});
+
+test("page jump preserves repeated intent search and invalid numeric filters leave choices intact", async () => {
+  const query="transactionIntent=Rent&transactionIntent=Sell&pageSize=7";
+  const app=await createApp([response(1,false),response(3,false)],`?${query}`);
+  app.get("filter-year-min").value="0";await app.submit();assert.equal(app.requests.length,1);
+  assert.deepEqual(app.get("filter-intent").selectedOptions.map(o=>o.value),["Rent","Sell"]);
+  app.get("page-jump-input").value="3";await app.jump();assert.equal(app.requests.at(-1),`${endpoint}?${query}&page=3`);
 });

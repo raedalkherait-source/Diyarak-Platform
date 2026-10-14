@@ -212,7 +212,10 @@ clearFiltersButton.addEventListener("click", async () => {
 pageSizeInput.value = initialSearch.get("pageSize") ?? "";
 cityInput.value = initialSearch.get("city") ?? "";
 postalInput.value = initialSearch.get("postalCode") ?? "";
-intentInput.value = initialSearch.get("transactionIntent") ?? "";
+const initialIntents = new Set(initialSearch.getAll("transactionIntent"));
+for (const option of intentInput.options) {
+  option.selected = initialIntents.has(option.value);
+}
 categoryInput.value = initialSearch.get("propertyCategory") ?? "";
 const initialFeatures = new Set(initialSearch.getAll("propertyFeature"));
 for (const feature of featureInputs) {
@@ -401,8 +404,8 @@ function buildFilteredCollectionUrl() {
   if (postalCode) {
     query.set("postalCode", postalCode);
   }
-  if (intentInput.value) {
-    query.set("transactionIntent", intentInput.value);
+  for (const option of intentInput.selectedOptions) {
+    query.append("transactionIntent", option.value);
   }
   if (categoryInput.value) {
     query.set("propertyCategory", categoryInput.value);
