@@ -66,14 +66,14 @@
         </label>
         <p id="commercial-filter-help" class="filter-message">Selecting a commercial type searches commercial properties. Leave categories unselected or include Commercial property; other categories alone may return no results.</p>
         <label for="filter-furnishing">Furnishing quality
-          <select id="filter-furnishing" name="furnishingQuality">
-            <option value="">Any quality</option>
+          <select id="filter-furnishing" name="furnishingQuality" multiple size="4" aria-describedby="furnishing-filter-help">
             <option value="Simple">Simple</option>
             <option value="Normal">Normal</option>
             <option value="Upscale">Upscale</option>
             <option value="Luxury">Luxury</option>
           </select>
         </label>
+        <p id="furnishing-filter-help" class="filter-message">Choose one or more furnishing qualities; no selection means any quality. Listings may match any selected quality. Use Ctrl (Windows) or Command (Mac) while clicking to toggle choices. Use Shift with arrow keys to select adjacent choices.</p>
         <label for="filter-price-min">Minimum price
           <input id="filter-price-min" name="priceMin" type="number" min="0" step="any" aria-describedby="price-filter-help filter-error">
         </label>

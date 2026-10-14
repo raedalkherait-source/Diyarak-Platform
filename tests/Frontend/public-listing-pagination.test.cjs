@@ -46,6 +46,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   }
   elements.get("#filter-intent").options = ["Rent", "Sell", "RentForLimitedPeriod"].map(value => ({ value, selected: false }));
   elements.get("#filter-category").options = ["Apartment", "House", "Plot", "InvestmentProperty", "GarageOrParkingSpace", "CommercialProperty"].map(value => ({ value, selected: false }));
+  elements.get("#filter-furnishing").options = ["Simple", "Normal", "Upscale", "Luxury"].map(value => ({ value, selected: false }));
   elements.get("#listing-card-template").content = { cloneNode: element };
   const requests = [];
   const historyUrls = [];
@@ -1946,4 +1947,64 @@ test("commercial subtype retains category choices and handles an empty intersect
   assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=CommercialProperty&commercialSubtype=Retail`);
   chooseCategories(app,["Apartment","House"]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=House&commercialSubtype=Retail`);
   assert.equal(app.get("status").dataset.state,"ready");assert.match(app.get("status").textContent,/No public listings/);
+});
+
+function chooseQualities(app,values) {
+  for(const option of app.get("filter-furnishing").options) option.selected=values.includes(option.value);
+}
+
+test("multiple furnishing qualities combine with repeated intents categories and features", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?city=Berlin&page=3&pageSize=7");
+  chooseQualities(app,["Normal","Luxury"]);chooseIntents(app,["Rent","Sell"]);chooseCategories(app,["Apartment","House"]);
+  app.get("filter-feature-Elevator").checked=true;await app.submit();const q=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(q.getAll("furnishingQuality"),["Normal","Luxury"]);assert.deepEqual(q.getAll("transactionIntent"),["Rent","Sell"]);
+  assert.deepEqual(q.getAll("propertyCategory"),["Apartment","House"]);assert.deepEqual(q.getAll("propertyFeature"),["Elevator"]);
+  assert.equal(q.get("pageSize"),"7");assert.equal(q.has("page"),false);assert.match(app.get("applied-filter-summary").textContent,/Furnishing: Normal, Luxury/);
+});
+
+test("furnishing bookmarks restore all choices and preserve detail return and reload", async () => {
+  const query="furnishingQuality=Luxury&furnishingQuality=Simple&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Simple","Luxury"]);
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(reload.get("filter-furnishing").selectedOptions.map(o=>o.value),["Simple","Luxury"]);
+});
+
+test("all qualities single choices and empty selection use the supported API contract", async () => {
+  const values=["Simple","Normal","Upscale","Luxury"];
+  const app=await createApp([response(1,false),response(1,false),response(1,false),response(1,false)]);
+  chooseQualities(app,values);await app.submit();assert.deepEqual(new URL(app.requests.at(-1),"https://diyarak.example").searchParams.getAll("furnishingQuality"),values);
+  chooseQualities(app,[]);await app.submit();assert.equal(app.requests.at(-1),endpoint);
+  chooseQualities(app,["Luxury"]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?furnishingQuality=Luxury`);
+});
+
+test("multiple qualities survive navigation Retry Refresh and page jumps despite form edits", async () => {
+  const filters="furnishingQuality=Normal&furnishingQuality=Upscale&pageSize=5";const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false),response(3,false)],`?${filters}&page=1`);
+  chooseQualities(app,["Luxury"]);await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  app.get("page-jump-input").value="3";await app.jump();assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`,`${endpoint}?${filters}&page=3`]);
+});
+
+test("Clear resets quality choices and loading blocks multiple-quality submissions", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending,response(1,false)]);chooseQualities(app,["Normal","Luxury"]);
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);await app.submit();await app.click("clear-filters");assert.equal(app.requests.length,2);
+  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(app.get("filter-furnishing").selectedOptions,[]);assert.equal(app.requests.at(-1),endpoint);
+});
+
+test("unknown and duplicate qualities remain API-validated and Apply sends supported choices once", async () => {
+  const query="furnishingQuality=Unknown&furnishingQuality=Normal&furnishingQuality=Normal";
+  const app=await createApp([{ok:false,status:400},{ok:false,status:400},response(1,false)],`?${query}`);
+  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Normal"]);await app.click("retry-listings");
+  assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?furnishingQuality=Normal`);
+});
+
+test("invalid numeric input leaves multiple furnishing selections and applied results intact", async () => {
+  const app=await createApp([response(1,false)],"?furnishingQuality=Simple&furnishingQuality=Normal");
+  chooseQualities(app,["Upscale","Luxury"]);app.get("filter-year-min").value="0";await app.submit();
+  assert.equal(app.requests.length,1);assert.equal(app.get("listing-grid").children.length,1);
+  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Upscale","Luxury"]);
+  assert.equal(app.get("applied-filter-summary").textContent,"Search filters: Furnishing: Simple, Normal");
 });

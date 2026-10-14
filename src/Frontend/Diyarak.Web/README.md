@@ -199,15 +199,15 @@ disables the form and details keep it hidden.
 
 ## Furnishing quality filter
 
-The optional single-choice `furnishingQuality` filter uses the existing API
-values Simple, Normal, Upscale, and Luxury. Any quality omits the parameter.
+The optional multiple-choice `furnishingQuality` filter uses the existing API
+values Simple, Normal, Upscale, and Luxury. No selection omits the parameter.
 The backend filters the property's furnishing quality; properties without a
 matching value are excluded when a quality is selected.
 
 This filter combines with all existing discovery and numeric filters.
 Applying starts on page one; the choice restores from bookmarks and persists
 through server page links, Refresh, Retry, and detail return navigation.
-Clear returns to Any quality. Unsubmitted edits leave applied search intact.
+Clear deselects all qualities. Unsubmitted edits leave applied search intact.
 Loading disables the form, which remains hidden on details. The API validates
 supported query values; no ranking or new backend behavior is introduced.
 
@@ -393,3 +393,17 @@ If categories are selected, CommercialProperty must be among them to allow
 those matches. Other categories alone produce an empty intersection according
 to the API. Unknown bookmark values remain API-validated and are not added to
 the options. No API or database changes are introduced.
+
+## Multiple furnishing qualities
+
+The furnishing select supports one or more of Simple, Normal, Upscale and
+Luxury. Each selection becomes a repeated `furnishingQuality` parameter.
+The API matches any selected quality; required property features still require
+all selected features. No selection leaves furnishing quality unrestricted.
+
+Bookmarks restore all supported choices. Pagination, Refresh, Retry, reload,
+page jumps and detail return preserve repeated values; the applied summary
+shows all selected labels. Applying sends each chosen option once in control
+order alongside other filters and page size. Clear deselects all options.
+Loading disables the form; details hide it. Unknown bookmark values remain
+API-validated and are not added as options. No backend changes are introduced.

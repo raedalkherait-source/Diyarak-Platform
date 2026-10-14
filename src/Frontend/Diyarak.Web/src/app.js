@@ -225,7 +225,10 @@ for (const feature of featureInputs) {
   feature.input.checked = initialFeatures.has(feature.value);
 }
 commercialInput.value = initialSearch.get("commercialSubtype") ?? "";
-furnishingInput.value = initialSearch.get("furnishingQuality") ?? "";
+const initialQualities = new Set(initialSearch.getAll("furnishingQuality"));
+for (const option of furnishingInput.options) {
+  option.selected = initialQualities.has(option.value);
+}
 priceMinInput.value = initialSearch.get("priceMin") ?? "";
 priceMaxInput.value = initialSearch.get("priceMax") ?? "";
 priceCurrencyInput.value = initialSearch.get("priceCurrency") ?? "";
@@ -424,8 +427,8 @@ function buildFilteredCollectionUrl() {
     query.set("commercialSubtype", commercialInput.value);
   }
 
-  if (furnishingInput.value) {
-    query.set("furnishingQuality", furnishingInput.value);
+  for (const option of furnishingInput.selectedOptions) {
+    query.append("furnishingQuality", option.value);
   }
 
   const minimum = priceMinInput.value.trim();
