@@ -441,3 +441,18 @@ the exact failure. Applying restored fields uses normal form validation and
 starts at page one. Unknown query values remain subject to API validation;
 only supported choices can be shown in native selects. Bookmark initialization,
 Clear and Restore use the same field restoration helper.
+
+## Unapplied filter changes
+
+A polite live message appears when input/change events reveal differences
+from the form values last restored or submitted. It covers text, price/area,
+page size, numeric ranges, multiple selects and required feature checkboxes.
+Returning fields to that same snapshot hides the message. Draft detection
+compares form values, so whitespace edits also count as changes.
+
+Applying valid filters records the submitted form and dismisses the message,
+even when the request later fails: the search now describes that request.
+Invalid submissions retain the draft notice. Restore and Clear dismiss it.
+Refresh, Retry, pagination and page jumps do not apply draft edits or discard
+the notice. Loading ignores form events; details hide the form. The notice
+never changes URL, summary, cards, requests or keyboard focus.

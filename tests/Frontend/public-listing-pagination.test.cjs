@@ -38,7 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -66,6 +66,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     } });
   await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
   return { requests, historyUrls, signals, formatters: context.formatters, get: id => elements.get(`#${id}`),
+    formEvent: event => elements.get("#listing-filters").listeners[event](),
     jump: () => elements.get("#page-jump-form").listeners.submit({ preventDefault() {} }),
     submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
     click: id => elements.get(`#${id}`).listeners.click() };
@@ -2128,4 +2129,51 @@ test("Restore after Clear resets drafts to unfiltered default and Apply restored
   await app.click("clear-filters");app.get("filter-city").value="Paris";chooseCategories(app,["House"]);await app.click("restore-filters");
   assert.equal(app.get("filter-city").value,"");assert.deepEqual(app.get("filter-category").selectedOptions,[]);assert.equal(app.get("filter-page-size").value,"");
   assert.equal(app.requests.length,3);assert.equal(app.historyUrls.at(-1),"./index.html");
+});
+
+test("draft notice tracks text changes and disappears when edits are reversed", async () => {
+  const app=await createApp([response(1,false)],"?city=Berlin");assert.equal(app.get("filter-draft-message").hidden,true);
+  app.get("filter-city").value="Paris";await app.formEvent("input");assert.equal(app.get("filter-draft-message").hidden,false);
+  app.get("filter-city").value="Berlin";await app.formEvent("input");assert.equal(app.get("filter-draft-message").hidden,true);
+  assert.deepEqual(app.requests,[`${endpoint}?city=Berlin`]);assert.equal(app.historyUrls.at(-1),"./index.html?city=Berlin");
+});
+
+test("draft notice covers numeric range size selections and feature changes", async () => {
+  for(const edit of [app=>{app.get("filter-price-min").value="10";},app=>{app.get("filter-area-unit").value="Dunum";},
+    app=>{app.get("filter-rooms-min").value="2.5";},app=>{app.get("filter-parking-min").value="0";},app=>{app.get("filter-page-size").value="50";},
+    app=>chooseIntents(app,["Rent","Sell"]),app=>chooseCategories(app,["House"]),app=>chooseQualities(app,["Luxury"]),
+    app=>chooseCommercialTypes(app,["Retail"]),app=>{app.get("filter-feature-Elevator").checked=true;}]) {
+    const app=await createApp([response(1,false)]);edit(app);await app.formEvent("change");assert.equal(app.get("filter-draft-message").hidden,false);
+    await app.click("restore-filters");assert.equal(app.get("filter-draft-message").hidden,true);assert.equal(app.requests.length,1);
+  }
+});
+
+test("invalid submission preserves draft notice and valid failed request records the submitted form", async () => {
+  const app=await createApp([response(1,false),{ok:false,status:503}]);app.get("filter-price-min").value="10";await app.formEvent("input");
+  await app.submit();assert.equal(app.get("filter-draft-message").hidden,false);assert.equal(app.get("filter-error").hidden,false);
+  app.get("filter-price-currency").value="EUR";await app.formEvent("input");await app.submit();assert.equal(app.get("filter-draft-message").hidden,true);
+  assert.equal(app.get("status").dataset.state,"error");app.get("filter-price-min").value="20";await app.formEvent("input");assert.equal(app.get("filter-draft-message").hidden,false);
+});
+
+test("Refresh navigation Retry and page jumps retain unapplied notice without applying edits", async () => {
+  const next=`${endpoint}?city=Berlin&page=2`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false),response(1,false),response(3,false)],"?city=Berlin");
+  app.get("filter-city").value="Paris";await app.formEvent("input");await app.click("next-page");await app.click("retry-listings");await app.click("load-listings");
+  app.get("page-jump-input").value="3";await app.jump();assert.equal(app.get("filter-draft-message").hidden,false);
+  assert.deepEqual(app.requests,[`${endpoint}?city=Berlin`,next,next,`${endpoint}?city=Berlin`,`${endpoint}?city=Berlin&page=3`]);
+});
+
+test("Clear records empty form and future edits are detected again", async () => {
+  const app=await createApp([response(1,false),response(1,false)],"?city=Berlin");app.get("filter-city").value="Paris";await app.formEvent("input");
+  await app.click("clear-filters");assert.equal(app.get("filter-draft-message").hidden,true);
+  app.get("filter-city").value="Berlin";await app.formEvent("input");assert.equal(app.get("filter-draft-message").hidden,false);
+  app.get("filter-city").value="";await app.formEvent("input");assert.equal(app.get("filter-draft-message").hidden,true);
+});
+
+test("loading and detail views ignore draft events and notification never moves focus", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});const app=await createApp([response(1,false),()=>pending]);
+  const loading=app.click("load-listings");app.get("filter-city").value="Paris";await app.formEvent("input");assert.equal(app.get("filter-draft-message").hidden,true);
+  resolveResponse(response(1,false));await loading;await app.formEvent("change");assert.equal(app.get("filter-draft-message").hidden,false);
+  assert.equal(app.get("filter-draft-message").focusCount,0);
+  const detail=await createApp([detailResponse({listingId})],detailQuery);detail.get("filter-city").value="Paris";await detail.formEvent("input");assert.equal(detail.get("filter-draft-message").hidden,true);
 });

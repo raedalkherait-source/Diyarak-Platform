@@ -181,6 +181,7 @@
           <input id="filter-page-size" name="pageSize" type="number" min="1" max="100" step="1" placeholder="20" aria-describedby="page-size-help filter-error">
         </label>
         <p id="page-size-help" class="filter-message">Choose 1 to 100 listings per page. Leave blank for the default of 20. Apply starts on the first page; Clear restores the default.</p>
+        <p id="filter-draft-message" class="filter-message" aria-live="polite" hidden>You have unapplied filter changes. Apply filters or restore applied filters.</p>
         <p id="filter-error" class="filter-message" role="alert" tabindex="-1" hidden></p>
         <div class="filter-actions">
           <button type="submit">Apply filters</button>

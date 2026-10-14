@@ -104,6 +104,7 @@ numericFilterRanges.push(
     minimum: document.querySelector("#filter-parking-min"),
     maximum: document.querySelector("#filter-parking-max") },
 );
+const filterDraftMessage = document.querySelector("#filter-draft-message");
 const filterError = document.querySelector("#filter-error");
 const restoreFiltersButton = document.querySelector("#restore-filters");
 const clearFiltersButton = document.querySelector("#clear-filters");
@@ -122,6 +123,7 @@ let requestedUrl = collectionUrl;
 let previousUrl = null;
 let nextUrl = null;
 let isLoading = false;
+let appliedFilterSnapshot = null;
 
 loadButton.addEventListener("click", async () => {
   await loadSelectedView();
@@ -161,6 +163,9 @@ pageJumpForm.addEventListener("submit", async event => {
   await loadPublicListings(collectionRequestUrl(query));
 });
 
+filterForm.addEventListener("input", updateFilterDraftState);
+filterForm.addEventListener("change", updateFilterDraftState);
+
 filterForm.addEventListener("submit", async event => {
   event.preventDefault();
   if (isLoading || isDetailView) {
@@ -175,6 +180,7 @@ filterForm.addEventListener("submit", async event => {
     return;
   }
 
+  rememberAppliedFilterState();
   firstPageUrl = buildFilteredCollectionUrl();
   await loadPublicListings(firstPageUrl);
 });
@@ -215,6 +221,29 @@ async function loadSelectedView(url = firstPageUrl) {
   }
 }
 
+function filterFormSnapshot() {
+  return JSON.stringify({
+    fields: [cityInput, postalInput, priceMinInput, priceMaxInput, priceCurrencyInput,
+      areaMinInput, areaMaxInput, areaUnitInput, pageSizeInput].map(input => input.value),
+    choices: [intentInput, categoryInput, commercialInput, furnishingInput]
+      .map(input => Array.from(input.selectedOptions, option => option.value)),
+    ranges: numericFilterRanges.map(range => [range.minimum.value, range.maximum.value]),
+    features: featureInputs.filter(feature => feature.input.checked).map(feature => feature.value),
+  });
+}
+
+function rememberAppliedFilterState() {
+  appliedFilterSnapshot = filterFormSnapshot();
+  filterDraftMessage.hidden = true;
+}
+
+function updateFilterDraftState() {
+  if (isLoading || isDetailView) {
+    return;
+  }
+  filterDraftMessage.hidden = filterFormSnapshot() === appliedFilterSnapshot;
+}
+
 function restoreFilterForm(query) {
   pageSizeInput.value = query.get("pageSize") ?? "";
   cityInput.value = query.get("city") ?? "";
@@ -251,6 +280,7 @@ function restoreFilterForm(query) {
   }
   filterError.textContent = "";
   filterError.hidden = true;
+  rememberAppliedFilterState();
 }
 
 function getSupportedSearch(query) {
