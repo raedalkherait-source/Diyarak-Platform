@@ -1,7 +1,7 @@
 using System.Threading.RateLimiting;
 using Diyarak.Api.Authentication;
-using Diyarak.Market.Application;
 using Diyarak.Api.Market;
+using Diyarak.Market.Application;
 using Diyarak.Platform.Persistence.PostgreSql;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Timeouts;

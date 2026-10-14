@@ -1,4 +1,4 @@
-﻿
+
 namespace Diyarak.Api.Market;
 
 internal sealed class MarketManagementEndpointMetadata

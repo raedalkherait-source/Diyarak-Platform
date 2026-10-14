@@ -1365,7 +1365,8 @@ public sealed class PublishListingEndpointTests
         public StubPropertyExistenceChecker PropertyChecker { get; }
 
         public StubPropertyListingAuthorizationChecker
-            PropertyListingAuthorizationChecker { get; }
+            PropertyListingAuthorizationChecker
+        { get; }
 
         protected override IHost CreateHost(IHostBuilder builder)
         {

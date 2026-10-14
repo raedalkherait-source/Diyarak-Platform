@@ -73,3 +73,26 @@ Optional local port and request timeout:
 ```powershell
 .\scripts\check-api-dev.cmd -Port 5227 -TimeoutSeconds 30
 ```
+
+## Full Windows verification
+
+With the selected .NET SDK and Node.js (including `node --test`) installed:
+
+```powershell
+.\scripts\verify.cmd
+$LASTEXITCODE
+```
+
+The Windows verifier resolves the repository from the script path, checks
+required commands, then runs frontend behavior tests, .NET restore, formatting
+verification, Release build and Release .NET tests. Every native command's exit
+code is checked; the first failure stops later steps and yields a nonzero exit
+code. The final success message is printed only after every step passes.
+Node.js is required; frontend tests are not silently skipped. No npm install
+or additional frontend dependencies are needed for these tests.
+
+The existing generated `artifacts` cleanup is scoped to the repository. The
+caller's working directory is restored afterward. Stop a running Development
+API before the Release build to avoid file locking. The `.cmd` wrapper uses the
+same process-only PowerShell execution policy as the other Windows launchers.
+This verifier does not start services or invoke the live readiness check.
