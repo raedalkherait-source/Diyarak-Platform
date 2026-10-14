@@ -456,3 +456,15 @@ Invalid submissions retain the draft notice. Restore and Clear dismiss it.
 Refresh, Retry, pagination and page jumps do not apply draft edits or discard
 the notice. Loading ignores form events; details hide the form. The notice
 never changes URL, summary, cards, requests or keyboard focus.
+
+## Collapsible search filters
+
+The existing form is inside a native details/summary panel titled Search
+filters, open by default. Activate its summary with a pointer or keyboard to
+collapse/expand the controls. Native browser semantics communicate expanded
+state; no extra click handler or stored preference is introduced.
+
+The applied filter summary, listing status, pagination and results remain
+outside the panel. Collapsing does not submit, clear or restore filters, and
+retains draft edits and messages for reopening. The entire panel is hidden on
+detail views. All request, validation and search-state behavior is unchanged.

@@ -67,6 +67,7 @@ const paginationElement = document.querySelector("#listing-pagination");
 const filterSummary = document.querySelector("#applied-filter-summary");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
+const filterPanel = document.querySelector("#listing-filter-panel");
 const filterForm = document.querySelector("#listing-filters");
 const filterFields = document.querySelector("#listing-filter-fields");
 const cityInput = document.querySelector("#filter-city");
@@ -205,6 +206,7 @@ clearFiltersButton.addEventListener("click", async () => {
 restoreFilterForm(initialSearch);
 backLink.href = collectionPageUrl(initialSearch);
 filterSummary.hidden = isDetailView;
+filterPanel.hidden = isDetailView;
 filterForm.hidden = isDetailView;
 pageJumpForm.hidden = isDetailView;
 paginationElement.hidden = isDetailView;

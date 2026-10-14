@@ -266,3 +266,29 @@ button:disabled {
   color: #9f1239;
   font-weight: 700;
 }
+
+#listing-filter-panel {
+  margin: 0 0 28px;
+}
+
+#listing-filter-panel > summary {
+  padding: 14px 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#listing-filter-panel > summary:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+#listing-filter-panel[open] > summary {
+  margin-bottom: 12px;
+}
+
+#listing-filter-panel #listing-filter-fields {
+  margin-bottom: 0;
+}
