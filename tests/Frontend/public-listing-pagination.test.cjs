@@ -47,6 +47,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   elements.get("#filter-intent").options = ["Rent", "Sell", "RentForLimitedPeriod"].map(value => ({ value, selected: false }));
   elements.get("#filter-category").options = ["Apartment", "House", "Plot", "InvestmentProperty", "GarageOrParkingSpace", "CommercialProperty"].map(value => ({ value, selected: false }));
   elements.get("#filter-furnishing").options = ["Simple", "Normal", "Upscale", "Luxury"].map(value => ({ value, selected: false }));
+  elements.get("#filter-commercial").options = ["OfficeOrPractice", "RestaurantOrHotel", "HallOrProduction", "Retail", "CommercialPlot"].map(value => ({ value, selected: false }));
   elements.get("#listing-card-template").content = { cloneNode: element };
   const requests = [];
   const historyUrls = [];
@@ -2007,4 +2008,64 @@ test("invalid numeric input leaves multiple furnishing selections and applied re
   assert.equal(app.requests.length,1);assert.equal(app.get("listing-grid").children.length,1);
   assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Upscale","Luxury"]);
   assert.equal(app.get("applied-filter-summary").textContent,"Search filters: Furnishing: Simple, Normal");
+});
+
+function chooseCommercialTypes(app,values) {
+  for(const option of app.get("filter-commercial").options) option.selected=values.includes(option.value);
+}
+
+test("multiple commercial types combine with other multiple-choice filters and size", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?city=Berlin&page=3&pageSize=7");
+  chooseCommercialTypes(app,["OfficeOrPractice","Retail"]);chooseCategories(app,["CommercialProperty"]);chooseIntents(app,["Rent","Sell"]);chooseQualities(app,["Normal","Luxury"]);
+  app.get("filter-feature-Elevator").checked=true;await app.submit();const q=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(q.getAll("commercialSubtype"),["OfficeOrPractice","Retail"]);assert.deepEqual(q.getAll("transactionIntent"),["Rent","Sell"]);
+  assert.deepEqual(q.getAll("furnishingQuality"),["Normal","Luxury"]);assert.equal(q.get("propertyCategory"),"CommercialProperty");
+  assert.equal(q.get("pageSize"),"7");assert.equal(q.has("page"),false);assert.match(app.get("applied-filter-summary").textContent,/Commercial type: Office or practice, Retail/);
+});
+
+test("commercial bookmarks restore every selected subtype through reload and detail return", async () => {
+  const query="commercialSubtype=Retail&commercialSubtype=OfficeOrPractice&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(reload.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
+});
+
+test("all commercial types single choices and no choices follow repeated-parameter contract", async () => {
+  const values=["OfficeOrPractice","RestaurantOrHotel","HallOrProduction","Retail","CommercialPlot"];
+  const app=await createApp([response(1,false),response(1,false),response(1,false),response(1,false)]);
+  chooseCommercialTypes(app,values);await app.submit();assert.deepEqual(new URL(app.requests.at(-1),"https://diyarak.example").searchParams.getAll("commercialSubtype"),values);
+  chooseCommercialTypes(app,[]);await app.submit();assert.equal(app.requests.at(-1),endpoint);
+  chooseCommercialTypes(app,["Retail"]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?commercialSubtype=Retail`);
+});
+
+test("multiple commercial types survive navigation Retry Refresh and page jump despite edits", async () => {
+  const filters="commercialSubtype=OfficeOrPractice&commercialSubtype=Retail&pageSize=5";const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false),response(3,false)],`?${filters}&page=1`);
+  chooseCommercialTypes(app,["CommercialPlot"]);await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  app.get("page-jump-input").value="3";await app.jump();assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`,`${endpoint}?${filters}&page=3`]);
+});
+
+test("Clear resets commercial types and loading blocks multiple-subtype submissions", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending,response(1,false)]);chooseCommercialTypes(app,["OfficeOrPractice","Retail"]);
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);await app.submit();await app.click("clear-filters");assert.equal(app.requests.length,2);
+  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(app.get("filter-commercial").selectedOptions,[]);assert.equal(app.requests.at(-1),endpoint);
+});
+
+test("unknown and duplicate subtypes remain API-validated and Apply sends supported values once", async () => {
+  const query="commercialSubtype=Unknown&commercialSubtype=Retail&commercialSubtype=Retail";
+  const app=await createApp([{ok:false,status:400},{ok:false,status:400},response(1,false)],`?${query}`);
+  assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["Retail"]);await app.click("retry-listings");
+  assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?commercialSubtype=Retail`);
+});
+
+test("multiple commercial types retain category intersection semantics and empty-result handling", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false,null,[])]);
+  chooseCommercialTypes(app,["OfficeOrPractice","Retail"]);chooseCategories(app,["Apartment","CommercialProperty"]);await app.submit();
+  assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=CommercialProperty&commercialSubtype=OfficeOrPractice&commercialSubtype=Retail`);
+  chooseCategories(app,["Apartment","House"]);await app.submit();assert.equal(app.get("status").dataset.state,"ready");assert.match(app.get("status").textContent,/No public listings/);
+  assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
 });

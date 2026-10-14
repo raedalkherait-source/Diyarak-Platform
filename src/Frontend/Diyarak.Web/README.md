@@ -214,12 +214,12 @@ supported query values; no ranking or new backend behavior is introduced.
 ## Commercial property type filter
 
 Optional `commercialSubtype` uses OfficeOrPractice, RestaurantOrHotel,
-HallOrProduction, Retail, or CommercialPlot. Any commercial type omits the
-parameter. Selecting a subtype searches commercial properties with that
-subtype. Categories remain the user's choices; excluding CommercialProperty can
+HallOrProduction, Retail, or CommercialPlot. No selection omits the
+parameter. Selecting subtypes searches commercial properties matching any
+selected subtype. Categories remain the user's choices; excluding CommercialProperty can
 produce an empty intersection. The help text explains this behavior.
 
-This single-choice filter combines with existing discovery and numeric
+This multiple-choice filter combines with existing discovery and numeric
 filters, restores from bookmarks and persists through pagination, Refresh,
 Retry, and detail return links. Clear resets it; loading disables the form
 and details keep it hidden. Unsubmitted edits do not change applied search.
@@ -407,3 +407,21 @@ shows all selected labels. Applying sends each chosen option once in control
 order alongside other filters and page size. Clear deselects all options.
 Loading disables the form; details hide it. Unknown bookmark values remain
 API-validated and are not added as options. No backend changes are introduced.
+
+## Multiple commercial property types
+
+Commercial type supports one or more of OfficeOrPractice, RestaurantOrHotel,
+HallOrProduction, Retail and CommercialPlot. Each selected option becomes a
+repeated `commercialSubtype` parameter. The API matches any selected subtype
+on commercial properties. No selection leaves subtype unrestricted.
+
+Bookmarks restore all supported choices. Pagination, Refresh, Retry, reload,
+page jumps and detail return retain repeated values. The summary shows all
+selected labels. Applying sends each selected option once in control order
+alongside other filters and page size. Clear deselects all options; loading
+disables the form and details hide it. Unknown bookmark values remain
+API-validated and are not added as options.
+
+If categories are also selected, include CommercialProperty to allow subtype
+matches; other categories alone produce an empty intersection. Required
+property features still require every selected feature. No backend changes.

@@ -224,7 +224,10 @@ const initialFeatures = new Set(initialSearch.getAll("propertyFeature"));
 for (const feature of featureInputs) {
   feature.input.checked = initialFeatures.has(feature.value);
 }
-commercialInput.value = initialSearch.get("commercialSubtype") ?? "";
+const initialCommercialTypes = new Set(initialSearch.getAll("commercialSubtype"));
+for (const option of commercialInput.options) {
+  option.selected = initialCommercialTypes.has(option.value);
+}
 const initialQualities = new Set(initialSearch.getAll("furnishingQuality"));
 for (const option of furnishingInput.options) {
   option.selected = initialQualities.has(option.value);
@@ -423,8 +426,8 @@ function buildFilteredCollectionUrl() {
     }
   }
 
-  if (commercialInput.value) {
-    query.set("commercialSubtype", commercialInput.value);
+  for (const option of commercialInput.selectedOptions) {
+    query.append("commercialSubtype", option.value);
   }
 
   for (const option of furnishingInput.selectedOptions) {
