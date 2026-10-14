@@ -45,3 +45,31 @@ run migrations, or delete volumes. Existing PostgreSQL data is retained.
 Stopping the API with Ctrl+C leaves PostgreSQL running for the next session.
 If an API process is already running on port 5227, stop it first or use
 `-DatabaseOnly`; the script does not stop another process.
+
+## Read-only API readiness check
+
+Once the Development API is listening, use a second PowerShell window:
+
+```powershell
+.\scripts\check-api-dev.cmd
+$LASTEXITCODE
+```
+
+The check issues anonymous GET requests to the local frontend HTML, JavaScript,
+CSS and public listing collection (`page=1&pageSize=1`). It reports HTTP status
+and duration, verifies collection pagination metadata and, if an item exists,
+checks its detail endpoint and matching identifier. An empty collection is a
+successful check and skips the detail request. It prints no response bodies,
+credentials or environment-file contents.
+
+The check does not start/stop services, build the application, run migrations,
+or change data. Success returns 0; HTTP, connection, timeout or invalid-response
+errors return a nonzero exit code. It is not a replacement for browser/keyboard
+checks or the full automated test suite. As with the startup launcher, the
+Windows wrapper uses a child-process-only execution policy.
+
+Optional local port and request timeout:
+
+```powershell
+.\scripts\check-api-dev.cmd -Port 5227 -TimeoutSeconds 30
+```
