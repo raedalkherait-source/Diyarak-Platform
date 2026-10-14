@@ -96,3 +96,21 @@ caller's working directory is restored afterward. Stop a running Development
 API before the Release build to avoid file locking. The `.cmd` wrapper uses the
 same process-only PowerShell execution policy as the other Windows launchers.
 This verifier does not start services or invoke the live readiness check.
+
+## Full Bash verification
+
+With Bash, the selected .NET SDK and Node.js (including `node --test`) installed:
+
+```bash
+bash scripts/verify.sh
+```
+
+The Bash verifier runs the same frontend behavior tests, .NET restore,
+formatting verification, Release build and Release .NET tests as the Windows
+verifier. Required commands are checked before generated `artifacts` cleanup.
+It resolves the repository from the script path, so an absolute script path
+also works from another directory. Cleanup stays within the repository.
+
+The first failing command stops verification with a nonzero exit code; the
+final success message appears only after all steps pass. Frontend tests require
+no npm install. The verifier does not start services or run live readiness checks.

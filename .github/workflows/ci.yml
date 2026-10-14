@@ -25,6 +25,12 @@ jobs:
           global-json-file: global.json
           cache: true
           cache-dependency-path: Directory.Packages.props
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Frontend behavior tests
+        run: node --test tests/Frontend/public-listing-pagination.test.cjs
       - run: dotnet restore Diyarak.Platform.All.sln
       - run: dotnet format Diyarak.Platform.All.sln --verify-no-changes --no-restore
       - run: dotnet build Diyarak.Platform.All.sln -c Release --no-restore
