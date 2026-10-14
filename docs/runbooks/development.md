@@ -12,8 +12,13 @@ From PowerShell, start the existing PostgreSQL service and the Development API
 with one command (Docker Desktop must already be running):
 
 ```powershell
-.\scripts\start-api-dev.ps1
+.\scripts\start-api-dev.cmd
 ```
+
+The Windows `.cmd` launcher invokes the adjacent PowerShell script with
+`-NoProfile -ExecutionPolicy Bypass` for that child process only. It forwards
+arguments and the script exit code; no persistent execution policy is changed.
+This also works when direct `.ps1` execution is disabled.
 
 The script locates the repository from its own path, requires the existing
 `docker/.env`, checks Docker/Compose and the selected .NET SDK, starts only the
@@ -24,13 +29,13 @@ then runs the API's `http` launch profile. The frontend is available at
 To start/check PostgreSQL without launching a second API process:
 
 ```powershell
-.\scripts\start-api-dev.ps1 -DatabaseOnly
+.\scripts\start-api-dev.cmd -DatabaseOnly
 ```
 
 For a slower initial startup, override the bounded wait:
 
 ```powershell
-.\scripts\start-api-dev.ps1 -DatabaseOnly -DatabaseWaitSeconds 240
+.\scripts\start-api-dev.cmd -DatabaseOnly -DatabaseWaitSeconds 240
 ```
 
 A missing environment file, unavailable Docker engine, failed Compose startup,
