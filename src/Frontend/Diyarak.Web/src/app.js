@@ -216,7 +216,10 @@ const initialIntents = new Set(initialSearch.getAll("transactionIntent"));
 for (const option of intentInput.options) {
   option.selected = initialIntents.has(option.value);
 }
-categoryInput.value = initialSearch.get("propertyCategory") ?? "";
+const initialCategories = new Set(initialSearch.getAll("propertyCategory"));
+for (const option of categoryInput.options) {
+  option.selected = initialCategories.has(option.value);
+}
 const initialFeatures = new Set(initialSearch.getAll("propertyFeature"));
 for (const feature of featureInputs) {
   feature.input.checked = initialFeatures.has(feature.value);
@@ -407,8 +410,8 @@ function buildFilteredCollectionUrl() {
   for (const option of intentInput.selectedOptions) {
     query.append("transactionIntent", option.value);
   }
-  if (categoryInput.value) {
-    query.set("propertyCategory", categoryInput.value);
+  for (const option of categoryInput.selectedOptions) {
+    query.append("propertyCategory", option.value);
   }
 
   for (const feature of featureInputs) {

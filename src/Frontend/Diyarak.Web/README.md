@@ -216,7 +216,7 @@ supported query values; no ranking or new backend behavior is introduced.
 Optional `commercialSubtype` uses OfficeOrPractice, RestaurantOrHotel,
 HallOrProduction, Retail, or CommercialPlot. Any commercial type omits the
 parameter. Selecting a subtype searches commercial properties with that
-subtype. The category remains the user's choice; a different category can
+subtype. Categories remain the user's choices; excluding CommercialProperty can
 produce an empty intersection. The help text explains this behavior.
 
 This single-choice filter combines with existing discovery and numeric
@@ -374,3 +374,22 @@ option, and retains other filters and size. Clear deselects all options.
 Unsubmitted edits leave the applied search intact. The outer disabled fieldset
 disables selection during loading, and details hide the form. Unknown bookmark
 values remain API-validated and are not added as choices. No backend changes.
+
+## Multiple property categories
+
+Property category uses a native multiple select with all six existing API
+categories. No selection means any category. Each selected option becomes
+a repeated `propertyCategory` parameter and the backend matches any chosen
+category. Selection help describes Ctrl/Command-click and Shift-arrow use.
+
+Bookmarks restore all supported categories; page links, Refresh, Retry,
+reload, direct page jumps and detail return links preserve repeated values.
+The applied summary shows all selected category labels. Applying sends each
+selected option once in control order, alongside other filters and page size.
+Clear deselects all options. Loading disables the form; details hide it.
+
+A commercial subtype still restricts results to matching commercial properties.
+If categories are selected, CommercialProperty must be among them to allow
+those matches. Other categories alone produce an empty intersection according
+to the API. Unknown bookmark values remain API-validated and are not added to
+the options. No API or database changes are introduced.

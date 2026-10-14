@@ -45,6 +45,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     elements.set(`#filter-feature-${value}`, element());
   }
   elements.get("#filter-intent").options = ["Rent", "Sell", "RentForLimitedPeriod"].map(value => ({ value, selected: false }));
+  elements.get("#filter-category").options = ["Apartment", "House", "Plot", "InvestmentProperty", "GarageOrParkingSpace", "CommercialProperty"].map(value => ({ value, selected: false }));
   elements.get("#listing-card-template").content = { cloneNode: element };
   const requests = [];
   const historyUrls = [];
@@ -1884,4 +1885,65 @@ test("page jump preserves repeated intent search and invalid numeric filters lea
   app.get("filter-year-min").value="0";await app.submit();assert.equal(app.requests.length,1);
   assert.deepEqual(app.get("filter-intent").selectedOptions.map(o=>o.value),["Rent","Sell"]);
   app.get("page-jump-input").value="3";await app.jump();assert.equal(app.requests.at(-1),`${endpoint}?${query}&page=3`);
+});
+
+function chooseCategories(app,values) {
+  for(const option of app.get("filter-category").options) option.selected=values.includes(option.value);
+}
+
+test("multiple categories combine with repeated intents features and page size", async () => {
+  const app=await createApp([response(3,false),response(1,false)],"?city=Berlin&page=3&pageSize=7");
+  chooseCategories(app,["Apartment","House"]);chooseIntents(app,["Rent","Sell"]);
+  app.get("filter-feature-Elevator").checked=true;await app.submit();
+  const q=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
+  assert.deepEqual(q.getAll("propertyCategory"),["Apartment","House"]);assert.deepEqual(q.getAll("transactionIntent"),["Rent","Sell"]);
+  assert.equal(q.get("city"),"Berlin");assert.equal(q.get("pageSize"),"7");assert.deepEqual(q.getAll("propertyFeature"),["Elevator"]);assert.equal(q.has("page"),false);
+  assert.match(app.get("applied-filter-summary").textContent,/Category: Apartment, House/);
+});
+
+test("category bookmarks restore all selections and preserve detail return and reload", async () => {
+  const query="propertyCategory=CommercialProperty&propertyCategory=Plot&page=2&pageSize=5";
+  const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
+  assert.deepEqual(app.get("filter-category").selectedOptions.map(o=>o.value),["Plot","CommercialProperty"]);
+  const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
+  assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(reload.get("filter-category").selectedOptions.map(o=>o.value),["Plot","CommercialProperty"]);
+});
+
+test("all categories single choices and empty selection retain supported API behavior", async () => {
+  const values=["Apartment","House","Plot","InvestmentProperty","GarageOrParkingSpace","CommercialProperty"];
+  const app=await createApp([response(1,false),response(1,false),response(1,false),response(1,false)]);
+  chooseCategories(app,values);await app.submit();assert.deepEqual(new URL(app.requests.at(-1),"https://diyarak.example").searchParams.getAll("propertyCategory"),values);
+  chooseCategories(app,[]);await app.submit();assert.equal(app.requests.at(-1),endpoint);
+  chooseCategories(app,["House"]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=House`);
+});
+
+test("category navigation Retry Refresh and page jump preserve applied choices over edits", async () => {
+  const filters="propertyCategory=Apartment&propertyCategory=House&pageSize=5";const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
+  const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false),response(3,false)],`?${filters}&page=1`);
+  chooseCategories(app,["Plot"]);await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
+  app.get("page-jump-input").value="3";await app.jump();assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`,`${endpoint}?${filters}&page=3`]);
+});
+
+test("Clear resets all categories and loading blocks repeated-category submissions", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending,response(1,false)]);chooseCategories(app,["Apartment","House"]);
+  const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);await app.submit();await app.click("clear-filters");assert.equal(app.requests.length,2);
+  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(app.get("filter-category").selectedOptions,[]);assert.equal(app.requests.at(-1),endpoint);
+});
+
+test("unknown and duplicate categories remain API-validated and Apply sends supported choices once", async () => {
+  const query="propertyCategory=Unknown&propertyCategory=House&propertyCategory=House";
+  const app=await createApp([{ok:false,status:400},{ok:false,status:400},response(1,false)],`?${query}`);
+  assert.deepEqual(app.get("filter-category").selectedOptions.map(o=>o.value),["House"]);await app.click("retry-listings");
+  assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=House`);
+});
+
+test("commercial subtype retains category choices and handles an empty intersection", async () => {
+  const app=await createApp([response(1,false),response(1,false),response(1,false,null,[])]);
+  chooseCategories(app,["Apartment","CommercialProperty"]);app.get("filter-commercial").value="Retail";await app.submit();
+  assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=CommercialProperty&commercialSubtype=Retail`);
+  chooseCategories(app,["Apartment","House"]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=House&commercialSubtype=Retail`);
+  assert.equal(app.get("status").dataset.state,"ready");assert.match(app.get("status").textContent,/No public listings/);
 });
