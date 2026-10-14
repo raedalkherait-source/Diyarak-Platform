@@ -38,7 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -2068,4 +2068,64 @@ test("multiple commercial types retain category intersection semantics and empty
   assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=CommercialProperty&commercialSubtype=OfficeOrPractice&commercialSubtype=Retail`);
   chooseCategories(app,["Apartment","House"]);await app.submit();assert.equal(app.get("status").dataset.state,"ready");assert.match(app.get("status").textContent,/No public listings/);
   assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
+});
+
+test("Restore returns all scalar and multiple-choice fields to requested search without fetching", async () => {
+  const query="city=Berlin&postalCode=00123&transactionIntent=Rent&transactionIntent=Sell&propertyCategory=Apartment&propertyCategory=CommercialProperty&commercialSubtype=OfficeOrPractice&commercialSubtype=Retail&furnishingQuality=Normal&furnishingQuality=Luxury&propertyFeature=Elevator&propertyFeature=Basement&priceMin=0&priceMax=100.25&priceCurrency=EUR&livingAreaMin=0&livingAreaMax=50.5&livingAreaUnit=SquareMeter&totalRoomsMin=2.5&totalRoomsMax=4.5&bedroomCountMin=0&bedroomCountMax=2&bathroomCountMin=1&bathroomCountMax=2&constructionYearMin=2000&constructionYearMax=2020&parkingSpaceCountMin=0&parkingSpaceCountMax=2&pageSize=7&page=3";
+  const app=await createApp([response(3,false)],`?${query}`);const summary=app.get("applied-filter-summary").textContent;
+  const fields=[["city","city"],["postal","postalCode"],["price-min","priceMin"],["price-max","priceMax"],["price-currency","priceCurrency"],["area-min","livingAreaMin"],["area-max","livingAreaMax"],["area-unit","livingAreaUnit"],["rooms-min","totalRoomsMin"],["rooms-max","totalRoomsMax"],["bedrooms-min","bedroomCountMin"],["bedrooms-max","bedroomCountMax"],["bathrooms-min","bathroomCountMin"],["bathrooms-max","bathroomCountMax"],["year-min","constructionYearMin"],["year-max","constructionYearMax"],["parking-min","parkingSpaceCountMin"],["parking-max","parkingSpaceCountMax"],["page-size","pageSize"]];
+  for(const [control] of fields) app.get(`filter-${control}`).value="changed";
+  chooseIntents(app,[]);chooseCategories(app,[]);chooseQualities(app,[]);chooseCommercialTypes(app,[]);
+  for(const feature of featureValues) app.get(`filter-feature-${feature}`).checked=true;
+  await app.click("restore-filters");const params=new URLSearchParams(query);
+  for(const [control,key] of fields) assert.equal(app.get(`filter-${control}`).value,params.get(key));
+  assert.deepEqual(app.get("filter-intent").selectedOptions.map(o=>o.value),["Rent","Sell"]);
+  assert.deepEqual(app.get("filter-category").selectedOptions.map(o=>o.value),["Apartment","CommercialProperty"]);
+  assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
+  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Normal","Luxury"]);
+  for(const feature of featureValues) assert.equal(app.get(`filter-feature-${feature}`).checked,["Elevator","Basement"].includes(feature));
+  assert.deepEqual(app.requests,[`${endpoint}?${query}`]);assert.deepEqual(app.historyUrls,[`./index.html?${query}`]);
+  assert.equal(app.get("applied-filter-summary").textContent,summary);assert.equal(app.get("current-page").textContent,"Page 3");
+});
+
+test("Restore dismisses invalid draft filters while preserving applied cards and summary", async () => {
+  const app=await createApp([response(1,false)],"?city=Berlin&priceMin=10&priceCurrency=EUR");
+  app.get("filter-price-min").value="20";app.get("filter-price-max").value="10";await app.submit();assert.equal(app.get("filter-error").hidden,false);
+  await app.click("restore-filters");assert.equal(app.get("filter-error").hidden,true);assert.equal(app.get("filter-error").textContent,"");
+  assert.equal(app.get("filter-price-min").value,"10");assert.equal(app.get("filter-price-max").value,"");assert.equal(app.get("listing-grid").children.length,1);
+  assert.equal(app.requests.length,1);
+});
+
+test("Restore follows server navigation query and does not use original bookmark fields", async () => {
+  const next=`${endpoint}?city=Paris&propertyFeature=Elevator&pageSize=5&page=2`;
+  const app=await createApp([response(1,true,link(next,"next")),response(2,false)],"?city=Berlin");
+  await app.click("next-page");app.get("filter-city").value="London";await app.click("restore-filters");
+  assert.equal(app.get("filter-city").value,"Paris");assert.equal(app.get("filter-page-size").value,"5");assert.equal(app.get("filter-feature-Elevator").checked,true);
+  assert.equal(app.requests.length,2);assert.equal(app.get("page-jump-input").value,"2");
+});
+
+test("Restore after failure preserves Retry and restores failed search values", async () => {
+  const query="city=Berlin&furnishingQuality=Normal&pageSize=7&page=3";
+  const app=await createApp([{ok:false,status:503},response(3,false)],`?${query}`);app.get("filter-city").value="Paris";
+  chooseQualities(app,["Luxury"]);await app.click("restore-filters");assert.equal(app.get("filter-city").value,"Berlin");
+  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Normal"]);assert.equal(app.get("retry-listings").hidden,false);
+  await app.click("retry-listings");assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
+});
+
+test("loading and detail views ignore Restore without extra requests or draft changes", async () => {
+  let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
+  const app=await createApp([response(1,false),()=>pending],"?city=Berlin");const loading=app.click("load-listings");
+  app.get("filter-city").value="Paris";await app.click("restore-filters");assert.equal(app.get("filter-city").value,"Paris");
+  assert.equal(app.requests.length,2);resolveResponse(response(1,false));await loading;
+  const detail=await createApp([detailResponse({listingId})],detailQuery);detail.get("filter-city").value="Draft";await detail.click("restore-filters");
+  assert.equal(detail.get("filter-city").value,"Draft");assert.deepEqual(detail.requests,[detailUrl]);
+});
+
+test("Restore after Clear resets drafts to unfiltered default and Apply restored search starts page one", async () => {
+  const app=await createApp([response(3,false),response(1,false),response(1,false)],"?city=Berlin&pageSize=7&page=3");
+  app.get("filter-city").value="Paris";await app.click("restore-filters");await app.submit();
+  assert.equal(app.requests.at(-1),`${endpoint}?city=Berlin&pageSize=7`);
+  await app.click("clear-filters");app.get("filter-city").value="Paris";chooseCategories(app,["House"]);await app.click("restore-filters");
+  assert.equal(app.get("filter-city").value,"");assert.deepEqual(app.get("filter-category").selectedOptions,[]);assert.equal(app.get("filter-page-size").value,"");
+  assert.equal(app.requests.length,3);assert.equal(app.historyUrls.at(-1),"./index.html");
 });

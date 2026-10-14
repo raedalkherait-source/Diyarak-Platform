@@ -105,6 +105,7 @@ numericFilterRanges.push(
     maximum: document.querySelector("#filter-parking-max") },
 );
 const filterError = document.querySelector("#filter-error");
+const restoreFiltersButton = document.querySelector("#restore-filters");
 const clearFiltersButton = document.querySelector("#clear-filters");
 const parameters = new URLSearchParams(window.location.search);
 const isDetailView = parameters.has("listingId");
@@ -178,70 +179,24 @@ filterForm.addEventListener("submit", async event => {
   await loadPublicListings(firstPageUrl);
 });
 
+restoreFiltersButton.addEventListener("click", () => {
+  if (isLoading || isDetailView) {
+    return;
+  }
+  restoreFilterForm(getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams));
+});
+
 clearFiltersButton.addEventListener("click", async () => {
   if (isLoading || isDetailView) {
     return;
   }
 
-  pageSizeInput.value = "";
-  cityInput.value = "";
-  postalInput.value = "";
-  intentInput.value = "";
-  categoryInput.value = "";
-  furnishingInput.value = "";
-  commercialInput.value = "";
-  for (const feature of featureInputs) {
-    feature.input.checked = false;
-  }
-  priceMinInput.value = "";
-  priceMaxInput.value = "";
-  priceCurrencyInput.value = "";
-  areaMinInput.value = "";
-  areaMaxInput.value = "";
-  areaUnitInput.value = "";
-  for (const range of numericFilterRanges) {
-    range.minimum.value = "";
-    range.maximum.value = "";
-  }
-  filterError.textContent = "";
-  filterError.hidden = true;
+  restoreFilterForm(new URLSearchParams());
   firstPageUrl = collectionUrl;
   await loadPublicListings(firstPageUrl);
 });
 
-pageSizeInput.value = initialSearch.get("pageSize") ?? "";
-cityInput.value = initialSearch.get("city") ?? "";
-postalInput.value = initialSearch.get("postalCode") ?? "";
-const initialIntents = new Set(initialSearch.getAll("transactionIntent"));
-for (const option of intentInput.options) {
-  option.selected = initialIntents.has(option.value);
-}
-const initialCategories = new Set(initialSearch.getAll("propertyCategory"));
-for (const option of categoryInput.options) {
-  option.selected = initialCategories.has(option.value);
-}
-const initialFeatures = new Set(initialSearch.getAll("propertyFeature"));
-for (const feature of featureInputs) {
-  feature.input.checked = initialFeatures.has(feature.value);
-}
-const initialCommercialTypes = new Set(initialSearch.getAll("commercialSubtype"));
-for (const option of commercialInput.options) {
-  option.selected = initialCommercialTypes.has(option.value);
-}
-const initialQualities = new Set(initialSearch.getAll("furnishingQuality"));
-for (const option of furnishingInput.options) {
-  option.selected = initialQualities.has(option.value);
-}
-priceMinInput.value = initialSearch.get("priceMin") ?? "";
-priceMaxInput.value = initialSearch.get("priceMax") ?? "";
-priceCurrencyInput.value = initialSearch.get("priceCurrency") ?? "";
-areaMinInput.value = initialSearch.get("livingAreaMin") ?? "";
-areaMaxInput.value = initialSearch.get("livingAreaMax") ?? "";
-areaUnitInput.value = initialSearch.get("livingAreaUnit") ?? "";
-for (const range of numericFilterRanges) {
-  range.minimum.value = initialSearch.get(`${range.key}Min`) ?? "";
-  range.maximum.value = initialSearch.get(`${range.key}Max`) ?? "";
-}
+restoreFilterForm(initialSearch);
 backLink.href = collectionPageUrl(initialSearch);
 filterSummary.hidden = isDetailView;
 filterForm.hidden = isDetailView;
@@ -258,6 +213,44 @@ async function loadSelectedView(url = firstPageUrl) {
   } else {
     await loadPublicListings(url);
   }
+}
+
+function restoreFilterForm(query) {
+  pageSizeInput.value = query.get("pageSize") ?? "";
+  cityInput.value = query.get("city") ?? "";
+  postalInput.value = query.get("postalCode") ?? "";
+  const initialIntents = new Set(query.getAll("transactionIntent"));
+  for (const option of intentInput.options) {
+    option.selected = initialIntents.has(option.value);
+  }
+  const initialCategories = new Set(query.getAll("propertyCategory"));
+  for (const option of categoryInput.options) {
+    option.selected = initialCategories.has(option.value);
+  }
+  const initialFeatures = new Set(query.getAll("propertyFeature"));
+  for (const feature of featureInputs) {
+    feature.input.checked = initialFeatures.has(feature.value);
+  }
+  const initialCommercialTypes = new Set(query.getAll("commercialSubtype"));
+  for (const option of commercialInput.options) {
+    option.selected = initialCommercialTypes.has(option.value);
+  }
+  const initialQualities = new Set(query.getAll("furnishingQuality"));
+  for (const option of furnishingInput.options) {
+    option.selected = initialQualities.has(option.value);
+  }
+  priceMinInput.value = query.get("priceMin") ?? "";
+  priceMaxInput.value = query.get("priceMax") ?? "";
+  priceCurrencyInput.value = query.get("priceCurrency") ?? "";
+  areaMinInput.value = query.get("livingAreaMin") ?? "";
+  areaMaxInput.value = query.get("livingAreaMax") ?? "";
+  areaUnitInput.value = query.get("livingAreaUnit") ?? "";
+  for (const range of numericFilterRanges) {
+    range.minimum.value = query.get(`${range.key}Min`) ?? "";
+    range.maximum.value = query.get(`${range.key}Max`) ?? "";
+  }
+  filterError.textContent = "";
+  filterError.hidden = true;
 }
 
 function getSupportedSearch(query) {

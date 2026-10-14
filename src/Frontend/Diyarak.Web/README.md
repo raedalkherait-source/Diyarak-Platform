@@ -425,3 +425,19 @@ API-validated and are not added as options.
 If categories are also selected, include CommercialProperty to allow subtype
 matches; other categories alone produce an empty intersection. Required
 property features still require every selected feature. No backend changes.
+
+## Restore applied filters
+
+Restore applied filters discards unsubmitted form edits and restores all fields
+from the current requested collection search, including multi-select choices,
+required features, numeric bounds and page size. It dismisses filter validation
+without changing results, URL, summary, current page, or issuing an API request.
+It does not clear the applied search. Clear filters retains its separate role
+of loading the unfiltered first page with default size.
+
+The button shares loading disablement with the form and is hidden on details.
+After a failed request it restores that requested search; Retry still repeats
+the exact failure. Applying restored fields uses normal form validation and
+starts at page one. Unknown query values remain subject to API validation;
+only supported choices can be shown in native selects. Bookmark initialization,
+Clear and Restore use the same field restoration helper.
