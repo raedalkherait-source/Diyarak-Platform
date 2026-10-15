@@ -65,6 +65,7 @@ const pageJumpError = document.querySelector("#page-jump-error");
 const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
 const filterSummary = document.querySelector("#applied-filter-summary");
+const editFiltersButton = document.querySelector("#edit-search-filters");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
 const filterPanel = document.querySelector("#listing-filter-panel");
@@ -164,6 +165,14 @@ pageJumpForm.addEventListener("submit", async event => {
   await loadPublicListings(collectionRequestUrl(query));
 });
 
+editFiltersButton.addEventListener("click", () => {
+  if (isLoading || isDetailView) {
+    return;
+  }
+  filterPanel.open = true;
+  cityInput.focus();
+});
+
 filterForm.addEventListener("input", updateFilterDraftState);
 filterForm.addEventListener("change", updateFilterDraftState);
 
@@ -206,6 +215,7 @@ clearFiltersButton.addEventListener("click", async () => {
 restoreFilterForm(initialSearch);
 backLink.href = collectionPageUrl(initialSearch);
 filterSummary.hidden = isDetailView;
+editFiltersButton.hidden = isDetailView;
 filterPanel.hidden = isDetailView;
 filterForm.hidden = isDetailView;
 pageJumpForm.hidden = isDetailView;
@@ -684,6 +694,7 @@ function getPageLink(header, relation) {
 }
 
 function updatePagination() {
+  editFiltersButton.disabled = isLoading;
   pageJumpFields.disabled = isLoading;
   filterFields.disabled = isLoading;
   previousButton.disabled = isLoading || !previousUrl;

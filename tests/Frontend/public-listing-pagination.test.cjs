@@ -38,7 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -2176,4 +2176,74 @@ test("loading and detail views ignore draft events and notification never moves 
   resolveResponse(response(1,false));await loading;await app.formEvent("change");assert.equal(app.get("filter-draft-message").hidden,false);
   assert.equal(app.get("filter-draft-message").focusCount,0);
   const detail=await createApp([detailResponse({listingId})],detailQuery);detail.get("filter-city").value="Paris";await detail.formEvent("input");assert.equal(detail.get("filter-draft-message").hidden,true);
+});
+
+
+test("Edit search filters opens the panel and focuses City without changing search state", async () => {
+  const app = await createApp([response(1, false)], "?city=Berlin&page=3");
+  assert.equal(app.get("filter-city").focusCount, 0);
+  app.get("listing-filter-panel").open = false;
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  const summary = app.get("applied-filter-summary").textContent;
+  const history = [...app.historyUrls];
+  const card = app.get("listing-grid").children[0];
+  app.get("filter-error").textContent = "Existing validation message";
+  app.get("filter-error").hidden = false;
+  await app.click("edit-search-filters");
+  assert.equal(app.get("listing-filter-panel").open, true);
+  assert.equal(app.get("filter-city").focusCount, 1);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, false);
+  assert.equal(app.get("filter-error").textContent, "Existing validation message");
+  assert.equal(app.get("filter-error").hidden, false);
+  assert.equal(app.get("applied-filter-summary").textContent, summary);
+  assert.equal(app.get("listing-grid").children[0], card);
+  assert.deepEqual(app.historyUrls, history);
+  assert.equal(app.requests.length, 1);
+  await app.click("edit-search-filters");
+  assert.equal(app.get("listing-filter-panel").open, true);
+  assert.equal(app.requests.length, 1);
+});
+
+test("Edit search filters is disabled during requests and restores after loading", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const app = await createApp([response(1, false), () => pending]);
+  app.get("listing-filter-panel").open = false;
+  const loading = app.click("load-listings");
+  assert.equal(app.get("edit-search-filters").disabled, true);
+  await app.click("edit-search-filters");
+  assert.equal(app.get("listing-filter-panel").open, false);
+  assert.equal(app.get("filter-city").focusCount, 0);
+  resolveResponse(response(1, false));
+  await loading;
+  assert.equal(app.get("edit-search-filters").disabled, false);
+  await app.click("edit-search-filters");
+  assert.equal(app.get("filter-city").focusCount, 1);
+  assert.equal(app.requests.length, 2);
+});
+
+test("Edit search filters is available after empty results or request failures", async () => {
+  for (const result of [response(1, false, null, []), { ok: false, status: 503 }, new Error("offline")]) {
+    const app = await createApp([result]);
+    app.get("listing-filter-panel").open = false;
+    const state = app.get("status").dataset.state;
+    assert.equal(app.get("edit-search-filters").disabled, false);
+    await app.click("edit-search-filters");
+    assert.equal(app.get("listing-filter-panel").open, true);
+    assert.equal(app.get("filter-city").focusCount, 1);
+    assert.equal(app.get("status").dataset.state, state);
+    assert.equal(app.requests.length, 1);
+  }
+});
+
+test("Edit search filters is hidden and ignores activation on details", async () => {
+  const app = await createApp([detailResponse({ listingId })], detailQuery);
+  app.get("listing-filter-panel").open = false;
+  assert.equal(app.get("edit-search-filters").hidden, true);
+  await app.click("edit-search-filters");
+  assert.equal(app.get("listing-filter-panel").open, false);
+  assert.equal(app.get("filter-city").focusCount, 0);
+  assert.equal(app.requests.length, 1);
 });

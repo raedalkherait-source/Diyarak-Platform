@@ -468,3 +468,12 @@ The applied filter summary, listing status, pagination and results remain
 outside the panel. Collapsing does not submit, clear or restore filters, and
 retains draft edits and messages for reopening. The entire panel is hidden on
 detail views. All request, validation and search-state behavior is unchanged.
+
+## Edit filters from search results
+
+The Edit search filters button beside the applied-search summary opens the
+filter panel and focuses City. Keyboard users can continue through the form
+with Tab. Opening the panel preserves draft values, validation messages,
+applied filters, results and the current page without making a request.
+The button is disabled while loading, available after empty/error responses,
+and hidden on listing details. Initial loading never moves focus to the form.
