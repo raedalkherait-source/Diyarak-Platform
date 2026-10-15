@@ -177,7 +177,7 @@ public sealed class ArchitectureTests
     private static string[] ReadProjectReferences(string project)
     {
         XDocument document = XDocument.Load(project);
-        return document.Descendants("ProjectReference").Select(element => element.Attribute("Include")?.Value).Where(value => value is not null).Cast<string>().ToArray();
+        return document.Descendants("ProjectReference").Select(element => element.Attribute("Include")?.Value).Where(value => value is not null).Cast<string>().Select(reference => reference.Replace('\\', '/')).ToArray();
     }
 
     private static string FindRepositoryRoot()
