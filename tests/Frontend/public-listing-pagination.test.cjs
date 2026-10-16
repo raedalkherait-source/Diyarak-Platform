@@ -52,10 +52,35 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   const requests = [];
   const historyUrls = [];
   const signals = [];
+  const windowListeners = {};
+  const historyCalls = [];
+  const historyEntries = [`./index.html${search}`];
+  let historyIndex = 0;
+  const location = { origin: "https://diyarak.example", search };
+  function recordHistory(type, url) {
+    historyUrls.push(url);
+    historyCalls.push({ type, url });
+    location.search = new URL(url, "https://diyarak.example/app/").search;
+    if (type === "push") {
+      historyEntries.splice(historyIndex + 1);
+      historyEntries.push(url);
+      historyIndex++;
+    } else {
+      historyEntries[historyIndex] = url;
+    }
+  }
+  async function moveHistory(delta) {
+    const index = historyIndex + delta;
+    if (index < 0 || index >= historyEntries.length) return;
+    historyIndex = index;
+    location.search = new URL(historyEntries[index], "https://diyarak.example/app/").search;
+    await windowListeners.popstate?.();
+  }
   const context = vm.createContext({ URL, URLSearchParams, Intl, Date, AbortController,
     setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout,
-    window: { location: { origin: "https://diyarak.example", search },
-      history: { replaceState: (_state, _title, url) => historyUrls.push(url) } },
+    window: { location, addEventListener: (event, callback) => { windowListeners[event] = callback; },
+      history: { replaceState: (_state, _title, url) => recordHistory("replace", url),
+        pushState: (_state, _title, url) => recordHistory("push", url) } },
     navigator: { clipboard },
     document: { querySelector: id => elements.get(id) },
     fetch: async (url, options) => {
@@ -66,7 +91,10 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
       return typeof result === "function" ? result() : result;
     } });
   await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
-  return { requests, historyUrls, signals, formatters: context.formatters, get: id => elements.get(`#${id}`),
+  return { requests, historyUrls, historyCalls, historyEntries, signals,
+    back: () => moveHistory(-1), forward: () => moveHistory(1),
+    popTo: async search => { location.search = search; await windowListeners.popstate?.(); },
+    formatters: context.formatters, get: id => elements.get(`#${id}`),
     formEvent: event => elements.get("#listing-filters").listeners[event](),
     jump: () => elements.get("#page-jump-form").listeners.submit({ preventDefault() {} }),
     submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
@@ -2348,4 +2376,146 @@ test("Copy search link remains available for empty or failed requested searches"
     assert.equal(app.get("status").dataset.state, state);
     assert.equal(app.requests.length, 1);
   }
+});
+
+test("browser Back and Forward restore applied searches and server page navigation", async () => {
+  const paris = `${endpoint}?city=Paris`;
+  const paris2 = `${paris}&page=2`;
+  const app = await createApp([response(1, false), response(1, true, link(paris2, "next")),
+    response(2, false), response(1, false), response(1, false), response(1, false)], "?city=Berlin");
+  app.get("filter-city").value = "Paris";
+  await app.submit();
+  await app.click("next-page");
+  assert.deepEqual(app.historyEntries, ["./index.html?city=Berlin", "./index.html?city=Paris", "./index.html?city=Paris&page=2"]);
+  app.get("filter-city").value = "Unapplied city";
+  await app.formEvent("input");
+  app.get("filter-error").hidden = false;
+  app.get("filter-error").textContent = "Old error";
+  await app.back();
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, true);
+  assert.equal(app.get("filter-error").hidden, true);
+  assert.equal(app.get("current-page").textContent, "Page 1");
+  await app.back();
+  assert.equal(app.get("filter-city").value, "Berlin");
+  assert.match(app.get("applied-filter-summary").textContent, /Berlin/);
+  await app.forward();
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.deepEqual(app.requests, [`${endpoint}?city=Berlin`, paris, paris2, paris, `${endpoint}?city=Berlin`, paris]);
+  assert.equal(app.historyCalls.filter(call => call.type === "push").length, 2);
+  assert.equal(app.get("filter-city").focusCount, 0);
+});
+
+test("history restores repeated filters and size and Refresh uses their first page", async () => {
+  const search = "?city=Berlin&transactionIntent=Rent&transactionIntent=Sell&propertyCategory=House&furnishingQuality=Luxury&propertyFeature=Elevator&pageSize=5&page=4";
+  const app = await createApp([response(4, false), response(1, false), response(4, false), response(1, false)], search);
+  await app.click("clear-filters");
+  await app.back();
+  assert.deepEqual(app.get("filter-intent").selectedOptions.map(option => option.value), ["Rent", "Sell"]);
+  assert.equal(app.get("filter-category").value, "House");
+  assert.equal(app.get("filter-furnishing").value, "Luxury");
+  assert.equal(app.get("filter-feature-Elevator").checked, true);
+  assert.equal(app.get("filter-page-size").value, "5");
+  assert.equal(app.get("page-jump-input").value, "4");
+  await app.click("load-listings");
+  assert.equal(app.requests.at(-1), `${endpoint}${search.replace("&page=4", "")}`);
+  assert.equal(app.get("current-page").textContent, "Page 1");
+});
+
+test("Retry and repeated searches replace history while page jumps record changed URLs", async () => {
+  const app = await createApp([response(1, false), response(1, false), { ok: false, status: 503 },
+    response(2, false), response(1, false), response(2, false, null, [])]);
+  await app.submit();
+  assert.equal(app.historyEntries.length, 1);
+  app.get("page-jump-input").value = "2";
+  await app.jump();
+  assert.equal(app.historyEntries.length, 2);
+  assert.equal(app.get("status").dataset.state, "error");
+  await app.click("retry-listings");
+  assert.equal(app.historyEntries.length, 2);
+  await app.back();
+  await app.forward();
+  assert.equal(app.get("listing-grid").children.length, 0);
+  assert.equal(app.get("current-page").textContent, "Page 2");
+  assert.equal(app.historyCalls.filter(call => call.type === "push").length, 1);
+  assert.deepEqual(app.requests, [endpoint, endpoint, `${endpoint}?page=2`, `${endpoint}?page=2`, endpoint, `${endpoint}?page=2`]);
+});
+
+test("history traversal aborts an active request and loads the latest destination only", async () => {
+  let resolveOld;
+  const oldResponse = new Promise(resolve => { resolveOld = resolve; });
+  const app = await createApp([response(1, false), () => oldResponse, response(1, false)], "?city=Berlin");
+  app.get("filter-city").value = "Paris";
+  const loading = app.submit();
+  const back = app.back();
+  const forward = app.forward();
+  await Promise.all([back, forward, loading]);
+  assert.equal(app.signals[1].aborted, true);
+  assert.deepEqual(app.requests, [`${endpoint}?city=Berlin`, `${endpoint}?city=Paris`, `${endpoint}?city=Paris`]);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("status").dataset.state, "ready");
+  assert.equal(app.get("listing-grid").children.length, 1);
+  resolveOld({ ok: false, status: 500 });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(app.get("status").dataset.state, "ready");
+  assert.equal(app.get("listing-grid").children.length, 1);
+});
+
+test("Back during loading restores the prior form without a cancellation error", async () => {
+  const never = new Promise(() => {});
+  const app = await createApp([response(1, false), () => never, response(1, false)], "?city=Berlin");
+  app.get("filter-city").value = "Paris";
+  const loading = app.submit();
+  await app.back();
+  await loading;
+  assert.equal(app.signals[1].aborted, true);
+  assert.equal(app.get("filter-city").value, "Berlin");
+  assert.equal(app.get("status").dataset.state, "ready");
+  assert.equal(app.get("retry-listings").hidden, true);
+  assert.equal(app.get("next-page").disabled, true);
+  assert.equal(app.get("copy-search-link").disabled, false);
+  assert.equal(app.historyEntries.length, 2);
+});
+
+test("new search after Back replaces forward history and preserves copy/detail return links", async () => {
+  const copies = [];
+  const app = await createApp([response(1, false), response(1, false), response(1, false), response(1, false, null, [{ listingId }])],
+    "?city=Berlin", undefined, { writeText: async value => { copies.push(value); } });
+  app.get("filter-city").value = "Paris";
+  await app.submit();
+  await app.back();
+  app.get("filter-city").value = "London";
+  await app.submit();
+  assert.deepEqual(app.historyEntries, ["./index.html?city=Berlin", "./index.html?city=London"]);
+  await app.forward();
+  assert.equal(app.requests.length, 4);
+  await app.click("copy-search-link");
+  assert.deepEqual(copies, ["https://diyarak.example/app/index.html?city=London"]);
+  const href = app.get("listing-grid").children[0].querySelector(".listing-card").querySelector(".listing-card__detail-link").href;
+  assert.equal(new URL(href, "https://diyarak.example/app/").searchParams.get("returnSearch"), "city=London");
+});
+
+test("invalid edits and restore/edit/copy actions do not create history entries", async () => {
+  const app = await createApp([response(1, false)], "?city=Berlin", undefined, { writeText: async () => {} });
+  app.get("filter-price-min").value = "10";
+  await app.submit();
+  await app.click("restore-filters");
+  await app.click("edit-search-filters");
+  await app.click("copy-search-link");
+  assert.equal(app.historyEntries.length, 1);
+  assert.equal(app.historyCalls.filter(call => call.type === "push").length, 0);
+  assert.equal(app.requests.length, 1);
+});
+
+test("history restoration strips unsupported parameters and detail views ignore collection popstate", async () => {
+  const app = await createApp([response(1, false), response(2, false)]);
+  await app.popTo("?city=Berlin&page=2&redirect=https://evil.example&returnSearch=private");
+  assert.equal(app.requests.at(-1), `${endpoint}?city=Berlin&page=2`);
+  assert.equal(app.historyUrls.at(-1), "./index.html?city=Berlin&page=2");
+  assert.equal(app.historyCalls.filter(call => call.type === "push").length, 0);
+  const detail = await createApp([detailResponse({ listingId })], detailQuery);
+  await detail.popTo("?city=Berlin");
+  assert.equal(detail.requests.length, 1);
+  assert.equal(detail.historyCalls.length, 0);
 });

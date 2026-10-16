@@ -491,3 +491,20 @@ permission is denied, the same URL is displayed as text for manual copying.
 The button is hidden on details and disabled during loading or a pending copy.
 Starting a new listing request clears the message; an older pending copy
 cannot show a stale confirmation after navigation.
+
+## Browser Back and Forward
+
+Apply, Clear, previous/next page, direct page jumps and Refresh record changed
+search URLs in browser history. Initialization, Retry and repeating the same
+URL replace the current entry instead of adding duplicates. Invalid form
+submissions and editing/restoring/copying filters do not add history entries.
+
+Back/Forward restores supported filters, repeated selections, page size and
+page, clears draft validation state, and fetches the selected search without
+adding a new history entry or moving focus. Refresh then uses the restored
+search's first page. History restoration replaces any unapplied form edits.
+
+If navigation occurs during loading, the old fetch is aborted and the latest
+history destination is loaded. Superseded responses do not render cards or
+errors. Empty/failed searches remain navigable and Retry uses their URL.
+Detail links still use normal document navigation with the return-search URL.

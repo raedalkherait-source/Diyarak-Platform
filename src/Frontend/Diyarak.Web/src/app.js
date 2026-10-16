@@ -130,9 +130,11 @@ let isLoading = false;
 let appliedFilterSnapshot = null;
 let isCopyingSearchLink = false;
 let searchLinkVersion = 0;
+let pendingHistorySearch = null;
+let cancelPublicRequest = null;
 
 loadButton.addEventListener("click", async () => {
-  await loadSelectedView();
+  await loadSelectedView(firstPageUrl, "push");
 });
 
 retryButton.addEventListener("click", async () => {
@@ -141,13 +143,13 @@ retryButton.addEventListener("click", async () => {
 
 previousButton.addEventListener("click", async () => {
   if (previousUrl) {
-    await loadPublicListings(previousUrl);
+    await loadPublicListings(previousUrl, "push");
   }
 });
 
 nextButton.addEventListener("click", async () => {
   if (nextUrl) {
-    await loadPublicListings(nextUrl);
+    await loadPublicListings(nextUrl, "push");
   }
 });
 
@@ -166,7 +168,7 @@ pageJumpForm.addEventListener("submit", async event => {
   }
   const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
   query.set("page", String(Number(value)));
-  await loadPublicListings(collectionRequestUrl(query));
+  await loadPublicListings(collectionRequestUrl(query), "push");
 });
 
 copySearchButton.addEventListener("click", async () => {
@@ -229,7 +231,7 @@ filterForm.addEventListener("submit", async event => {
 
   rememberAppliedFilterState();
   firstPageUrl = buildFilteredCollectionUrl();
-  await loadPublicListings(firstPageUrl);
+  await loadPublicListings(firstPageUrl, "push");
 });
 
 restoreFiltersButton.addEventListener("click", () => {
@@ -246,8 +248,32 @@ clearFiltersButton.addEventListener("click", async () => {
 
   restoreFilterForm(new URLSearchParams());
   firstPageUrl = collectionUrl;
-  await loadPublicListings(firstPageUrl);
+  await loadPublicListings(firstPageUrl, "push");
 });
+
+if (!isDetailView) {
+  window.addEventListener("popstate", async () => {
+    pendingHistorySearch = getSupportedSearch(new URLSearchParams(window.location.search));
+    searchLinkVersion++;
+    searchLinkStatus.textContent = "";
+    searchLinkStatus.hidden = true;
+    if (isLoading) {
+      cancelPublicRequest?.();
+      return;
+    }
+    await loadPendingHistorySearch();
+  });
+}
+
+async function loadPendingHistorySearch() {
+  const search = pendingHistorySearch;
+  pendingHistorySearch = null;
+  restoreFilterForm(search);
+  const firstSearch = new URLSearchParams(search);
+  firstSearch.delete("page");
+  firstPageUrl = collectionRequestUrl(firstSearch);
+  await loadPublicListings(collectionRequestUrl(search));
+}
 
 restoreFilterForm(initialSearch);
 backLink.href = collectionPageUrl(initialSearch);
@@ -263,11 +289,11 @@ headingElement.textContent = isDetailView ? "Listing details" : "Public listings
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
 await loadSelectedView(initialCollectionUrl);
 
-async function loadSelectedView(url = firstPageUrl) {
+async function loadSelectedView(url = firstPageUrl, historyMode = "replace") {
   if (isDetailView) {
     await loadPublicListing();
   } else {
-    await loadPublicListings(url);
+    await loadPublicListings(url, historyMode);
   }
 }
 
@@ -559,6 +585,14 @@ function isListingId(value) {
 async function fetchPublicResource(url) {
   const controller = new AbortController();
   let timer;
+  const cancellation = new Promise((_, reject) => {
+    cancelPublicRequest = () => {
+      const error = new Error("Public API request canceled for history navigation.");
+      error.name = "AbortError";
+      reject(error);
+      controller.abort();
+    };
+  });
   const timeout = new Promise((_, reject) => {
     timer = setTimeout(() => {
       const error = new Error("Public API request timed out.");
@@ -573,9 +607,10 @@ async function fetchPublicResource(url) {
     return { response, payload };
   })();
   try {
-    return await Promise.race([request, timeout]);
+    return await Promise.race([request, timeout, cancellation]);
   } finally {
     clearTimeout(timer);
+    cancelPublicRequest = null;
   }
 }
 
@@ -647,7 +682,7 @@ async function loadPublicListing() {
   }
 }
 
-async function loadPublicListings(url = collectionUrl) {
+async function loadPublicListings(url = collectionUrl, historyMode = "replace") {
   if (isLoading) {
     return;
   }
@@ -661,7 +696,12 @@ async function loadPublicListings(url = collectionUrl) {
   pageJumpError.hidden = true;
   pageJumpInput.value = currentSearch.get("page") ?? "1";
   filterSummary.textContent = describeAppliedFilters(currentSearch);
-  window.history.replaceState(null, "", collectionPageUrl(currentSearch));
+  const currentUrlSearch = getSupportedSearch(new URLSearchParams(window.location.search));
+  if (historyMode === "push" && currentSearch.toString() !== currentUrlSearch.toString()) {
+    window.history.pushState(null, "", collectionPageUrl(currentSearch));
+  } else {
+    window.history.replaceState(null, "", collectionPageUrl(currentSearch));
+  }
   isLoading = true;
   previousUrl = null;
   nextUrl = null;
@@ -672,6 +712,9 @@ async function loadPublicListings(url = collectionUrl) {
 
   try {
     const { response, payload } = await fetchPublicResource(requestedUrl);
+    if (pendingHistorySearch !== null) {
+      return;
+    }
 
     if (!response.ok) {
       setErrorState(`Unable to load listings. HTTP ${response.status}.`);
@@ -703,6 +746,9 @@ async function loadPublicListings(url = collectionUrl) {
         : `Loaded ${listingCount} ${listingLabel}.`,
     );
   } catch (error) {
+    if (pendingHistorySearch !== null) {
+      return;
+    }
     previousUrl = null;
     nextUrl = null;
     pageElement.textContent = "";
@@ -710,6 +756,9 @@ async function loadPublicListings(url = collectionUrl) {
   } finally {
     isLoading = false;
     updatePagination();
+    if (pendingHistorySearch !== null) {
+      await loadPendingHistorySearch();
+    }
   }
 }
 
