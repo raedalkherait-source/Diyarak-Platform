@@ -112,7 +112,16 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"listing-filter-fields\"", html);
         Assert.Contains("for=\"filter-city\"", html);
         Assert.Contains("name=\"city\"", html);
-        Assert.Contains("for=\"filter-intent\"", html);
+        Assert.Contains("id=\"intent-filter-fields\"", html);
+        Assert.Contains("<legend>Transaction intent</legend>", html);
+        Assert.Contains("aria-describedby=\"intent-filter-help\"", html);
+        string[] intents = ["Rent", "Sell", "RentForLimitedPeriod"];
+        foreach (string intent in intents)
+        {
+            Assert.Contains($"for=\"filter-intent-{intent}\"", html);
+            Assert.Contains($"id=\"filter-intent-{intent}\" name=\"transactionIntent\" type=\"checkbox\" value=\"{intent}\"", html);
+        }
+        Assert.DoesNotContain("<select id=\"filter-intent\"", html);
         Assert.Contains("name=\"transactionIntent\"", html);
         Assert.Contains("for=\"filter-category\"", html);
         Assert.Contains("name=\"propertyCategory\"", html);

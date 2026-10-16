@@ -200,7 +200,8 @@ button:disabled {
   font-weight: 700;
 }
 
-#feature-filter-fields {
+#feature-filter-fields,
+#intent-filter-fields {
   grid-column: 1 / -1;
   min-width: 0;
   margin: 0;
@@ -291,4 +292,8 @@ button:disabled {
 
 #listing-filter-panel #listing-filter-fields {
   margin-bottom: 0;
+}
+
+#intent-filter-fields .feature-choices {
+  margin-top: 12px;
 }

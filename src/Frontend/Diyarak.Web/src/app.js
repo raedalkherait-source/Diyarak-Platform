@@ -77,7 +77,9 @@ const filterFields = document.querySelector("#listing-filter-fields");
 const cityInput = document.querySelector("#filter-city");
 const pageSizeInput = document.querySelector("#filter-page-size");
 const postalInput = document.querySelector("#filter-postal");
-const intentInput = document.querySelector("#filter-intent");
+const intentInputs = Object.keys(publicLabels.transactionIntent).map(value => ({
+  value, input: document.querySelector(`#filter-intent-${value}`),
+}));
 const categoryInput = document.querySelector("#filter-category");
 const commercialInput = document.querySelector("#filter-commercial");
 const furnishingInput = document.querySelector("#filter-furnishing");
@@ -304,8 +306,11 @@ function filterFormSnapshot() {
   return JSON.stringify({
     fields: [cityInput, postalInput, priceMinInput, priceMaxInput, priceCurrencyInput,
       areaMinInput, areaMaxInput, areaUnitInput, pageSizeInput].map(input => input.value),
-    choices: [intentInput, categoryInput, commercialInput, furnishingInput]
-      .map(input => Array.from(input.selectedOptions, option => option.value)),
+    choices: [
+      intentInputs.filter(intent => intent.input.checked).map(intent => intent.value),
+      ...[categoryInput, commercialInput, furnishingInput]
+        .map(input => Array.from(input.selectedOptions, option => option.value)),
+    ],
     ranges: numericFilterRanges.map(range => [range.minimum.value, range.maximum.value]),
     features: featureInputs.filter(feature => feature.input.checked).map(feature => feature.value),
   });
@@ -328,8 +333,8 @@ function restoreFilterForm(query) {
   cityInput.value = query.get("city") ?? "";
   postalInput.value = query.get("postalCode") ?? "";
   const initialIntents = new Set(query.getAll("transactionIntent"));
-  for (const option of intentInput.options) {
-    option.selected = initialIntents.has(option.value);
+  for (const intent of intentInputs) {
+    intent.input.checked = initialIntents.has(intent.value);
   }
   const initialCategories = new Set(query.getAll("propertyCategory"));
   for (const option of categoryInput.options) {
@@ -564,8 +569,10 @@ function buildFilteredCollectionUrl() {
   if (postalCode) {
     query.set("postalCode", postalCode);
   }
-  for (const option of intentInput.selectedOptions) {
-    query.append("transactionIntent", option.value);
+  for (const intent of intentInputs) {
+    if (intent.input.checked) {
+      query.append("transactionIntent", intent.value);
+    }
   }
   for (const option of categoryInput.selectedOptions) {
     query.append("propertyCategory", option.value);

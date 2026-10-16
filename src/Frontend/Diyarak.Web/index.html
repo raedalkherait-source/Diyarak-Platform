@@ -37,14 +37,24 @@
           <input id="filter-postal" name="postalCode" type="text" autocomplete="postal-code" aria-describedby="postal-filter-help">
         </label>
         <p id="postal-filter-help" class="filter-message">Matches the full postal code, ignoring letter case. Leading zeros and internal spaces are preserved.</p>
-        <label for="filter-intent">Transaction intent
-          <select id="filter-intent" name="transactionIntent" multiple size="3" aria-describedby="intent-filter-help">
-            <option value="Rent">For rent</option>
-            <option value="Sell">For sale</option>
-            <option value="RentForLimitedPeriod">For rent for a limited period</option>
-          </select>
-        </label>
-        <p id="intent-filter-help" class="filter-message">Choose one or more transaction types; no selection means any transaction. Use Ctrl (Windows) or Command (Mac) while clicking to toggle choices. Use Shift with arrow keys to select adjacent choices.</p>
+        <fieldset id="intent-filter-fields" aria-describedby="intent-filter-help">
+          <legend>Transaction intent</legend>
+          <p id="intent-filter-help" class="filter-message">Choose one or more transaction types; leave all unchecked for any transaction. Use Tab to move between choices and Space to toggle a choice.</p>
+          <div class="feature-choices">
+            <label class="feature-choice" for="filter-intent-Rent">
+              <input id="filter-intent-Rent" name="transactionIntent" type="checkbox" value="Rent">
+              <span>For rent</span>
+            </label>
+            <label class="feature-choice" for="filter-intent-Sell">
+              <input id="filter-intent-Sell" name="transactionIntent" type="checkbox" value="Sell">
+              <span>For sale</span>
+            </label>
+            <label class="feature-choice" for="filter-intent-RentForLimitedPeriod">
+              <input id="filter-intent-RentForLimitedPeriod" name="transactionIntent" type="checkbox" value="RentForLimitedPeriod">
+              <span>For rent for a limited period</span>
+            </label>
+          </div>
+        </fieldset>
         <label for="filter-category">Property category
           <select id="filter-category" name="propertyCategory" multiple size="6" aria-describedby="category-filter-help">
             <option value="Apartment">Apartment</option>
