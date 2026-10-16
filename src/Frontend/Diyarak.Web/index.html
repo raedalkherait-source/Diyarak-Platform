@@ -196,7 +196,8 @@
 
     <section>
       <h2 id="listing-heading">Public listings</h2>
-      <p id="applied-filter-summary" class="applied-filter-summary" aria-live="polite">No filters applied.</p>
+      <p id="applied-filter-summary" class="applied-filter-summary" aria-live="polite" tabindex="-1">No filters applied.</p>
+      <div id="filter-removal-actions" class="toolbar" role="group" aria-label="Remove applied search filters" hidden></div>
       <button id="edit-search-filters" class="secondary-button" type="button" aria-controls="listing-filter-panel">Edit search filters</button>
       <button id="copy-search-link" class="secondary-button" type="button">Copy search link</button>
       <p id="search-link-status" role="status" aria-live="polite" hidden></p>

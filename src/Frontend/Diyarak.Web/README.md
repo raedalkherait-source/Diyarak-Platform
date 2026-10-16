@@ -508,3 +508,20 @@ If navigation occurs during loading, the old fetch is aborted and the latest
 history destination is loaded. Superseded responses do not render cards or
 errors. Empty/failed searches remain navigable and Retry uses their URL.
 Detail links still use normal document navigation with the return-search URL.
+
+## Remove applied filter groups from results
+
+Buttons beneath the applied-search summary remove city, postal code, transaction
+intent, property category, commercial type, furnishing quality, price range,
+living area range, each numeric range, or required features independently.
+Removing a multiple-choice group removes all selections in that group. Price
+and area bounds are removed together with their currency/unit, avoiding an
+incomplete range. Other applied filters and page size are retained.
+
+Removal replaces unapplied edits with the remaining applied search, clears
+validation messages and starts on page one. It creates a browser history entry,
+so Back restores the previous search. Focus moves to the updated summary,
+which remains available after the activated button is removed. Buttons are
+disabled while loading, available after empty/error results, and hidden when
+no filter groups are applied or when viewing listing details. Page/page size
+alone do not create removal buttons.

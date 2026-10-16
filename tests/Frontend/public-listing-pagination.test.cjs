@@ -38,7 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "search-link-status"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "search-link-status", "filter-removal-actions"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -82,7 +82,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
       history: { replaceState: (_state, _title, url) => recordHistory("replace", url),
         pushState: (_state, _title, url) => recordHistory("push", url) } },
     navigator: { clipboard },
-    document: { querySelector: id => elements.get(id) },
+    document: { querySelector: id => elements.get(id), createElement: element },
     fetch: async (url, options) => {
       requests.push(url);
       signals.push(options?.signal);
@@ -2518,4 +2518,136 @@ test("history restoration strips unsupported parameters and detail views ignore 
   await detail.popTo("?city=Berlin");
   assert.equal(detail.requests.length, 1);
   assert.equal(detail.historyCalls.length, 0);
+});
+
+function removalButton(app, group) {
+  return app.get("filter-removal-actions").children.find(button => button.dataset.filterGroup === group);
+}
+
+test("filter removal buttons represent applied groups and hide for unfiltered or detail views", async () => {
+  const app = await createApp([response(1, false)], "?city=Berlin&transactionIntent=Rent&transactionIntent=Sell&priceMin=10&priceCurrency=EUR");
+  assert.equal(app.get("filter-removal-actions").hidden, false);
+  assert.deepEqual(app.get("filter-removal-actions").children.map(button => button.textContent), ["Remove city", "Remove transaction intent", "Remove price range"]);
+  for (const query of ["", "?page=3&pageSize=5", "?unsupported=ignored"]) {
+    const empty = await createApp([response(3, false)], query);
+    assert.equal(empty.get("filter-removal-actions").hidden, true);
+    assert.equal(empty.get("filter-removal-actions").children.length, 0);
+  }
+  const detail = await createApp([detailResponse({ listingId })], `${detailQuery}&returnSearch=city%3DBerlin`);
+  assert.equal(detail.get("filter-removal-actions").hidden, true);
+  assert.equal(detail.get("filter-removal-actions").children.length, 0);
+});
+
+test("each filter group removes only its keys and page while retaining size and other groups", async () => {
+  const groups = [
+    ["city", ["city"]], ["postal", ["postalCode"]], ["intent", ["transactionIntent"]],
+    ["category", ["propertyCategory"]], ["commercial", ["commercialSubtype"]],
+    ["furnishing", ["furnishingQuality"]], ["price", ["priceMin", "priceMax", "priceCurrency"]],
+    ["area", ["livingAreaMin", "livingAreaMax", "livingAreaUnit"]],
+    ["totalRooms", ["totalRoomsMin", "totalRoomsMax"]], ["bedroomCount", ["bedroomCountMin", "bedroomCountMax"]],
+    ["bathroomCount", ["bathroomCountMin", "bathroomCountMax"]], ["constructionYear", ["constructionYearMin", "constructionYearMax"]],
+    ["parkingSpaceCount", ["parkingSpaceCountMin", "parkingSpaceCountMax"]], ["features", ["propertyFeature"]],
+  ];
+  const search = new URLSearchParams({ city: "Berlin", postalCode: "00123", transactionIntent: "Rent",
+    propertyCategory: "CommercialProperty", commercialSubtype: "Retail", furnishingQuality: "Normal",
+    priceMin: "10", priceMax: "20", priceCurrency: "EUR", livingAreaMin: "30", livingAreaMax: "60", livingAreaUnit: "SquareMeter",
+    totalRoomsMin: "2.5", totalRoomsMax: "4", bedroomCountMin: "1", bedroomCountMax: "3", bathroomCountMin: "1", bathroomCountMax: "2",
+    constructionYearMin: "1980", constructionYearMax: "2020", parkingSpaceCountMin: "0", parkingSpaceCountMax: "2",
+    propertyFeature: "Elevator", page: "4", pageSize: "5" });
+  for (const [key, value] of [["transactionIntent", "Sell"], ["propertyCategory", "Apartment"], ["commercialSubtype", "OfficeOrPractice"],
+    ["furnishingQuality", "Luxury"], ["propertyFeature", "Basement"]]) search.append(key, value);
+  for (const [id, keys] of groups) {
+    const app = await createApp([response(4, false), response(1, false)], `?${search}`);
+    await removalButton(app, id).listeners.click();
+    const expected = new URLSearchParams(search);
+    for (const key of keys) expected.delete(key);
+    expected.delete("page");
+    assert.equal(app.requests.at(-1), `${endpoint}?${expected}`, id);
+    assert.equal(app.historyUrls.at(-1), `./index.html?${expected}`, id);
+    assert.equal(app.get("filter-page-size").value, "5", id);
+    assert.equal(app.get("current-page").textContent, "Page 1", id);
+    assert.equal(app.get("applied-filter-summary").focusCount, 1, id);
+    assert.equal(removalButton(app, id), undefined, id);
+  }
+});
+
+test("removing a group discards drafts and validation but retains the applied search", async () => {
+  const app = await createApp([response(1, false), response(1, false)], "?city=Berlin&postalCode=00123&transactionIntent=Rent");
+  app.get("filter-city").value = "Paris";
+  app.get("filter-price-min").value = "100";
+  await app.formEvent("input");
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden, false);
+  await removalButton(app, "postal").listeners.click();
+  assert.equal(app.requests.at(-1), `${endpoint}?city=Berlin&transactionIntent=Rent`);
+  assert.equal(app.get("filter-city").value, "Berlin");
+  assert.equal(app.get("filter-price-min").value, "");
+  assert.equal(app.get("filter-draft-message").hidden, true);
+  assert.equal(app.get("filter-error").hidden, true);
+});
+
+test("filter removal records history and Back restores groups selections and page", async () => {
+  const copies = [];
+  const search = "?city=Berlin&transactionIntent=Rent&transactionIntent=Sell&page=3&pageSize=5";
+  const app = await createApp([response(3, false), response(1, false), response(3, false), response(1, false)], search, undefined,
+    { writeText: async value => { copies.push(value); } });
+  await removalButton(app, "intent").listeners.click();
+  await app.click("copy-search-link");
+  assert.deepEqual(copies, ["https://diyarak.example/app/index.html?city=Berlin&pageSize=5"]);
+  await app.back();
+  assert.deepEqual(app.get("filter-intent").selectedOptions.map(option => option.value), ["Rent", "Sell"]);
+  assert.ok(removalButton(app, "intent"));
+  assert.equal(app.get("current-page").textContent, "Page 3");
+  await app.forward();
+  assert.equal(removalButton(app, "intent"), undefined);
+  assert.equal(app.get("current-page").textContent, "Page 1");
+  assert.equal(app.historyCalls.filter(call => call.type === "push").length, 1);
+});
+
+test("removal blocks repeated activation while loading and restores remaining controls afterward", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const app = await createApp([response(1, false), () => pending], "?city=Berlin&postalCode=00123");
+  const city = removalButton(app, "city");
+  const postal = removalButton(app, "postal");
+  const loading = city.listeners.click();
+  assert.equal(removalButton(app, "postal").disabled, true);
+  await postal.listeners.click();
+  await city.listeners.click();
+  assert.equal(app.requests.length, 2);
+  resolveResponse(response(1, false));
+  await loading;
+  assert.equal(removalButton(app, "postal").disabled, false);
+  await city.listeners.click();
+  assert.equal(app.requests.length, 2);
+});
+
+test("last group removal hides controls and empty or failed searches still allow refinement", async () => {
+  for (const result of [response(1, false, null, []), { ok: false, status: 503 }, new Error("offline")]) {
+    const app = await createApp([result, response(1, false)], "?city=Berlin&page=2&pageSize=5");
+    assert.equal(removalButton(app, "city").disabled, false);
+    await removalButton(app, "city").listeners.click();
+    assert.equal(app.requests.at(-1), `${endpoint}?pageSize=5`);
+    assert.equal(app.get("filter-removal-actions").hidden, true);
+    assert.equal(app.get("applied-filter-summary").textContent, "No filters applied.");
+  }
+});
+
+test("failed group removal retries the remaining search without restoring removed keys", async () => {
+  const app = await createApp([response(1, false), { ok: false, status: 503 }, response(1, false)], "?city=Berlin&priceMin=10&priceCurrency=EUR&page=2");
+  await removalButton(app, "price").listeners.click();
+  assert.equal(app.get("status").dataset.state, "error");
+  assert.equal(removalButton(app, "price"), undefined);
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests.slice(1), [`${endpoint}?city=Berlin`, `${endpoint}?city=Berlin`]);
+  assert.equal(app.historyCalls.filter(call => call.type === "push").length, 1);
+});
+
+test("partial range bookmarks can be removed without leaving currency or unit keys", async () => {
+  for (const [query, group] of [["priceCurrency=EUR", "price"], ["livingAreaUnit=SquareMeter", "area"], ["bedroomCountMax=3", "bedroomCount"]]) {
+    const app = await createApp([{ ok: false, status: 400 }, response(1, false)], `?${query}`);
+    await removalButton(app, group).listeners.click();
+    assert.equal(app.requests.at(-1), endpoint);
+    assert.equal(app.get("filter-removal-actions").hidden, true);
+  }
 });

@@ -65,6 +65,7 @@ const pageJumpError = document.querySelector("#page-jump-error");
 const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
 const filterSummary = document.querySelector("#applied-filter-summary");
+const filterRemovalActions = document.querySelector("#filter-removal-actions");
 const editFiltersButton = document.querySelector("#edit-search-filters");
 const copySearchButton = document.querySelector("#copy-search-link");
 const searchLinkStatus = document.querySelector("#search-link-status");
@@ -132,6 +133,7 @@ let isCopyingSearchLink = false;
 let searchLinkVersion = 0;
 let pendingHistorySearch = null;
 let cancelPublicRequest = null;
+let filterRemovalButtons = [];
 
 loadButton.addEventListener("click", async () => {
   await loadSelectedView(firstPageUrl, "push");
@@ -278,6 +280,7 @@ async function loadPendingHistorySearch() {
 restoreFilterForm(initialSearch);
 backLink.href = collectionPageUrl(initialSearch);
 filterSummary.hidden = isDetailView;
+filterRemovalActions.hidden = true;
 editFiltersButton.hidden = isDetailView;
 copySearchButton.hidden = isDetailView;
 filterPanel.hidden = isDetailView;
@@ -398,6 +401,55 @@ function describeAppliedFilters(query) {
     }
   }
   return parts.length ? `Search filters: ${parts.join(" · ")}` : "No filters applied.";
+}
+
+function renderFilterRemovalActions(query) {
+  filterRemovalActions.replaceChildren();
+  filterRemovalButtons = [];
+  const groups = [
+    { id: "city", label: "city", keys: ["city"] },
+    { id: "postal", label: "postal code", keys: ["postalCode"] },
+    { id: "intent", label: "transaction intent", keys: ["transactionIntent"] },
+    { id: "category", label: "property category", keys: ["propertyCategory"] },
+    { id: "commercial", label: "commercial property type", keys: ["commercialSubtype"] },
+    { id: "furnishing", label: "furnishing quality", keys: ["furnishingQuality"] },
+    { id: "price", label: "price range", keys: ["priceMin", "priceMax", "priceCurrency"] },
+    { id: "area", label: "living area range", keys: ["livingAreaMin", "livingAreaMax", "livingAreaUnit"] },
+    ...numericFilterRanges.map(range => ({
+      id: range.key, label: `${range.label} range`, keys: [`${range.key}Min`, `${range.key}Max`],
+    })),
+    { id: "features", label: "required features", keys: ["propertyFeature"] },
+  ];
+  for (const group of groups) {
+    if (!group.keys.some(key => query.has(key))) {
+      continue;
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "secondary-button";
+    button.dataset.filterGroup = group.id;
+    button.textContent = `Remove ${group.label}`;
+    button.addEventListener("click", async () => {
+      if (isLoading || isDetailView) {
+        return;
+      }
+      const search = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
+      if (!group.keys.some(key => search.has(key))) {
+        return;
+      }
+      for (const key of group.keys) {
+        search.delete(key);
+      }
+      search.delete("page");
+      restoreFilterForm(search);
+      firstPageUrl = collectionRequestUrl(search);
+      filterSummary.focus();
+      await loadPublicListings(firstPageUrl, "push");
+    });
+    filterRemovalButtons.push(button);
+    filterRemovalActions.append(button);
+  }
+  filterRemovalActions.hidden = isDetailView || filterRemovalButtons.length === 0;
 }
 
 function collectionRequestUrl(query) {
@@ -696,6 +748,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace") 
   pageJumpError.hidden = true;
   pageJumpInput.value = currentSearch.get("page") ?? "1";
   filterSummary.textContent = describeAppliedFilters(currentSearch);
+  renderFilterRemovalActions(currentSearch);
   const currentUrlSearch = getSupportedSearch(new URLSearchParams(window.location.search));
   if (historyMode === "push" && currentSearch.toString() !== currentUrlSearch.toString()) {
     window.history.pushState(null, "", collectionPageUrl(currentSearch));
@@ -784,6 +837,9 @@ function getPageLink(header, relation) {
 }
 
 function updatePagination() {
+  for (const button of filterRemovalButtons) {
+    button.disabled = isLoading;
+  }
   editFiltersButton.disabled = isLoading;
   copySearchButton.disabled = isLoading || isCopyingSearchLink;
   pageJumpFields.disabled = isLoading;
