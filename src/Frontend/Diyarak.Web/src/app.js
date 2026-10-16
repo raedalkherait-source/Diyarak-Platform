@@ -66,6 +66,8 @@ const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
 const filterSummary = document.querySelector("#applied-filter-summary");
 const editFiltersButton = document.querySelector("#edit-search-filters");
+const copySearchButton = document.querySelector("#copy-search-link");
+const searchLinkStatus = document.querySelector("#search-link-status");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
 const filterPanel = document.querySelector("#listing-filter-panel");
@@ -126,6 +128,8 @@ let previousUrl = null;
 let nextUrl = null;
 let isLoading = false;
 let appliedFilterSnapshot = null;
+let isCopyingSearchLink = false;
+let searchLinkVersion = 0;
 
 loadButton.addEventListener("click", async () => {
   await loadSelectedView();
@@ -163,6 +167,39 @@ pageJumpForm.addEventListener("submit", async event => {
   const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
   query.set("page", String(Number(value)));
   await loadPublicListings(collectionRequestUrl(query));
+});
+
+copySearchButton.addEventListener("click", async () => {
+  if (isLoading || isDetailView || isCopyingSearchLink) {
+    return;
+  }
+  const version = searchLinkVersion;
+  const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
+  const url = new URL("/app/index.html", window.location.origin);
+  url.search = query.toString();
+  const link = url.href;
+  isCopyingSearchLink = true;
+  searchLinkStatus.textContent = "";
+  searchLinkStatus.hidden = true;
+  updatePagination();
+  try {
+    if (typeof navigator.clipboard?.writeText !== "function") {
+      throw new Error("Clipboard is unavailable.");
+    }
+    await navigator.clipboard.writeText(link);
+    if (version === searchLinkVersion) {
+      searchLinkStatus.textContent = "Search link copied.";
+      searchLinkStatus.hidden = false;
+    }
+  } catch {
+    if (version === searchLinkVersion) {
+      searchLinkStatus.textContent = `Copy this search link manually: ${link}`;
+      searchLinkStatus.hidden = false;
+    }
+  } finally {
+    isCopyingSearchLink = false;
+    updatePagination();
+  }
 });
 
 editFiltersButton.addEventListener("click", () => {
@@ -216,6 +253,7 @@ restoreFilterForm(initialSearch);
 backLink.href = collectionPageUrl(initialSearch);
 filterSummary.hidden = isDetailView;
 editFiltersButton.hidden = isDetailView;
+copySearchButton.hidden = isDetailView;
 filterPanel.hidden = isDetailView;
 filterForm.hidden = isDetailView;
 pageJumpForm.hidden = isDetailView;
@@ -615,6 +653,9 @@ async function loadPublicListings(url = collectionUrl) {
   }
 
   requestedUrl = url;
+  searchLinkVersion++;
+  searchLinkStatus.textContent = "";
+  searchLinkStatus.hidden = true;
   const currentSearch = getSupportedSearch(new URL(url, window.location.origin).searchParams);
   pageJumpError.textContent = "";
   pageJumpError.hidden = true;
@@ -695,6 +736,7 @@ function getPageLink(header, relation) {
 
 function updatePagination() {
   editFiltersButton.disabled = isLoading;
+  copySearchButton.disabled = isLoading || isCopyingSearchLink;
   pageJumpFields.disabled = isLoading;
   filterFields.disabled = isLoading;
   previousButton.disabled = isLoading || !previousUrl;

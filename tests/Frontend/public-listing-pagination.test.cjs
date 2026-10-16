@@ -16,7 +16,7 @@ function response(page, hasMore, links = null, items = [{}]) {
     json: async () => ({ page, pageSize: 20, hasMore, items }) };
 }
 
-async function createApp(responses, search = "", clock = { setTimeout, clearTimeout }) {
+async function createApp(responses, search = "", clock = { setTimeout, clearTimeout }, clipboard) {
   const elements = new Map();
   function element() {
     return { disabled: false, hidden: false, _value: "", textContent: "", dataset: {},
@@ -38,7 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "search-link-status"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -56,6 +56,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout,
     window: { location: { origin: "https://diyarak.example", search },
       history: { replaceState: (_state, _title, url) => historyUrls.push(url) } },
+    navigator: { clipboard },
     document: { querySelector: id => elements.get(id) },
     fetch: async (url, options) => {
       requests.push(url);
@@ -2246,4 +2247,105 @@ test("Edit search filters is hidden and ignores activation on details", async ()
   assert.equal(app.get("listing-filter-panel").open, false);
   assert.equal(app.get("filter-city").focusCount, 0);
   assert.equal(app.requests.length, 1);
+});
+
+
+test("Copy search link uses applied filters and page while preserving draft and results", async () => {
+  const copies = [];
+  const search = "?city=Berlin&transactionIntent=Rent&transactionIntent=Sell&propertyFeature=Elevator&page=3&pageSize=5&untrusted=ignored";
+  const app = await createApp([response(3, false)], search, undefined, { writeText: async value => { copies.push(value); } });
+  assert.equal(copies.length, 0);
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  const history = [...app.historyUrls];
+  const summary = app.get("applied-filter-summary").textContent;
+  const card = app.get("listing-grid").children[0];
+  await app.click("copy-search-link");
+  assert.deepEqual(copies, ["https://diyarak.example/app/index.html?city=Berlin&transactionIntent=Rent&transactionIntent=Sell&propertyFeature=Elevator&page=3&pageSize=5"]);
+  assert.equal(app.get("search-link-status").textContent, "Search link copied.");
+  assert.equal(app.get("search-link-status").hidden, false);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, false);
+  assert.equal(app.get("applied-filter-summary").textContent, summary);
+  assert.equal(app.get("listing-grid").children[0], card);
+  assert.equal(app.get("search-link-status").focusCount, 0);
+  assert.deepEqual(app.historyUrls, history);
+  assert.equal(app.requests.length, 1);
+});
+
+test("Copy search link follows server navigation and Clear restores the unfiltered URL", async () => {
+  const copies = [];
+  const next = `${endpoint}?city=Paris&page=2&pageSize=1`;
+  const app = await createApp([response(1, true, link(next, "next")), response(2, false), response(1, false)], "?city=Berlin", undefined,
+    { writeText: async value => { copies.push(value); } });
+  await app.click("copy-search-link");
+  await app.click("next-page");
+  assert.equal(app.get("search-link-status").hidden, true);
+  await app.click("copy-search-link");
+  await app.click("clear-filters");
+  await app.click("copy-search-link");
+  assert.deepEqual(copies, ["https://diyarak.example/app/index.html?city=Berlin", "https://diyarak.example/app/index.html?city=Paris&page=2&pageSize=1", "https://diyarak.example/app/index.html"]);
+  assert.equal(app.requests.length, 3);
+});
+
+test("Copy search link displays a safe manual URL when clipboard is missing or denied", async () => {
+  for (const clipboard of [undefined, {}, { writeText: async () => { throw new Error("Permission denied"); } }]) {
+    const app = await createApp([response(1, false)], "?city=%3Cscript%3E&redirect=https://evil.example", undefined, clipboard);
+    await app.click("copy-search-link");
+    assert.equal(app.get("search-link-status").textContent, "Copy this search link manually: https://diyarak.example/app/index.html?city=%3Cscript%3E");
+    assert.equal(app.get("search-link-status").hidden, false);
+    assert.equal(app.get("copy-search-link").disabled, false);
+    assert.equal(app.requests.length, 1);
+  }
+});
+
+test("Copy search link blocks duplicate copies and ignores stale completion after navigation", async () => {
+  for (const rejectCopy of [false, true]) {
+    let finishCopy;
+    let calls = 0;
+    const pending = new Promise((resolve, reject) => { finishCopy = rejectCopy ? reject : resolve; });
+    const app = await createApp([response(1, false), response(1, false)], "", undefined,
+      { writeText: () => { calls++; return pending; } });
+    const copying = app.click("copy-search-link");
+    assert.equal(app.get("copy-search-link").disabled, true);
+    await app.click("copy-search-link");
+    assert.equal(calls, 1);
+    await app.click("load-listings");
+    finishCopy(rejectCopy ? new Error("denied") : undefined);
+    await copying;
+    assert.equal(app.get("search-link-status").hidden, true);
+    assert.equal(app.get("search-link-status").textContent, "");
+    assert.equal(app.get("copy-search-link").disabled, false);
+  }
+});
+
+test("Copy search link is disabled while loading and hidden on details", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const copies = [];
+  const clipboard = { writeText: async value => { copies.push(value); } };
+  const app = await createApp([response(1, false), () => pending], "", undefined, clipboard);
+  const loading = app.click("load-listings");
+  assert.equal(app.get("copy-search-link").disabled, true);
+  await app.click("copy-search-link");
+  assert.equal(copies.length, 0);
+  resolveResponse(response(1, false));
+  await loading;
+  assert.equal(app.get("copy-search-link").disabled, false);
+  const detail = await createApp([detailResponse({ listingId })], detailQuery, undefined, clipboard);
+  assert.equal(detail.get("copy-search-link").hidden, true);
+  await detail.click("copy-search-link");
+  assert.equal(copies.length, 0);
+});
+
+test("Copy search link remains available for empty or failed requested searches", async () => {
+  for (const result of [response(1, false, null, []), { ok: false, status: 503 }, new Error("offline")]) {
+    const copies = [];
+    const app = await createApp([result], "?city=Berlin", undefined, { writeText: async value => { copies.push(value); } });
+    const state = app.get("status").dataset.state;
+    await app.click("copy-search-link");
+    assert.deepEqual(copies, ["https://diyarak.example/app/index.html?city=Berlin"]);
+    assert.equal(app.get("status").dataset.state, state);
+    assert.equal(app.requests.length, 1);
+  }
 });

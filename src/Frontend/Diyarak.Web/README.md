@@ -477,3 +477,17 @@ with Tab. Opening the panel preserves draft values, validation messages,
 applied filters, results and the current page without making a request.
 The button is disabled while loading, available after empty/error responses,
 and hidden on listing details. Initial loading never moves focus to the form.
+
+## Copy the applied search link
+
+Copy search link copies an absolute local frontend URL with the requested
+filters, repeated selections, page and page size. Draft edits and unsupported
+URL parameters are excluded. It does not submit filters, fetch listings,
+change browser history or move focus. It shares the search, not a snapshot of
+listing data; available listings may change when the link is opened later.
+
+A polite status confirms copying. If the browser clipboard is unavailable or
+permission is denied, the same URL is displayed as text for manual copying.
+The button is hidden on details and disabled during loading or a pending copy.
+Starting a new listing request clears the message; an older pending copy
+cannot show a stale confirmation after navigation.
