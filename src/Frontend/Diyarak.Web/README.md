@@ -556,3 +556,18 @@ The lower navigation has its own accessible landmark name. Only the original
 page indicator announces live updates, avoiding duplicate page announcements.
 Both sets are hidden on details and disabled when their links are unavailable.
 An empty later page can still use its valid previous link from either set.
+
+## Focus after page navigation
+
+Activating either Previous/Next control or submitting a valid page jump moves
+focus to the results heading after a successful response, including an empty
+page. Native focus scrolling brings the heading into view without scripted
+smooth animation. If that navigation fails, focus moves to the visible status
+message instead, where the user can find the error and Retry control.
+
+Both targets use tabindex=-1 and do not add ordinary Tab stops. Controls finish
+updating before focus moves. Initial load, Refresh, Retry, Apply/Clear, filter
+restoration and browser Back/Forward retain their existing focus behavior.
+History traversal that cancels an in-flight page request does not let that
+superseded request move focus. Invalid page jumps still focus their validation
+message and do not make a request.

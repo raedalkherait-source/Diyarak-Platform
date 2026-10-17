@@ -2785,3 +2785,94 @@ test("bottom controls remain disabled without server links and hidden on details
   await detail.click("previous-page-bottom");
   assert.equal(detail.requests.length, 1);
 });
+
+test("explicit page navigation focuses results after top bottom and direct-page actions", async () => {
+  const second = `${endpoint}?page=2`;
+  const third = `${endpoint}?page=3`;
+  const app = await createApp([response(1, true, link(second, "next")),
+    response(2, true, link(third, "next")), response(3, false, link(second, "prev")),
+    response(2, false), response(99, false, null, [])]);
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  await app.click("next-page");
+  assert.equal(app.get("listing-heading").focusCount, 1);
+  await app.click("next-page-bottom");
+  assert.equal(app.get("listing-heading").focusCount, 2);
+  await app.click("previous-page-bottom");
+  assert.equal(app.get("listing-heading").focusCount, 3);
+  app.get("page-jump-input").value = "99";
+  await app.jump();
+  assert.equal(app.get("listing-heading").focusCount, 4);
+  assert.equal(app.get("listing-grid").children.length, 0);
+  assert.equal(app.get("status").focusCount, 0);
+  assertPaginationSynchronized(app);
+});
+
+test("page navigation waits for completion before moving focus", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const app = await createApp([response(1, true, link(`${endpoint}?page=2`, "next")), () => pending]);
+  const loading = app.click("next-page-bottom");
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("status").focusCount, 0);
+  assert.equal(app.get("next-page-bottom").disabled, true);
+  resolveResponse(response(2, false));
+  await loading;
+  assert.equal(app.get("listing-heading").focusCount, 1);
+  assert.equal(app.get("status").dataset.state, "ready");
+  assert.equal(app.get("listing-grid").getAttribute("aria-busy"), "false");
+});
+
+test("page navigation failures focus status instead of the empty results heading", async () => {
+  const malformed = { ok: true, headers: { get: () => null }, json: async () => ({ items: null }) };
+  for (const result of [{ ok: false, status: 503 }, new Error("offline"), malformed]) {
+    const app = await createApp([response(1, true, link(`${endpoint}?page=2`, "next")), result]);
+    await app.click("next-page-bottom");
+    assert.equal(app.get("status").dataset.state, "error");
+    assert.equal(app.get("status").focusCount, 1);
+    assert.equal(app.get("listing-heading").focusCount, 0);
+    assert.equal(app.get("retry-listings").hidden, false);
+  }
+});
+
+test("timed-out page navigation focuses its retryable status", async () => {
+  const clock = manualClock();
+  const app = await createApp([response(1, true, link(`${endpoint}?page=2`, "next")), neverRespond], "", clock);
+  const loading = app.click("next-page-bottom");
+  clock.expire();
+  await loading;
+  assert.equal(app.get("status").focusCount, 1);
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.signals[1].aborted, true);
+  assert.equal(clock.count(), 0);
+});
+
+test("history cancellation prevents a superseded page request from moving focus", async () => {
+  const app = await createApp([response(1, true, link(`${endpoint}?page=2`, "next")), neverRespond, response(1, false)]);
+  const loading = app.click("next-page-bottom");
+  await app.back();
+  await loading;
+  assert.equal(app.signals[1].aborted, true);
+  assert.equal(app.get("current-page").textContent, "Page 1");
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("status").focusCount, 0);
+});
+
+test("initial load Retry Refresh and filter submissions keep existing focus behavior", async () => {
+  const app = await createApp([{ ok: false, status: 503 }, response(1, false), response(1, false), response(1, false), response(1, false)]);
+  assert.equal(app.get("status").focusCount, 0);
+  await app.click("retry-listings");
+  await app.click("load-listings");
+  app.get("filter-city").value = "Berlin";
+  await app.submit();
+  await app.click("clear-filters");
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("status").focusCount, 0);
+  app.get("page-jump-input").value = "0";
+  await app.jump();
+  assert.equal(app.get("page-jump-error").focusCount, 1);
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.requests.length, 5);
+  const detail = await createApp([detailResponse({ listingId })], detailQuery);
+  assert.equal(detail.get("listing-heading").focusCount, 0);
+  assert.equal(detail.get("status").focusCount, 0);
+});

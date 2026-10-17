@@ -158,7 +158,7 @@ retryButton.addEventListener("click", async () => {
 for (const button of previousButtons) {
   button.addEventListener("click", async () => {
     if (previousUrl) {
-      await loadPublicListings(previousUrl, "push");
+      await loadPublicListings(previousUrl, "push", true);
     }
   });
 }
@@ -166,7 +166,7 @@ for (const button of previousButtons) {
 for (const button of nextButtons) {
   button.addEventListener("click", async () => {
     if (nextUrl) {
-      await loadPublicListings(nextUrl, "push");
+      await loadPublicListings(nextUrl, "push", true);
     }
   });
 }
@@ -186,7 +186,7 @@ pageJumpForm.addEventListener("submit", async event => {
   }
   const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
   query.set("page", String(Number(value)));
-  await loadPublicListings(collectionRequestUrl(query), "push");
+  await loadPublicListings(collectionRequestUrl(query), "push", true);
 });
 
 copySearchButton.addEventListener("click", async () => {
@@ -760,7 +760,7 @@ async function loadPublicListing() {
   }
 }
 
-async function loadPublicListings(url = collectionUrl, historyMode = "replace") {
+async function loadPublicListings(url = collectionUrl, historyMode = "replace", focusResults = false) {
   if (isLoading) {
     return;
   }
@@ -837,6 +837,9 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace") 
     updatePagination();
     if (pendingHistorySearch !== null) {
       await loadPendingHistorySearch();
+    } else if (focusResults) {
+      const target = statusElement.dataset.state === "error" ? statusElement : headingElement;
+      target.focus();
     }
   }
 }

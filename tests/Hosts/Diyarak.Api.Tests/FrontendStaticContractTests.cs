@@ -84,6 +84,8 @@ public sealed class FrontendStaticContractTests
         string html = ReadFrontendFile("index.html");
 
         Assert.Contains("aria-label=\"Listing pages\"", html);
+        Assert.Contains("id=\"listing-heading\" tabindex=\"-1\"", html);
+        Assert.Contains("id=\"status\" role=\"status\" tabindex=\"-1\"", html);
         Assert.Contains("id=\"previous-page\"", html);
         Assert.Contains("id=\"listing-pagination-bottom\"", html);
         Assert.Contains("aria-label=\"Listing pages after results\"", html);
