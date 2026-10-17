@@ -123,7 +123,16 @@ public sealed class FrontendStaticContractTests
         }
         Assert.DoesNotContain("<select id=\"filter-intent\"", html);
         Assert.Contains("name=\"transactionIntent\"", html);
-        Assert.Contains("for=\"filter-category\"", html);
+        Assert.Contains("id=\"category-filter-fields\"", html);
+        Assert.Contains("<legend>Property category</legend>", html);
+        Assert.Contains("aria-describedby=\"category-filter-help\"", html);
+        string[] categories = ["Apartment", "House", "Plot", "InvestmentProperty", "GarageOrParkingSpace", "CommercialProperty"];
+        foreach (string category in categories)
+        {
+            Assert.Contains($"for=\"filter-category-{category}\"", html);
+            Assert.Contains($"id=\"filter-category-{category}\" name=\"propertyCategory\" type=\"checkbox\" value=\"{category}\"", html);
+        }
+        Assert.DoesNotContain("<select id=\"filter-category\"", html);
         Assert.Contains("name=\"propertyCategory\"", html);
         Assert.Contains("id=\"clear-filters\"", html);
     }
@@ -209,11 +218,15 @@ public sealed class FrontendStaticContractTests
     {
         string html = ReadFrontendFile("index.html");
 
-        Assert.Contains("for=\"filter-furnishing\"", html);
+        Assert.Contains("id=\"furnishing-filter-fields\"", html);
+        Assert.Contains("<legend>Furnishing quality</legend>", html);
+        Assert.Contains("aria-describedby=\"furnishing-filter-help\"", html);
+        Assert.DoesNotContain("<select id=\"filter-furnishing\"", html);
         Assert.Contains("name=\"furnishingQuality\"", html);
         foreach (string quality in new[] { "Simple", "Normal", "Upscale", "Luxury" })
         {
-            Assert.Contains($"value=\"{quality}\"", html);
+            Assert.Contains($"for=\"filter-furnishing-{quality}\"", html);
+            Assert.Contains($"id=\"filter-furnishing-{quality}\" name=\"furnishingQuality\" type=\"checkbox\" value=\"{quality}\"", html);
         }
     }
 
@@ -222,16 +235,19 @@ public sealed class FrontendStaticContractTests
     {
         string html = ReadFrontendFile("index.html");
 
-        Assert.Contains("for=\"filter-commercial\"", html);
-        Assert.Contains("name=\"commercialSubtype\"", html);
+        Assert.Contains("id=\"commercial-filter-fields\"", html);
+        Assert.Contains("<legend>Commercial property type</legend>", html);
         Assert.Contains("aria-describedby=\"commercial-filter-help\"", html);
+        Assert.DoesNotContain("<select id=\"filter-commercial\"", html);
+        Assert.Contains("name=\"commercialSubtype\"", html);
         Assert.Contains("id=\"commercial-filter-help\"", html);
         foreach (string subtype in new[]
         {
             "OfficeOrPractice", "RestaurantOrHotel", "HallOrProduction", "Retail", "CommercialPlot"
         })
         {
-            Assert.Contains($"value=\"{subtype}\"", html);
+            Assert.Contains($"for=\"filter-commercial-{subtype}\"", html);
+            Assert.Contains($"id=\"filter-commercial-{subtype}\" name=\"commercialSubtype\" type=\"checkbox\" value=\"{subtype}\"", html);
         }
     }
 

@@ -55,36 +55,84 @@
             </label>
           </div>
         </fieldset>
-        <label for="filter-category">Property category
-          <select id="filter-category" name="propertyCategory" multiple size="6" aria-describedby="category-filter-help">
-            <option value="Apartment">Apartment</option>
-            <option value="House">House</option>
-            <option value="Plot">Plot</option>
-            <option value="InvestmentProperty">Investment property</option>
-            <option value="GarageOrParkingSpace">Garage or parking space</option>
-            <option value="CommercialProperty">Commercial property</option>
-          </select>
-        </label>
-        <p id="category-filter-help" class="filter-message">Choose one or more categories; no selection means any category. Use Ctrl (Windows) or Command (Mac) while clicking to toggle choices. Use Shift with arrow keys to select adjacent choices.</p>
-        <label for="filter-commercial">Commercial property type
-          <select id="filter-commercial" name="commercialSubtype" multiple size="5" aria-describedby="commercial-filter-help">
-            <option value="OfficeOrPractice">Office or practice</option>
-            <option value="RestaurantOrHotel">Restaurant or hotel</option>
-            <option value="HallOrProduction">Hall or production</option>
-            <option value="Retail">Retail</option>
-            <option value="CommercialPlot">Commercial plot</option>
-          </select>
-        </label>
-        <p id="commercial-filter-help" class="filter-message">Choose one or more commercial types; no selection means any type. Listings may match any selected type. Leave categories unselected or include Commercial property; other categories alone may return no results. Use Ctrl (Windows) or Command (Mac) while clicking to toggle choices. Use Shift with arrow keys to select adjacent choices.</p>
-        <label for="filter-furnishing">Furnishing quality
-          <select id="filter-furnishing" name="furnishingQuality" multiple size="4" aria-describedby="furnishing-filter-help">
-            <option value="Simple">Simple</option>
-            <option value="Normal">Normal</option>
-            <option value="Upscale">Upscale</option>
-            <option value="Luxury">Luxury</option>
-          </select>
-        </label>
-        <p id="furnishing-filter-help" class="filter-message">Choose one or more furnishing qualities; no selection means any quality. Listings may match any selected quality. Use Ctrl (Windows) or Command (Mac) while clicking to toggle choices. Use Shift with arrow keys to select adjacent choices.</p>
+        <fieldset id="category-filter-fields" aria-describedby="category-filter-help">
+          <legend>Property category</legend>
+          <p id="category-filter-help" class="filter-message">Choose one or more categories; leave all unchecked for any category. Listings match any selected category. Use Tab to move between choices and Space to toggle a choice.</p>
+          <div class="feature-choices">
+            <label class="feature-choice" for="filter-category-Apartment">
+              <input id="filter-category-Apartment" name="propertyCategory" type="checkbox" value="Apartment">
+              <span>Apartment</span>
+            </label>
+            <label class="feature-choice" for="filter-category-House">
+              <input id="filter-category-House" name="propertyCategory" type="checkbox" value="House">
+              <span>House</span>
+            </label>
+            <label class="feature-choice" for="filter-category-Plot">
+              <input id="filter-category-Plot" name="propertyCategory" type="checkbox" value="Plot">
+              <span>Plot</span>
+            </label>
+            <label class="feature-choice" for="filter-category-InvestmentProperty">
+              <input id="filter-category-InvestmentProperty" name="propertyCategory" type="checkbox" value="InvestmentProperty">
+              <span>Investment property</span>
+            </label>
+            <label class="feature-choice" for="filter-category-GarageOrParkingSpace">
+              <input id="filter-category-GarageOrParkingSpace" name="propertyCategory" type="checkbox" value="GarageOrParkingSpace">
+              <span>Garage or parking space</span>
+            </label>
+            <label class="feature-choice" for="filter-category-CommercialProperty">
+              <input id="filter-category-CommercialProperty" name="propertyCategory" type="checkbox" value="CommercialProperty">
+              <span>Commercial property</span>
+            </label>
+          </div>
+        </fieldset>
+        <fieldset id="commercial-filter-fields" aria-describedby="commercial-filter-help">
+          <legend>Commercial property type</legend>
+          <p id="commercial-filter-help" class="filter-message">Choose one or more commercial types; leave all unchecked for any type. Listings match any selected type. Leave categories unchecked or include Commercial property; other categories alone may return no results. Use Tab to move between choices and Space to toggle a choice.</p>
+          <div class="feature-choices">
+            <label class="feature-choice" for="filter-commercial-OfficeOrPractice">
+              <input id="filter-commercial-OfficeOrPractice" name="commercialSubtype" type="checkbox" value="OfficeOrPractice">
+              <span>Office or practice</span>
+            </label>
+            <label class="feature-choice" for="filter-commercial-RestaurantOrHotel">
+              <input id="filter-commercial-RestaurantOrHotel" name="commercialSubtype" type="checkbox" value="RestaurantOrHotel">
+              <span>Restaurant or hotel</span>
+            </label>
+            <label class="feature-choice" for="filter-commercial-HallOrProduction">
+              <input id="filter-commercial-HallOrProduction" name="commercialSubtype" type="checkbox" value="HallOrProduction">
+              <span>Hall or production</span>
+            </label>
+            <label class="feature-choice" for="filter-commercial-Retail">
+              <input id="filter-commercial-Retail" name="commercialSubtype" type="checkbox" value="Retail">
+              <span>Retail</span>
+            </label>
+            <label class="feature-choice" for="filter-commercial-CommercialPlot">
+              <input id="filter-commercial-CommercialPlot" name="commercialSubtype" type="checkbox" value="CommercialPlot">
+              <span>Commercial plot</span>
+            </label>
+          </div>
+        </fieldset>
+        <fieldset id="furnishing-filter-fields" aria-describedby="furnishing-filter-help">
+          <legend>Furnishing quality</legend>
+          <p id="furnishing-filter-help" class="filter-message">Choose one or more furnishing qualities; leave all unchecked for any quality. Listings match any selected quality. Use Tab to move between choices and Space to toggle a choice.</p>
+          <div class="feature-choices">
+            <label class="feature-choice" for="filter-furnishing-Simple">
+              <input id="filter-furnishing-Simple" name="furnishingQuality" type="checkbox" value="Simple">
+              <span>Simple</span>
+            </label>
+            <label class="feature-choice" for="filter-furnishing-Normal">
+              <input id="filter-furnishing-Normal" name="furnishingQuality" type="checkbox" value="Normal">
+              <span>Normal</span>
+            </label>
+            <label class="feature-choice" for="filter-furnishing-Upscale">
+              <input id="filter-furnishing-Upscale" name="furnishingQuality" type="checkbox" value="Upscale">
+              <span>Upscale</span>
+            </label>
+            <label class="feature-choice" for="filter-furnishing-Luxury">
+              <input id="filter-furnishing-Luxury" name="furnishingQuality" type="checkbox" value="Luxury">
+              <span>Luxury</span>
+            </label>
+          </div>
+        </fieldset>
         <label for="filter-price-min">Minimum price
           <input id="filter-price-min" name="priceMin" type="number" min="0" step="any" aria-describedby="price-filter-help filter-error">
         </label>

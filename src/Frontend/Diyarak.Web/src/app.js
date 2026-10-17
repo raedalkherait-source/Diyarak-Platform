@@ -80,9 +80,15 @@ const postalInput = document.querySelector("#filter-postal");
 const intentInputs = Object.keys(publicLabels.transactionIntent).map(value => ({
   value, input: document.querySelector(`#filter-intent-${value}`),
 }));
-const categoryInput = document.querySelector("#filter-category");
-const commercialInput = document.querySelector("#filter-commercial");
-const furnishingInput = document.querySelector("#filter-furnishing");
+const categoryInputs = Object.keys(publicLabels.category).map(value => ({
+  value, input: document.querySelector(`#filter-category-${value}`),
+}));
+const commercialInputs = Object.keys(publicLabels.commercialSubtype).map(value => ({
+  value, input: document.querySelector(`#filter-commercial-${value}`),
+}));
+const furnishingInputs = Object.keys(publicLabels.furnishingQuality).map(value => ({
+  value, input: document.querySelector(`#filter-furnishing-${value}`),
+}));
 const featureInputs = Object.keys(publicLabels.features).map(value => ({
   value, input: document.querySelector(`#filter-feature-${value}`),
 }));
@@ -306,11 +312,8 @@ function filterFormSnapshot() {
   return JSON.stringify({
     fields: [cityInput, postalInput, priceMinInput, priceMaxInput, priceCurrencyInput,
       areaMinInput, areaMaxInput, areaUnitInput, pageSizeInput].map(input => input.value),
-    choices: [
-      intentInputs.filter(intent => intent.input.checked).map(intent => intent.value),
-      ...[categoryInput, commercialInput, furnishingInput]
-        .map(input => Array.from(input.selectedOptions, option => option.value)),
-    ],
+    choices: [intentInputs, categoryInputs, commercialInputs, furnishingInputs]
+      .map(choices => choices.filter(choice => choice.input.checked).map(choice => choice.value)),
     ranges: numericFilterRanges.map(range => [range.minimum.value, range.maximum.value]),
     features: featureInputs.filter(feature => feature.input.checked).map(feature => feature.value),
   });
@@ -337,20 +340,20 @@ function restoreFilterForm(query) {
     intent.input.checked = initialIntents.has(intent.value);
   }
   const initialCategories = new Set(query.getAll("propertyCategory"));
-  for (const option of categoryInput.options) {
-    option.selected = initialCategories.has(option.value);
+  for (const choice of categoryInputs) {
+    choice.input.checked = initialCategories.has(choice.value);
   }
   const initialFeatures = new Set(query.getAll("propertyFeature"));
   for (const feature of featureInputs) {
     feature.input.checked = initialFeatures.has(feature.value);
   }
   const initialCommercialTypes = new Set(query.getAll("commercialSubtype"));
-  for (const option of commercialInput.options) {
-    option.selected = initialCommercialTypes.has(option.value);
+  for (const choice of commercialInputs) {
+    choice.input.checked = initialCommercialTypes.has(choice.value);
   }
   const initialQualities = new Set(query.getAll("furnishingQuality"));
-  for (const option of furnishingInput.options) {
-    option.selected = initialQualities.has(option.value);
+  for (const choice of furnishingInputs) {
+    choice.input.checked = initialQualities.has(choice.value);
   }
   priceMinInput.value = query.get("priceMin") ?? "";
   priceMaxInput.value = query.get("priceMax") ?? "";
@@ -574,8 +577,10 @@ function buildFilteredCollectionUrl() {
       query.append("transactionIntent", intent.value);
     }
   }
-  for (const option of categoryInput.selectedOptions) {
-    query.append("propertyCategory", option.value);
+  for (const choice of categoryInputs) {
+    if (choice.input.checked) {
+      query.append("propertyCategory", choice.value);
+    }
   }
 
   for (const feature of featureInputs) {
@@ -584,12 +589,16 @@ function buildFilteredCollectionUrl() {
     }
   }
 
-  for (const option of commercialInput.selectedOptions) {
-    query.append("commercialSubtype", option.value);
+  for (const choice of commercialInputs) {
+    if (choice.input.checked) {
+      query.append("commercialSubtype", choice.value);
+    }
   }
 
-  for (const option of furnishingInput.selectedOptions) {
-    query.append("furnishingQuality", option.value);
+  for (const choice of furnishingInputs) {
+    if (choice.input.checked) {
+      query.append("furnishingQuality", choice.value);
+    }
   }
 
   const minimum = priceMinInput.value.trim();

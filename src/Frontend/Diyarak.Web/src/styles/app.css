@@ -201,7 +201,10 @@ button:disabled {
 }
 
 #feature-filter-fields,
-#intent-filter-fields {
+#intent-filter-fields,
+#category-filter-fields,
+#commercial-filter-fields,
+#furnishing-filter-fields {
   grid-column: 1 / -1;
   min-width: 0;
   margin: 0;
@@ -294,6 +297,9 @@ button:disabled {
   margin-bottom: 0;
 }
 
-#intent-filter-fields .feature-choices {
+#intent-filter-fields .feature-choices,
+#category-filter-fields .feature-choices,
+#commercial-filter-fields .feature-choices,
+#furnishing-filter-fields .feature-choices {
   margin-top: 12px;
 }

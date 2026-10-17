@@ -379,50 +379,51 @@ values remain API-validated and are not added as choices. No backend changes.
 
 ## Multiple property categories
 
-Property category uses a native multiple select with all six existing API
-categories. No selection means any category. Each selected option becomes
+Property category uses native labeled checkboxes for all six existing API
+categories. Leaving all unchecked means any category. Each checked choice becomes
 a repeated `propertyCategory` parameter and the backend matches any chosen
-category. Selection help describes Ctrl/Command-click and Shift-arrow use.
+category. Use Tab to move between choices and Space to toggle; no modifier
+keys are needed for pointer or touch selection.
 
 Bookmarks restore all supported categories; page links, Refresh, Retry,
 reload, direct page jumps and detail return links preserve repeated values.
 The applied summary shows all selected category labels. Applying sends each
-selected option once in control order, alongside other filters and page size.
-Clear deselects all options. Loading disables the form; details hide it.
+checked choice once in control order, alongside other filters and page size.
+Clear unchecks all choices. Loading disables the form; details hide it.
 
 A commercial subtype still restricts results to matching commercial properties.
 If categories are selected, CommercialProperty must be among them to allow
 those matches. Other categories alone produce an empty intersection according
 to the API. Unknown bookmark values remain API-validated and are not added to
-the options. No API or database changes are introduced.
+the checkbox choices. No API or database changes are introduced.
 
 ## Multiple furnishing qualities
 
-The furnishing select supports one or more of Simple, Normal, Upscale and
+The furnishing checkboxes support one or more of Simple, Normal, Upscale and
 Luxury. Each selection becomes a repeated `furnishingQuality` parameter.
 The API matches any selected quality; required property features still require
 all selected features. No selection leaves furnishing quality unrestricted.
 
 Bookmarks restore all supported choices. Pagination, Refresh, Retry, reload,
 page jumps and detail return preserve repeated values; the applied summary
-shows all selected labels. Applying sends each chosen option once in control
-order alongside other filters and page size. Clear deselects all options.
+shows all selected labels. Applying sends each checked choice once in control
+order alongside other filters and page size. Clear unchecks all choices.
 Loading disables the form; details hide it. Unknown bookmark values remain
-API-validated and are not added as options. No backend changes are introduced.
+API-validated and are not added as choices. No backend changes are introduced.
 
 ## Multiple commercial property types
 
-Commercial type supports one or more of OfficeOrPractice, RestaurantOrHotel,
-HallOrProduction, Retail and CommercialPlot. Each selected option becomes a
+Commercial type checkboxes support one or more of OfficeOrPractice, RestaurantOrHotel,
+HallOrProduction, Retail and CommercialPlot. Each checked choice becomes a
 repeated `commercialSubtype` parameter. The API matches any selected subtype
 on commercial properties. No selection leaves subtype unrestricted.
 
 Bookmarks restore all supported choices. Pagination, Refresh, Retry, reload,
 page jumps and detail return retain repeated values. The summary shows all
-selected labels. Applying sends each selected option once in control order
-alongside other filters and page size. Clear deselects all options; loading
+selected labels. Applying sends each checked choice once in control order
+alongside other filters and page size. Clear unchecks all choices; loading
 disables the form and details hide it. Unknown bookmark values remain
-API-validated and are not added as options.
+API-validated and are not added as choices.
 
 If categories are also selected, include CommercialProperty to allow subtype
 matches; other categories alone produce an empty intersection. Required
@@ -431,7 +432,7 @@ property features still require every selected feature. No backend changes.
 ## Restore applied filters
 
 Restore applied filters discards unsubmitted form edits and restores all fields
-from the current requested collection search, including multi-select choices,
+from the current requested collection search, including checkbox selections,
 required features, numeric bounds and page size. It dismisses filter validation
 without changing results, URL, summary, current page, or issuing an API request.
 It does not clear the applied search. Clear filters retains its separate role
@@ -441,14 +442,14 @@ The button shares loading disablement with the form and is hidden on details.
 After a failed request it restores that requested search; Retry still repeats
 the exact failure. Applying restored fields uses normal form validation and
 starts at page one. Unknown query values remain subject to API validation;
-only supported choices can be shown in native selects. Bookmark initialization,
+only supported choices can be shown in native checkboxes. Bookmark initialization,
 Clear and Restore use the same field restoration helper.
 
 ## Unapplied filter changes
 
 A polite live message appears when input/change events reveal differences
 from the form values last restored or submitted. It covers text, price/area,
-page size, numeric ranges, multiple selects and required feature checkboxes.
+page size, numeric ranges, multiple-choice checkboxes and required feature checkboxes.
 Returning fields to that same snapshot hides the message. Draft detection
 compares form values, so whitespace edits also count as changes.
 
@@ -527,3 +528,19 @@ which remains available after the activated button is removed. Buttons are
 disabled while loading, available after empty/error results, and hidden when
 no filter groups are applied or when viewing listing details. Page/page size
 alone do not create removal buttons.
+
+## Checkbox filter groups
+
+Transaction intent, property category, commercial type and furnishing quality
+now all use native checkboxes with visible labels and fieldset legends. Each
+group has associated help text. The outer fieldset disables them while loading.
+The existing responsive checkbox layout is shared with required features.
+
+Each checked value is sent once as a repeated parameter in the established
+control order. Leaving a group unchecked omits that restriction. Matching stays
+OR within these groups and AND across filter groups; required features still
+require all selected values. No group is selected or cleared automatically
+based on another group, including category/commercial-type intersections.
+
+Bookmarks, draft detection, Restore/Clear, removal buttons, Copy search link,
+browser Back/Forward and detail return links retain their existing behavior.

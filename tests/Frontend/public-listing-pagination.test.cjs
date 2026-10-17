@@ -38,15 +38,21 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "filter-category", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-furnishing", "filter-commercial", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "search-link-status", "filter-removal-actions"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "search-link-status", "filter-removal-actions"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
     elements.set(`#filter-feature-${value}`, element());
   }
-  elements.get("#filter-category").options = ["Apartment", "House", "Plot", "InvestmentProperty", "GarageOrParkingSpace", "CommercialProperty"].map(value => ({ value, selected: false }));
-  elements.get("#filter-furnishing").options = ["Simple", "Normal", "Upscale", "Luxury"].map(value => ({ value, selected: false }));
-  elements.get("#filter-commercial").options = ["OfficeOrPractice", "RestaurantOrHotel", "HallOrProduction", "Retail", "CommercialPlot"].map(value => ({ value, selected: false }));
+  for (const value of ["Apartment", "House", "Plot", "InvestmentProperty", "GarageOrParkingSpace", "CommercialProperty"]) {
+    elements.set(`#filter-category-${value}`, element());
+  }
+  for (const value of ["OfficeOrPractice", "RestaurantOrHotel", "HallOrProduction", "Retail", "CommercialPlot"]) {
+    elements.set(`#filter-commercial-${value}`, element());
+  }
+  for (const value of ["Simple", "Normal", "Upscale", "Luxury"]) {
+    elements.set(`#filter-furnishing-${value}`, element());
+  }
   elements.get("#listing-card-template").content = { cloneNode: element };
   const requests = [];
   const historyUrls = [];
@@ -426,7 +432,7 @@ test("filter submit trims and encodes city and sends supported API enum values",
   const app = await createApp([response(1,false), response(1,false)]);
   app.get("filter-city").value = "  دمشق & حمص  ";
   chooseIntents(app, ["Sell"]);
-  app.get("filter-category").value = "Apartment";
+  chooseCategories(app, ["Apartment"]);
   await app.submit();
   const url = new URL(app.requests[1], "https://diyarak.example");
   assert.equal(url.pathname,endpoint);
@@ -475,11 +481,12 @@ test("clear filters resets the inputs and reloads the unfiltered first page", as
   const app = await createApp([response(1,false),response(1,false),response(1,false)]);
   app.get("filter-city").value="Berlin";
   chooseIntents(app, ["Sell"]);
-  app.get("filter-category").value="House";
+  chooseCategories(app, ["House"]);
   await app.submit();
   await app.click("clear-filters");
   assert.equal(app.requests.at(-1),endpoint);
-  for(const id of ["filter-city","filter-category"]) assert.equal(app.get(id).value,"");
+  assert.equal(app.get("filter-city").value, "");
+  assert.deepEqual(selectedCategories(app), []);
   assert.deepEqual(selectedIntents(app), []);
 });
 
@@ -515,7 +522,7 @@ test("bookmarked collection URL restores filters and page coordinates", async ()
   assert.deepEqual(app.requests,[`${endpoint}${search}`]);
   assert.equal(app.get("filter-city").value,"Luebeck");
   assert.equal((selectedIntents(app)[0] ?? ""),"Sell");
-  assert.equal(app.get("filter-category").value,"Apartment");
+  assert.equal((selectedCategories(app)[0] ?? ""),"Apartment");
   assert.equal(app.get("current-page").textContent,"Page 3");
   assert.deepEqual(app.historyUrls,[`./index.html${search}`]);
 });
@@ -705,7 +712,7 @@ test("area range combines with discovery and price filters without conversion", 
   const app=await createApp([response(1,false),response(1,false)],"?page=4");
   app.get("filter-city").value=" دمشق ";
   chooseIntents(app, ["Sell"]);
-  app.get("filter-category").value="Apartment";
+  chooseCategories(app, ["Apartment"]);
   app.get("filter-price-min").value="100";
   app.get("filter-price-currency").value="USD";
   app.get("filter-area-min").value="0";
@@ -838,7 +845,7 @@ test("room ranges combine with city, category, price and living area filters", a
   const app=await createApp([response(3,false),response(1,false)],"?page=3");
   app.get("filter-city").value=" دمشق ";
   chooseIntents(app, ["Rent"]);
-  app.get("filter-category").value="Apartment";
+  chooseCategories(app, ["Apartment"]);
   app.get("filter-price-max").value="500";
   app.get("filter-price-currency").value="USD";
   app.get("filter-area-min").value="50";
@@ -964,7 +971,7 @@ const yearParkingRanges=[["year","constructionYear",1],["parking","parkingSpaceC
 
 test("year and parking ranges combine with all existing filter groups", async () => {
   const app=await createApp([response(3,false),response(1,false)],"?page=3");
-  for(const [id,value] of [["city","Berlin"],["intent","Sell"],["category","House"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["bedrooms-min","1"],["bathrooms-min","1"],["year-min"," 2000 "],["year-max","2020"],["parking-min","0"],["parking-max","2"]]) if (id === "intent") chooseIntents(app, [value]); else app.get(`filter-${id}`).value=value;
+  for(const [id,value] of [["city","Berlin"],["intent","Sell"],["category","House"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["bedrooms-min","1"],["bathrooms-min","1"],["year-min"," 2000 "],["year-max","2020"],["parking-min","0"],["parking-max","2"]]) setFilterValue(app, id, value);
   await app.submit();
   const params=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
   assert.deepEqual(Object.fromEntries(params),{city:"Berlin",transactionIntent:"Sell",propertyCategory:"House",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",bedroomCountMin:"1",bathroomCountMin:"1",constructionYearMin:"2000",constructionYearMax:"2020",parkingSpaceCountMin:"0",parkingSpaceCountMax:"2"});
@@ -1074,7 +1081,7 @@ test("loading prevents submitting or clearing year and parking edits", async () 
 test("furnishing filter sends each supported quality and omits Any quality", async () => {
   for(const quality of ["","Simple","Normal","Upscale","Luxury"]) {
     const app=await createApp([response(1,false),response(1,false)]);
-    app.get("filter-furnishing").value=quality;
+    chooseQualities(app, [quality]);
     await app.submit();
     assert.equal(app.requests.at(-1),quality?`${endpoint}?furnishingQuality=${quality}`:endpoint);
   }
@@ -1082,7 +1089,7 @@ test("furnishing filter sends each supported quality and omits Any quality", asy
 
 test("furnishing combines with existing filters and resets page coordinates", async () => {
   const app=await createApp([response(3,false),response(1,false)],"?page=3&pageSize=5");
-  for(const [id,value] of [["city","Berlin"],["intent","Sell"],["category","House"],["furnishing","Luxury"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) if (id === "intent") chooseIntents(app, [value]); else app.get(`filter-${id}`).value=value;
+  for(const [id,value] of [["city","Berlin"],["intent","Sell"],["category","House"],["furnishing","Luxury"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) setFilterValue(app, id, value);
   await app.submit();
   const query=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
   assert.deepEqual(Object.fromEntries(query),{city:"Berlin",transactionIntent:"Sell",propertyCategory:"House",furnishingQuality:"Luxury",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0",pageSize:"5"});
@@ -1091,7 +1098,7 @@ test("furnishing combines with existing filters and resets page coordinates", as
 test("furnishing bookmark reload and details restore the applied quality", async () => {
   const query="city=Berlin&furnishingQuality=Upscale&page=2&pageSize=5";
   const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
-  assert.equal(app.get("filter-furnishing").value,"Upscale");
+  assert.equal((selectedQualities(app)[0] ?? ""),"Upscale");
   const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(detailLink.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],detailLink.search);
@@ -1099,14 +1106,14 @@ test("furnishing bookmark reload and details restore the applied quality", async
   assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
-  assert.equal(reload.get("filter-furnishing").value,"Upscale");
+  assert.equal((selectedQualities(reload)[0] ?? ""),"Upscale");
 });
 
 test("furnishing navigation Retry and Refresh preserve applied choice over edits", async () => {
   const filters="furnishingQuality=Normal&pageSize=1";
   const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
   const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
-  app.get("filter-furnishing").value="Luxury";
+  chooseQualities(app, ["Luxury"]);
   await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
   assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);
   assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
@@ -1116,7 +1123,7 @@ test("Clear resets furnishing and other filters and dismisses validation", async
   const app=await createApp([response(1,false),response(1,false)],"?furnishingQuality=Luxury&constructionYearMin=0");
   await app.submit();assert.equal(app.get("filter-error").hidden,false);
   await app.click("clear-filters");
-  assert.equal(app.get("filter-furnishing").value,"");
+  assert.equal((selectedQualities(app)[0] ?? ""),"");
   assert.equal(app.get("filter-year-min").value,"");
   assert.equal(app.get("filter-error").hidden,true);
   assert.equal(app.requests.at(-1),endpoint);
@@ -1126,11 +1133,11 @@ test("Clear resets furnishing and other filters and dismisses validation", async
 test("loading blocks furnishing submission and Clear", async () => {
   let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
   const app=await createApp([response(1,false),()=>pending]);
-  app.get("filter-furnishing").value="Simple";
+  chooseQualities(app, ["Simple"]);
   const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);
-  app.get("filter-furnishing").value="Luxury";
+  chooseQualities(app, ["Luxury"]);
   await app.submit();await app.click("clear-filters");
-  assert.equal(app.get("filter-furnishing").value,"Luxury");
+  assert.equal((selectedQualities(app)[0] ?? ""),"Luxury");
   assert.deepEqual(app.requests,[endpoint,`${endpoint}?furnishingQuality=Simple`]);
   resolveResponse(response(1,false));await loading;
   assert.equal(app.get("listing-filter-fields").disabled,false);
@@ -1148,25 +1155,25 @@ test("malformed bookmarked furnishing value remains subject to API validation", 
 test("commercial filter sends all supported subtypes and omits the blank choice", async () => {
   for(const subtype of ["","OfficeOrPractice","RestaurantOrHotel","HallOrProduction","Retail","CommercialPlot"]) {
     const app=await createApp([response(1,false),response(1,false)]);
-    app.get("filter-commercial").value=subtype;await app.submit();
+    chooseCommercialTypes(app, [subtype]);await app.submit();
     assert.equal(app.requests.at(-1),subtype?`${endpoint}?commercialSubtype=${subtype}`:endpoint);
-    assert.equal(app.get("filter-category").value,"");
+    assert.equal((selectedCategories(app)[0] ?? ""),"");
   }
 });
 
 test("commercial subtype combines with the chosen category and previous filters", async () => {
   const app=await createApp([response(3,false),response(1,false)],"?page=3&pageSize=5");
-  for(const [id,value] of [["city","Berlin"],["intent","Rent"],["category","CommercialProperty"],["commercial","OfficeOrPractice"],["furnishing","Upscale"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) if (id === "intent") chooseIntents(app, [value]); else app.get(`filter-${id}`).value=value;
+  for(const [id,value] of [["city","Berlin"],["intent","Rent"],["category","CommercialProperty"],["commercial","OfficeOrPractice"],["furnishing","Upscale"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) setFilterValue(app, id, value);
   await app.submit();
   assert.deepEqual(Object.fromEntries(new URL(app.requests.at(-1),"https://diyarak.example").searchParams),{city:"Berlin",transactionIntent:"Rent",propertyCategory:"CommercialProperty",commercialSubtype:"OfficeOrPractice",furnishingQuality:"Upscale",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0",pageSize:"5"});
 });
 
 test("commercial subtype respects a different category and handles empty results", async () => {
   const app=await createApp([response(1,false),response(1,false,null,[])]);
-  app.get("filter-category").value="Apartment";app.get("filter-commercial").value="Retail";
+  chooseCategories(app, ["Apartment"]);chooseCommercialTypes(app, ["Retail"]);
   await app.submit();
   assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&commercialSubtype=Retail`);
-  assert.equal(app.get("filter-category").value,"Apartment");
+  assert.equal((selectedCategories(app)[0] ?? ""),"Apartment");
   assert.equal(app.get("status").dataset.state,"ready");
   assert.match(app.get("status").textContent,/No public listings/);
 });
@@ -1174,7 +1181,7 @@ test("commercial subtype respects a different category and handles empty results
 test("commercial bookmarks reload and details return to the same subtype search", async () => {
   const query="city=Berlin&commercialSubtype=CommercialPlot&page=2&pageSize=5";
   const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
-  assert.equal(app.get("filter-commercial").value,"CommercialPlot");
+  assert.equal((selectedCommercialTypes(app)[0] ?? ""),"CommercialPlot");
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],anchor.search);
@@ -1182,14 +1189,14 @@ test("commercial bookmarks reload and details return to the same subtype search"
   assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
-  assert.equal(reload.get("filter-commercial").value,"CommercialPlot");
+  assert.equal((selectedCommercialTypes(reload)[0] ?? ""),"CommercialPlot");
 });
 
 test("commercial pagination Retry and Refresh preserve applied subtype over edits", async () => {
   const filters="commercialSubtype=HallOrProduction&pageSize=1";
   const next=`${endpoint}?${filters}&page=2`,prev=`${endpoint}?${filters}&page=1`;
   const app=await createApp([response(1,true,link(next,"next")),{ok:false,status:503},response(2,false,link(prev,"prev")),response(1,true,link(next,"next")),response(1,false)],`?${filters}&page=1`);
-  app.get("filter-commercial").value="Retail";
+  chooseCommercialTypes(app, ["Retail"]);
   await app.click("next-page");await app.click("retry-listings");await app.click("previous-page");await app.click("load-listings");
   assert.deepEqual(app.requests,[prev,next,next,prev,`${endpoint}?${filters}`]);
   assert.equal(app.historyUrls.at(-1),`./index.html?${filters}`);
@@ -1199,7 +1206,7 @@ test("Clear resets commercial subtype and dismisses other validation", async () 
   const app=await createApp([response(1,false),response(1,false)],"?commercialSubtype=Retail&constructionYearMin=0");
   await app.submit();assert.equal(app.get("filter-error").hidden,false);
   await app.click("clear-filters");
-  assert.equal(app.get("filter-commercial").value,"");assert.equal(app.get("filter-year-min").value,"");
+  assert.equal((selectedCommercialTypes(app)[0] ?? ""),"");assert.equal(app.get("filter-year-min").value,"");
   assert.equal(app.get("filter-error").hidden,true);
   assert.equal(app.requests.at(-1),endpoint);assert.equal(app.historyUrls.at(-1),"./index.html");
 });
@@ -1207,10 +1214,10 @@ test("Clear resets commercial subtype and dismisses other validation", async () 
 test("loading blocks commercial submission and Clear", async () => {
   let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
   const app=await createApp([response(1,false),()=>pending]);
-  app.get("filter-commercial").value="RestaurantOrHotel";
+  chooseCommercialTypes(app, ["RestaurantOrHotel"]);
   const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);
-  app.get("filter-commercial").value="Retail";await app.submit();await app.click("clear-filters");
-  assert.equal(app.get("filter-commercial").value,"Retail");
+  chooseCommercialTypes(app, ["Retail"]);await app.submit();await app.click("clear-filters");
+  assert.equal((selectedCommercialTypes(app)[0] ?? ""),"Retail");
   assert.deepEqual(app.requests,[endpoint,`${endpoint}?commercialSubtype=RestaurantOrHotel`]);
   resolveResponse(response(1,false));await loading;
   assert.equal(app.get("listing-filter-fields").disabled,false);
@@ -1237,7 +1244,7 @@ test("postal submit preserves leading zeros, letters, spaces and literal special
 test("blank postal values omit the parameter and combine with previous filters", async () => {
   const app=await createApp([response(3,false),response(1,false),response(1,false)],"?page=3&pageSize=5");
   app.get("filter-postal").value="  ";await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?pageSize=5`);
-  for(const [id,value] of [["city","Berlin"],["postal"," 00123 "],["intent","Rent"],["category","CommercialProperty"],["commercial","Retail"],["furnishing","Normal"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) if (id === "intent") chooseIntents(app, [value]); else app.get(`filter-${id}`).value=value;
+  for(const [id,value] of [["city","Berlin"],["postal"," 00123 "],["intent","Rent"],["category","CommercialProperty"],["commercial","Retail"],["furnishing","Normal"],["price-min","100"],["price-currency","EUR"],["area-min","50"],["area-unit","SquareMeter"],["rooms-min","2.5"],["year-min","2000"],["parking-min","0"]]) setFilterValue(app, id, value);
   await app.submit();
   assert.deepEqual(Object.fromEntries(new URL(app.requests.at(-1),"https://diyarak.example").searchParams),{city:"Berlin",postalCode:"00123",transactionIntent:"Rent",propertyCategory:"CommercialProperty",commercialSubtype:"Retail",furnishingQuality:"Normal",priceMin:"100",priceCurrency:"EUR",livingAreaMin:"50",livingAreaUnit:"SquareMeter",totalRoomsMin:"2.5",constructionYearMin:"2000",parkingSpaceCountMin:"0",pageSize:"5"});
 });
@@ -1310,7 +1317,7 @@ test("feature checkboxes support every domain value and omit unchecked choices",
 test("multiple features use repeated parameters and combine with existing filters", async () => {
   const app=await createApp([response(3,false),response(1,false)],"?page=3&pageSize=5");
   app.get("filter-city").value="Berlin";app.get("filter-postal").value="00123";
-  app.get("filter-category").value="House";app.get("filter-price-min").value="100";app.get("filter-price-currency").value="EUR";
+  chooseCategories(app, ["House"]);app.get("filter-price-min").value="100";app.get("filter-price-currency").value="EUR";
   for(const value of ["Elevator","GardenOrSharedGardenUse","StepFreeAccess"]) app.get(`filter-feature-${value}`).checked=true;
   await app.submit();
   const q=new URL(app.requests.at(-1),"https://diyarak.example").searchParams;
@@ -1856,6 +1863,16 @@ test("correcting a precise inverted range clears its validation error", async ()
   assert.equal(app.requests.at(-1),`${endpoint}?totalRoomsMin=2.0000000000000000000000000001&totalRoomsMax=2.0000000000000000000000000002`);
 });
 
+function setFilterValue(app, id, value) {
+  const choices = { intent: chooseIntents, category: chooseCategories,
+    commercial: chooseCommercialTypes, furnishing: chooseQualities };
+  if (choices[id]) {
+    choices[id](app, [value]);
+  } else {
+    app.get(`filter-${id}`).value = value;
+  }
+}
+
 function chooseIntents(app, values) {
   for (const value of ["Rent", "Sell", "RentForLimitedPeriod"]) {
     app.get(`filter-intent-${value}`).checked = values.includes(value);
@@ -1925,8 +1942,14 @@ test("page jump preserves repeated intent search and invalid numeric filters lea
   app.get("page-jump-input").value="3";await app.jump();assert.equal(app.requests.at(-1),`${endpoint}?${query}&page=3`);
 });
 
-function chooseCategories(app,values) {
-  for(const option of app.get("filter-category").options) option.selected=values.includes(option.value);
+function chooseCategories(app, values) {
+  for (const value of ["Apartment", "House", "Plot", "InvestmentProperty", "GarageOrParkingSpace", "CommercialProperty"]) {
+    app.get(`filter-category-${value}`).checked = values.includes(value);
+  }
+}
+
+function selectedCategories(app) {
+  return ["Apartment", "House", "Plot", "InvestmentProperty", "GarageOrParkingSpace", "CommercialProperty"].filter(value => app.get(`filter-category-${value}`).checked);
 }
 
 test("multiple categories combine with repeated intents features and page size", async () => {
@@ -1942,11 +1965,11 @@ test("multiple categories combine with repeated intents features and page size",
 test("category bookmarks restore all selections and preserve detail return and reload", async () => {
   const query="propertyCategory=CommercialProperty&propertyCategory=Plot&page=2&pageSize=5";
   const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
-  assert.deepEqual(app.get("filter-category").selectedOptions.map(o=>o.value),["Plot","CommercialProperty"]);
+  assert.deepEqual(selectedCategories(app),["Plot","CommercialProperty"]);
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
   assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
-  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(reload.get("filter-category").selectedOptions.map(o=>o.value),["Plot","CommercialProperty"]);
+  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(selectedCategories(reload),["Plot","CommercialProperty"]);
 });
 
 test("all categories single choices and empty selection retain supported API behavior", async () => {
@@ -1968,26 +1991,32 @@ test("Clear resets all categories and loading blocks repeated-category submissio
   let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
   const app=await createApp([response(1,false),()=>pending,response(1,false)]);chooseCategories(app,["Apartment","House"]);
   const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);await app.submit();await app.click("clear-filters");assert.equal(app.requests.length,2);
-  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(app.get("filter-category").selectedOptions,[]);assert.equal(app.requests.at(-1),endpoint);
+  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(selectedCategories(app),[]);assert.equal(app.requests.at(-1),endpoint);
 });
 
 test("unknown and duplicate categories remain API-validated and Apply sends supported choices once", async () => {
   const query="propertyCategory=Unknown&propertyCategory=House&propertyCategory=House";
   const app=await createApp([{ok:false,status:400},{ok:false,status:400},response(1,false)],`?${query}`);
-  assert.deepEqual(app.get("filter-category").selectedOptions.map(o=>o.value),["House"]);await app.click("retry-listings");
+  assert.deepEqual(selectedCategories(app),["House"]);await app.click("retry-listings");
   assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=House`);
 });
 
 test("commercial subtype retains category choices and handles an empty intersection", async () => {
   const app=await createApp([response(1,false),response(1,false),response(1,false,null,[])]);
-  chooseCategories(app,["Apartment","CommercialProperty"]);app.get("filter-commercial").value="Retail";await app.submit();
+  chooseCategories(app,["Apartment","CommercialProperty"]);chooseCommercialTypes(app, ["Retail"]);await app.submit();
   assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=CommercialProperty&commercialSubtype=Retail`);
   chooseCategories(app,["Apartment","House"]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=House&commercialSubtype=Retail`);
   assert.equal(app.get("status").dataset.state,"ready");assert.match(app.get("status").textContent,/No public listings/);
 });
 
-function chooseQualities(app,values) {
-  for(const option of app.get("filter-furnishing").options) option.selected=values.includes(option.value);
+function chooseQualities(app, values) {
+  for (const value of ["Simple", "Normal", "Upscale", "Luxury"]) {
+    app.get(`filter-furnishing-${value}`).checked = values.includes(value);
+  }
+}
+
+function selectedQualities(app) {
+  return ["Simple", "Normal", "Upscale", "Luxury"].filter(value => app.get(`filter-furnishing-${value}`).checked);
 }
 
 test("multiple furnishing qualities combine with repeated intents categories and features", async () => {
@@ -2002,11 +2031,11 @@ test("multiple furnishing qualities combine with repeated intents categories and
 test("furnishing bookmarks restore all choices and preserve detail return and reload", async () => {
   const query="furnishingQuality=Luxury&furnishingQuality=Simple&page=2&pageSize=5";
   const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
-  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Simple","Luxury"]);
+  assert.deepEqual(selectedQualities(app),["Simple","Luxury"]);
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
   assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
-  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(reload.get("filter-furnishing").selectedOptions.map(o=>o.value),["Simple","Luxury"]);
+  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(selectedQualities(reload),["Simple","Luxury"]);
 });
 
 test("all qualities single choices and empty selection use the supported API contract", async () => {
@@ -2028,13 +2057,13 @@ test("Clear resets quality choices and loading blocks multiple-quality submissio
   let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
   const app=await createApp([response(1,false),()=>pending,response(1,false)]);chooseQualities(app,["Normal","Luxury"]);
   const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);await app.submit();await app.click("clear-filters");assert.equal(app.requests.length,2);
-  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(app.get("filter-furnishing").selectedOptions,[]);assert.equal(app.requests.at(-1),endpoint);
+  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(selectedQualities(app),[]);assert.equal(app.requests.at(-1),endpoint);
 });
 
 test("unknown and duplicate qualities remain API-validated and Apply sends supported choices once", async () => {
   const query="furnishingQuality=Unknown&furnishingQuality=Normal&furnishingQuality=Normal";
   const app=await createApp([{ok:false,status:400},{ok:false,status:400},response(1,false)],`?${query}`);
-  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Normal"]);await app.click("retry-listings");
+  assert.deepEqual(selectedQualities(app),["Normal"]);await app.click("retry-listings");
   assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?furnishingQuality=Normal`);
 });
 
@@ -2042,12 +2071,18 @@ test("invalid numeric input leaves multiple furnishing selections and applied re
   const app=await createApp([response(1,false)],"?furnishingQuality=Simple&furnishingQuality=Normal");
   chooseQualities(app,["Upscale","Luxury"]);app.get("filter-year-min").value="0";await app.submit();
   assert.equal(app.requests.length,1);assert.equal(app.get("listing-grid").children.length,1);
-  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Upscale","Luxury"]);
+  assert.deepEqual(selectedQualities(app),["Upscale","Luxury"]);
   assert.equal(app.get("applied-filter-summary").textContent,"Search filters: Furnishing: Simple, Normal");
 });
 
-function chooseCommercialTypes(app,values) {
-  for(const option of app.get("filter-commercial").options) option.selected=values.includes(option.value);
+function chooseCommercialTypes(app, values) {
+  for (const value of ["OfficeOrPractice", "RestaurantOrHotel", "HallOrProduction", "Retail", "CommercialPlot"]) {
+    app.get(`filter-commercial-${value}`).checked = values.includes(value);
+  }
+}
+
+function selectedCommercialTypes(app) {
+  return ["OfficeOrPractice", "RestaurantOrHotel", "HallOrProduction", "Retail", "CommercialPlot"].filter(value => app.get(`filter-commercial-${value}`).checked);
 }
 
 test("multiple commercial types combine with other multiple-choice filters and size", async () => {
@@ -2062,11 +2097,11 @@ test("multiple commercial types combine with other multiple-choice filters and s
 test("commercial bookmarks restore every selected subtype through reload and detail return", async () => {
   const query="commercialSubtype=Retail&commercialSubtype=OfficeOrPractice&page=2&pageSize=5";
   const app=await createApp([response(2,false,null,[{listingId}])],`?${query}`);
-  assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
+  assert.deepEqual(selectedCommercialTypes(app),["OfficeOrPractice","Retail"]);
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
   assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
-  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(reload.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
+  const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(selectedCommercialTypes(reload),["OfficeOrPractice","Retail"]);
 });
 
 test("all commercial types single choices and no choices follow repeated-parameter contract", async () => {
@@ -2088,13 +2123,13 @@ test("Clear resets commercial types and loading blocks multiple-subtype submissi
   let resolveResponse;const pending=new Promise(resolve=>{resolveResponse=resolve;});
   const app=await createApp([response(1,false),()=>pending,response(1,false)]);chooseCommercialTypes(app,["OfficeOrPractice","Retail"]);
   const loading=app.submit();assert.equal(app.get("listing-filter-fields").disabled,true);await app.submit();await app.click("clear-filters");assert.equal(app.requests.length,2);
-  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(app.get("filter-commercial").selectedOptions,[]);assert.equal(app.requests.at(-1),endpoint);
+  resolveResponse(response(1,false));await loading;await app.click("clear-filters");assert.deepEqual(selectedCommercialTypes(app),[]);assert.equal(app.requests.at(-1),endpoint);
 });
 
 test("unknown and duplicate subtypes remain API-validated and Apply sends supported values once", async () => {
   const query="commercialSubtype=Unknown&commercialSubtype=Retail&commercialSubtype=Retail";
   const app=await createApp([{ok:false,status:400},{ok:false,status:400},response(1,false)],`?${query}`);
-  assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["Retail"]);await app.click("retry-listings");
+  assert.deepEqual(selectedCommercialTypes(app),["Retail"]);await app.click("retry-listings");
   assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);await app.submit();assert.equal(app.requests.at(-1),`${endpoint}?commercialSubtype=Retail`);
 });
 
@@ -2103,7 +2138,7 @@ test("multiple commercial types retain category intersection semantics and empty
   chooseCommercialTypes(app,["OfficeOrPractice","Retail"]);chooseCategories(app,["Apartment","CommercialProperty"]);await app.submit();
   assert.equal(app.requests.at(-1),`${endpoint}?propertyCategory=Apartment&propertyCategory=CommercialProperty&commercialSubtype=OfficeOrPractice&commercialSubtype=Retail`);
   chooseCategories(app,["Apartment","House"]);await app.submit();assert.equal(app.get("status").dataset.state,"ready");assert.match(app.get("status").textContent,/No public listings/);
-  assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
+  assert.deepEqual(selectedCommercialTypes(app),["OfficeOrPractice","Retail"]);
 });
 
 test("Restore returns all scalar and multiple-choice fields to requested search without fetching", async () => {
@@ -2116,9 +2151,9 @@ test("Restore returns all scalar and multiple-choice fields to requested search 
   await app.click("restore-filters");const params=new URLSearchParams(query);
   for(const [control,key] of fields) assert.equal(app.get(`filter-${control}`).value,params.get(key));
   assert.deepEqual(selectedIntents(app),["Rent","Sell"]);
-  assert.deepEqual(app.get("filter-category").selectedOptions.map(o=>o.value),["Apartment","CommercialProperty"]);
-  assert.deepEqual(app.get("filter-commercial").selectedOptions.map(o=>o.value),["OfficeOrPractice","Retail"]);
-  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Normal","Luxury"]);
+  assert.deepEqual(selectedCategories(app),["Apartment","CommercialProperty"]);
+  assert.deepEqual(selectedCommercialTypes(app),["OfficeOrPractice","Retail"]);
+  assert.deepEqual(selectedQualities(app),["Normal","Luxury"]);
   for(const feature of featureValues) assert.equal(app.get(`filter-feature-${feature}`).checked,["Elevator","Basement"].includes(feature));
   assert.deepEqual(app.requests,[`${endpoint}?${query}`]);assert.deepEqual(app.historyUrls,[`./index.html?${query}`]);
   assert.equal(app.get("applied-filter-summary").textContent,summary);assert.equal(app.get("current-page").textContent,"Page 3");
@@ -2144,7 +2179,7 @@ test("Restore after failure preserves Retry and restores failed search values", 
   const query="city=Berlin&furnishingQuality=Normal&pageSize=7&page=3";
   const app=await createApp([{ok:false,status:503},response(3,false)],`?${query}`);app.get("filter-city").value="Paris";
   chooseQualities(app,["Luxury"]);await app.click("restore-filters");assert.equal(app.get("filter-city").value,"Berlin");
-  assert.deepEqual(app.get("filter-furnishing").selectedOptions.map(o=>o.value),["Normal"]);assert.equal(app.get("retry-listings").hidden,false);
+  assert.deepEqual(selectedQualities(app),["Normal"]);assert.equal(app.get("retry-listings").hidden,false);
   await app.click("retry-listings");assert.deepEqual(app.requests,[`${endpoint}?${query}`,`${endpoint}?${query}`]);
 });
 
@@ -2162,7 +2197,7 @@ test("Restore after Clear resets drafts to unfiltered default and Apply restored
   app.get("filter-city").value="Paris";await app.click("restore-filters");await app.submit();
   assert.equal(app.requests.at(-1),`${endpoint}?city=Berlin&pageSize=7`);
   await app.click("clear-filters");app.get("filter-city").value="Paris";chooseCategories(app,["House"]);await app.click("restore-filters");
-  assert.equal(app.get("filter-city").value,"");assert.deepEqual(app.get("filter-category").selectedOptions,[]);assert.equal(app.get("filter-page-size").value,"");
+  assert.equal(app.get("filter-city").value,"");assert.deepEqual(selectedCategories(app),[]);assert.equal(app.get("filter-page-size").value,"");
   assert.equal(app.requests.length,3);assert.equal(app.historyUrls.at(-1),"./index.html");
 });
 
@@ -2418,8 +2453,8 @@ test("history restores repeated filters and size and Refresh uses their first pa
   await app.click("clear-filters");
   await app.back();
   assert.deepEqual(selectedIntents(app), ["Rent", "Sell"]);
-  assert.equal(app.get("filter-category").value, "House");
-  assert.equal(app.get("filter-furnishing").value, "Luxury");
+  assert.equal((selectedCategories(app)[0] ?? ""), "House");
+  assert.equal((selectedQualities(app)[0] ?? ""), "Luxury");
   assert.equal(app.get("filter-feature-Elevator").checked, true);
   assert.equal(app.get("filter-page-size").value, "5");
   assert.equal(app.get("page-jump-input").value, "4");
