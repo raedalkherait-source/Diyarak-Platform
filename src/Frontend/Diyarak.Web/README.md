@@ -544,3 +544,15 @@ based on another group, including category/commercial-type intersections.
 
 Bookmarks, draft detection, Restore/Clear, removal buttons, Copy search link,
 browser Back/Forward and detail return links retain their existing behavior.
+
+## Pagination below results
+
+Previous/Next controls and the current page are available above and below the
+listing cards. Both sets use the same validated server links, applied filters
+and page size, and remain synchronized during loading, errors, Retry and
+browser history navigation. Draft edits are not applied by either set.
+
+The lower navigation has its own accessible landmark name. Only the original
+page indicator announces live updates, avoiding duplicate page announcements.
+Both sets are hidden on details and disabled when their links are unavailable.
+An empty later page can still use its valid previous link from either set.

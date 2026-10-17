@@ -58,12 +58,16 @@ const loadButton = document.querySelector("#load-listings");
 const retryButton = document.querySelector("#retry-listings");
 const previousButton = document.querySelector("#previous-page");
 const nextButton = document.querySelector("#next-page");
+const previousButtons = [previousButton, document.querySelector("#previous-page-bottom")];
+const nextButtons = [nextButton, document.querySelector("#next-page-bottom")];
 const pageJumpForm = document.querySelector("#page-jump-form");
 const pageJumpFields = document.querySelector("#page-jump-fields");
 const pageJumpInput = document.querySelector("#page-jump-input");
 const pageJumpError = document.querySelector("#page-jump-error");
 const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
+const pageElements = [pageElement, document.querySelector("#current-page-bottom")];
+const paginationElements = [paginationElement, document.querySelector("#listing-pagination-bottom")];
 const filterSummary = document.querySelector("#applied-filter-summary");
 const filterRemovalActions = document.querySelector("#filter-removal-actions");
 const editFiltersButton = document.querySelector("#edit-search-filters");
@@ -151,17 +155,21 @@ retryButton.addEventListener("click", async () => {
   await loadSelectedView(requestedUrl);
 });
 
-previousButton.addEventListener("click", async () => {
-  if (previousUrl) {
-    await loadPublicListings(previousUrl, "push");
-  }
-});
+for (const button of previousButtons) {
+  button.addEventListener("click", async () => {
+    if (previousUrl) {
+      await loadPublicListings(previousUrl, "push");
+    }
+  });
+}
 
-nextButton.addEventListener("click", async () => {
-  if (nextUrl) {
-    await loadPublicListings(nextUrl, "push");
-  }
-});
+for (const button of nextButtons) {
+  button.addEventListener("click", async () => {
+    if (nextUrl) {
+      await loadPublicListings(nextUrl, "push");
+    }
+  });
+}
 
 pageJumpForm.addEventListener("submit", async event => {
   event.preventDefault();
@@ -294,7 +302,9 @@ copySearchButton.hidden = isDetailView;
 filterPanel.hidden = isDetailView;
 filterForm.hidden = isDetailView;
 pageJumpForm.hidden = isDetailView;
-paginationElement.hidden = isDetailView;
+for (const pagination of paginationElements) {
+  pagination.hidden = isDetailView;
+}
 backLink.hidden = !isDetailView;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
@@ -774,7 +784,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace") 
   isLoading = true;
   previousUrl = null;
   nextUrl = null;
-  pageElement.textContent = "";
+  setCurrentPageLabel("");
   updatePagination();
   setLoadingState();
   gridElement.replaceChildren();
@@ -795,7 +805,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace") 
     const linkHeader = response.headers.get("Link");
     previousUrl = getPageLink(linkHeader, "prev");
     nextUrl = payload.hasMore === true ? getPageLink(linkHeader, "next") : null;
-    pageElement.textContent = `Page ${payload.page}`;
+    setCurrentPageLabel(`Page ${payload.page}`);
     pageJumpInput.value = String(payload.page);
 
     if (items.length === 0) {
@@ -820,7 +830,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace") 
     }
     previousUrl = null;
     nextUrl = null;
-    pageElement.textContent = "";
+    setCurrentPageLabel("");
     setErrorState(publicRequestError(error));
   } finally {
     isLoading = false;
@@ -852,6 +862,12 @@ function getPageLink(header, relation) {
   return null;
 }
 
+function setCurrentPageLabel(value) {
+  for (const element of pageElements) {
+    element.textContent = value;
+  }
+}
+
 function updatePagination() {
   for (const button of filterRemovalButtons) {
     button.disabled = isLoading;
@@ -860,8 +876,12 @@ function updatePagination() {
   copySearchButton.disabled = isLoading || isCopyingSearchLink;
   pageJumpFields.disabled = isLoading;
   filterFields.disabled = isLoading;
-  previousButton.disabled = isLoading || !previousUrl;
-  nextButton.disabled = isLoading || !nextUrl;
+  for (const button of previousButtons) {
+    button.disabled = isLoading || !previousUrl;
+  }
+  for (const button of nextButtons) {
+    button.disabled = isLoading || !nextUrl;
+  }
 }
 
 function createListingCard(listing, showDetails = false) {

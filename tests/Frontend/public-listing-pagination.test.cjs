@@ -37,7 +37,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   }
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
-    "listing-pagination", "listing-heading", "back-to-listings",
+    "listing-pagination", "listing-pagination-bottom", "previous-page-bottom", "next-page-bottom", "current-page-bottom", "listing-heading", "back-to-listings",
     "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "search-link-status", "filter-removal-actions"]) {
     elements.set(`#${id}`, element());
   }
@@ -2691,4 +2691,97 @@ test("partial range bookmarks can be removed without leaving currency or unit ke
     assert.equal(app.requests.at(-1), endpoint);
     assert.equal(app.get("filter-removal-actions").hidden, true);
   }
+});
+
+function assertPaginationSynchronized(app) {
+  assert.equal(app.get("current-page-bottom").textContent, app.get("current-page").textContent);
+  assert.equal(app.get("previous-page-bottom").disabled, app.get("previous-page").disabled);
+  assert.equal(app.get("next-page-bottom").disabled, app.get("next-page").disabled);
+}
+
+test("top and bottom pagination share server links and applied filters across pages", async () => {
+  const first = `${endpoint}?city=Berlin&page=1&pageSize=1`;
+  const second = `${endpoint}?city=Berlin&page=2&pageSize=1`;
+  const third = `${endpoint}?city=Berlin&page=3&pageSize=1`;
+  const app = await createApp([response(1, true, link(second, "next")),
+    response(2, true, `${link(first, "prev")}, ${link(third, "next")}`),
+    response(3, false, link(second, "prev")), response(2, false, link(first, "prev"))], "?city=Berlin&page=1&pageSize=1");
+  assertPaginationSynchronized(app);
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  await app.click("next-page-bottom");
+  assert.equal(app.get("current-page-bottom").textContent, "Page 2");
+  assertPaginationSynchronized(app);
+  await app.click("next-page");
+  assert.equal(app.get("current-page-bottom").textContent, "Page 3");
+  assert.equal(app.get("next-page-bottom").disabled, true);
+  assertPaginationSynchronized(app);
+  await app.click("previous-page-bottom");
+  assert.deepEqual(app.requests, [first, second, third, second]);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, false);
+  assertPaginationSynchronized(app);
+});
+
+test("both pagination sets disable during loading and recover through failure and Retry", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const first = `${endpoint}?page=1`;
+  const second = `${endpoint}?page=2`;
+  const app = await createApp([response(1, true, link(second, "next")), () => pending,
+    response(2, false, link(first, "prev"))]);
+  const loading = app.click("next-page-bottom");
+  assertPaginationSynchronized(app);
+  for (const id of ["previous-page", "next-page", "previous-page-bottom", "next-page-bottom"]) {
+    assert.equal(app.get(id).disabled, true);
+    await app.click(id);
+  }
+  assert.equal(app.requests.length, 2);
+  assert.equal(app.get("current-page-bottom").textContent, "");
+  resolveResponse({ ok: false, status: 503 });
+  await loading;
+  assert.equal(app.get("status").dataset.state, "error");
+  assertPaginationSynchronized(app);
+  assert.equal(app.get("previous-page-bottom").disabled, true);
+  assert.equal(app.get("next-page-bottom").disabled, true);
+  await app.click("retry-listings");
+  assert.equal(app.get("current-page-bottom").textContent, "Page 2");
+  assert.equal(app.get("previous-page-bottom").disabled, false);
+  assertPaginationSynchronized(app);
+  assert.deepEqual(app.requests, [endpoint, second, second]);
+});
+
+test("bottom pagination stays synchronized with history and empty later pages", async () => {
+  const second = `${endpoint}?city=Berlin&page=2`;
+  const first = `${endpoint}?city=Berlin`;
+  const app = await createApp([response(1, true, link(second, "next")),
+    response(2, false, link(first, "prev"), []), response(1, true, link(second, "next")),
+    response(2, false, link(first, "prev"), []), response(1, false)], "?city=Berlin");
+  await app.click("next-page-bottom");
+  assert.equal(app.get("listing-grid").children.length, 0);
+  assert.equal(app.get("previous-page-bottom").disabled, false);
+  assertPaginationSynchronized(app);
+  await app.back();
+  assert.equal(app.get("current-page-bottom").textContent, "Page 1");
+  assertPaginationSynchronized(app);
+  await app.forward();
+  assert.equal(app.get("current-page-bottom").textContent, "Page 2");
+  assertPaginationSynchronized(app);
+  await app.click("previous-page-bottom");
+  assert.deepEqual(app.requests, [first, second, first, second, first]);
+  assertPaginationSynchronized(app);
+});
+
+test("bottom controls remain disabled without server links and hidden on details", async () => {
+  const app = await createApp([response(1, true)]);
+  assert.equal(app.get("listing-pagination-bottom").hidden, false);
+  assert.equal(app.get("next-page-bottom").disabled, true);
+  await app.click("next-page-bottom");
+  await app.click("previous-page-bottom");
+  assert.equal(app.requests.length, 1);
+  const detail = await createApp([detailResponse({ listingId })], detailQuery);
+  assert.equal(detail.get("listing-pagination-bottom").hidden, true);
+  await detail.click("next-page-bottom");
+  await detail.click("previous-page-bottom");
+  assert.equal(detail.requests.length, 1);
 });

@@ -85,6 +85,11 @@ public sealed class FrontendStaticContractTests
 
         Assert.Contains("aria-label=\"Listing pages\"", html);
         Assert.Contains("id=\"previous-page\"", html);
+        Assert.Contains("id=\"listing-pagination-bottom\"", html);
+        Assert.Contains("aria-label=\"Listing pages after results\"", html);
+        Assert.Contains("id=\"previous-page-bottom\"", html);
+        Assert.Contains("id=\"current-page-bottom\"", html);
+        Assert.Contains("id=\"next-page-bottom\"", html);
         Assert.Contains("id=\"next-page\"", html);
         Assert.Contains("id=\"current-page\"", html);
     }
