@@ -571,3 +571,20 @@ restoration and browser Back/Forward retain their existing focus behavior.
 History traversal that cancels an in-flight page request does not let that
 superseded request move focus. Invalid page jumps still focus their validation
 message and do not make a request.
+
+## Browser tab titles
+
+Collection titles identify public listings, the applied city/postal code when
+present, and page numbers above one. They follow page navigation, validated
+response pages, browser history and filter removal. Unapplied form edits do
+not change the title. Empty/failed searches retain their search context.
+
+Detail titles use the loaded headline and public city/postal code. Missing
+headlines fall back to Listing details. Invalid, unavailable and failed detail
+requests have distinct fallback titles; refreshing a detail clears its old
+headline until the new request completes. The brand suffix is always Diyarak.
+
+Values are assigned through document.title as text. Display values have
+collapsed whitespace and a limit of 80 Unicode code points per field; this
+does not alter filters, URLs, API requests or rendered listing fields. The
+static HTML title remains the fallback before JavaScript runs.

@@ -470,6 +470,30 @@ function renderFilterRemovalActions(query) {
   filterRemovalActions.hidden = isDetailView || filterRemovalButtons.length === 0;
 }
 
+function browserTitleText(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const text = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+  return Array.from(text).slice(0, 80).join("");
+}
+
+function updateCollectionTitle(query, responsePage = null) {
+  const parts = ["Public listings", browserTitleText(query.get("city")), browserTitleText(query.get("postalCode"))];
+  const page = responsePage ?? Number(query.get("page") ?? "1");
+  if (Number.isInteger(page) && page > 1 && page <= 2147483647) {
+    parts.push(`Page ${page}`);
+  }
+  document.title = `${parts.filter(Boolean).join(" – ")} | Diyarak`;
+}
+
+function updateListingTitle(listing) {
+  const headline = browserTitleText(listing.headline) || "Listing details";
+  const location = [browserTitleText(listing.property?.location?.city), browserTitleText(listing.property?.location?.postalCode)]
+    .filter(Boolean).join(", ");
+  document.title = `${[headline, location].filter(Boolean).join(" – ")} | Diyarak`;
+}
+
 function collectionRequestUrl(query) {
   const search = query.toString();
   return search ? `${collectionUrl}?${search}` : collectionUrl;
@@ -726,8 +750,10 @@ async function loadPublicListing() {
     return;
   }
 
+  document.title = "Listing details | Diyarak";
   gridElement.replaceChildren();
   if (!isListingId(selectedListingId)) {
+    document.title = "Invalid listing link | Diyarak";
     setReadyState("Invalid listing link. Return to public listings.");
     loadButton.disabled = true;
     return;
@@ -739,10 +765,12 @@ async function loadPublicListing() {
   try {
     const { response, payload: listing } = await fetchPublicResource(`${collectionUrl}/${encodeURIComponent(selectedListingId)}`);
     if (response.status === 404) {
+      document.title = "Listing not found | Diyarak";
       setReadyState("Listing not found or no longer public.");
       return;
     }
     if (!response.ok) {
+      document.title = "Unable to load listing | Diyarak";
       setErrorState(`Unable to load listing. HTTP ${response.status}.`);
       return;
     }
@@ -752,8 +780,10 @@ async function loadPublicListing() {
       throw invalidPublicResponse();
     }
     gridElement.append(createListingCard(listing, true));
+    updateListingTitle(listing);
     setReadyState("Listing details loaded.");
   } catch (error) {
+    document.title = "Unable to load listing | Diyarak";
     setErrorState(publicRequestError(error));
   } finally {
     isLoading = false;
@@ -774,6 +804,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
   pageJumpError.hidden = true;
   pageJumpInput.value = currentSearch.get("page") ?? "1";
   filterSummary.textContent = describeAppliedFilters(currentSearch);
+  updateCollectionTitle(currentSearch);
   renderFilterRemovalActions(currentSearch);
   const currentUrlSearch = getSupportedSearch(new URLSearchParams(window.location.search));
   if (historyMode === "push" && currentSearch.toString() !== currentUrlSearch.toString()) {
@@ -806,6 +837,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
     previousUrl = getPageLink(linkHeader, "prev");
     nextUrl = payload.hasMore === true ? getPageLink(linkHeader, "next") : null;
     setCurrentPageLabel(`Page ${payload.page}`);
+    updateCollectionTitle(currentSearch, payload.page);
     pageJumpInput.value = String(payload.page);
 
     if (items.length === 0) {

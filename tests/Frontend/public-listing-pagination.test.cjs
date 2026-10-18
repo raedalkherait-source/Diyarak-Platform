@@ -87,7 +87,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
       history: { replaceState: (_state, _title, url) => recordHistory("replace", url),
         pushState: (_state, _title, url) => recordHistory("push", url) } },
     navigator: { clipboard },
-    document: { querySelector: id => elements.get(id), createElement: element },
+    document: { title: "Diyarak", querySelector: id => elements.get(id), createElement: element },
     fetch: async (url, options) => {
       requests.push(url);
       signals.push(options?.signal);
@@ -99,7 +99,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   return { requests, historyUrls, historyCalls, historyEntries, signals,
     back: () => moveHistory(-1), forward: () => moveHistory(1),
     popTo: async search => { location.search = search; await windowListeners.popstate?.(); },
-    formatters: context.formatters, get: id => elements.get(`#${id}`),
+    formatters: context.formatters, title: () => context.document.title, get: id => elements.get(`#${id}`),
     formEvent: event => elements.get("#listing-filters").listeners[event](),
     jump: () => elements.get("#page-jump-form").listeners.submit({ preventDefault() {} }),
     submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
@@ -2875,4 +2875,99 @@ test("initial load Retry Refresh and filter submissions keep existing focus beha
   const detail = await createApp([detailResponse({ listingId })], detailQuery);
   assert.equal(detail.get("listing-heading").focusCount, 0);
   assert.equal(detail.get("status").focusCount, 0);
+});
+
+test("collection tab titles show normalized search context and validated response page", async () => {
+  const app = await createApp([response(3, false)], "?city=++Berlin+%0A&postalCode=+00123+&page=4&pageSize=5");
+  assert.equal(app.title(), "Public listings – Berlin – 00123 – Page 3 | Diyarak");
+  assert.equal(app.get("current-page").textContent, "Page 3");
+  assert.equal(app.requests[0], `${endpoint}?city=++Berlin+%0A&postalCode=+00123+&page=4&pageSize=5`);
+  const empty = await createApp([response(1, false, null, [])]);
+  assert.equal(empty.title(), "Public listings | Diyarak");
+  const failed = await createApp([{ ok: false, status: 503 }], "?city=Berlin&page=2");
+  assert.equal(failed.title(), "Public listings – Berlin – Page 2 | Diyarak");
+});
+
+test("tab titles follow pagination history and group removal but ignore draft and copy actions", async () => {
+  const first = `${endpoint}?city=Berlin&postalCode=00123`;
+  const second = `${first}&page=2`;
+  const app = await createApp([response(1, true, link(second, "next")), response(2, false), response(1, false), response(1, false)],
+    "?city=Berlin&postalCode=00123");
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  await app.click("copy-search-link");
+  assert.equal(app.title(), "Public listings – Berlin – 00123 | Diyarak");
+  await app.click("next-page-bottom");
+  assert.equal(app.title(), "Public listings – Berlin – 00123 – Page 2 | Diyarak");
+  await app.back();
+  assert.equal(app.title(), "Public listings – Berlin – 00123 | Diyarak");
+  await removalButton(app, "city").listeners.click();
+  assert.equal(app.title(), "Public listings – 00123 | Diyarak");
+  assert.equal(app.requests.length, 4);
+});
+
+test("Apply and Clear update collection titles while preserving first-page conventions", async () => {
+  const app = await createApp([response(2, false), response(1, false), response(1, false)], "?city=Berlin&page=2");
+  app.get("filter-city").value = "Paris";
+  await app.submit();
+  assert.equal(app.title(), "Public listings – Paris | Diyarak");
+  await app.click("clear-filters");
+  assert.equal(app.title(), "Public listings | Diyarak");
+});
+
+test("loaded listing titles use public headline and location with safe fallbacks", async () => {
+  const listing = { listingId, headline: "  Sunny\napartment  ", property: { location: { city: " Berlin ", postalCode: "00123" } } };
+  const app = await createApp([detailResponse(listing)], detailQuery);
+  assert.equal(app.title(), "Sunny apartment – Berlin, 00123 | Diyarak");
+  const fallback = await createApp([detailResponse({ listingId, headline: null })], detailQuery);
+  assert.equal(fallback.title(), "Listing details | Diyarak");
+  const cityOnly = await createApp([detailResponse({ listingId, headline: "", property: { location: { city: "Berlin" } } })], detailQuery);
+  assert.equal(cityOnly.title(), "Listing details – Berlin | Diyarak");
+});
+
+test("detail refresh clears stale titles and unavailable invalid or failed details get fallback titles", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const app = await createApp([detailResponse({ listingId, headline: "Old headline" }), () => pending], detailQuery);
+  assert.equal(app.title(), "Old headline | Diyarak");
+  const loading = app.click("load-listings");
+  assert.equal(app.title(), "Listing details | Diyarak");
+  resolveResponse({ ok: false, status: 404 });
+  await loading;
+  assert.equal(app.title(), "Listing not found | Diyarak");
+  for (const failure of [{ ok: false, status: 503 }, new Error("offline"), detailResponse({ listingId: "invalid" })]) {
+    const failed = await createApp([failure], detailQuery);
+    assert.equal(failed.title(), "Unable to load listing | Diyarak");
+  }
+  const invalid = await createApp([], "?listingId=invalid");
+  assert.equal(invalid.title(), "Invalid listing link | Diyarak");
+  assert.equal(invalid.requests.length, 0);
+});
+
+test("titles preserve literal text and truncate long Unicode display fields without altering data", async () => {
+  const headline = "😀".repeat(100);
+  const app = await createApp([detailResponse({ listingId, headline })], detailQuery);
+  assert.equal(app.title(), `${"😀".repeat(80)} | Diyarak`);
+  assert.equal(cardOf(app).querySelector(".listing-card__headline").textContent, headline);
+  const literal = "<script>alert(1)</script>";
+  const search = `?${new URLSearchParams({ city: literal })}`;
+  const collection = await createApp([response(1, false)], search);
+  assert.equal(collection.title(), `Public listings – ${literal} | Diyarak`);
+  assert.equal(collection.requests[0], `${endpoint}${search}`);
+});
+
+test("canceled page requests cannot overwrite the title of the restored history search", async () => {
+  let resolveOld;
+  const old = new Promise(resolve => { resolveOld = resolve; });
+  const second = `${endpoint}?city=Berlin&page=2`;
+  const app = await createApp([response(1, true, link(second, "next")), () => old, response(1, false)], "?city=Berlin");
+  const loading = app.click("next-page-bottom");
+  assert.equal(app.title(), "Public listings – Berlin – Page 2 | Diyarak");
+  await app.back();
+  await loading;
+  assert.equal(app.title(), "Public listings – Berlin | Diyarak");
+  resolveOld(response(2, false));
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(app.title(), "Public listings – Berlin | Diyarak");
 });
