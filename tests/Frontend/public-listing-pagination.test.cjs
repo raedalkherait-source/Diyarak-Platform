@@ -38,7 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-pagination-bottom", "previous-page-bottom", "next-page-bottom", "current-page-bottom", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "search-link-status", "filter-removal-actions"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "copy-listing-link", "search-link-status", "filter-removal-actions"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -2970,4 +2970,117 @@ test("canceled page requests cannot overwrite the title of the restored history 
   await Promise.resolve();
   await Promise.resolve();
   assert.equal(app.title(), "Public listings – Berlin | Diyarak");
+});
+
+test("Copy listing link shares only a validated canonical identifier and preserves detail state", async () => {
+  const copies = [];
+  const query = new URLSearchParams({ listingId: listingId.toUpperCase(), returnSearch: "city=Berlin&page=3", extra: "ignored" });
+  const app = await createApp([detailResponse({ listingId, headline: "Apartment" })], `?${query}`, undefined,
+    { writeText: async value => { copies.push(value); } });
+  const card = app.get("listing-grid").children[0];
+  const title = app.title();
+  const back = app.get("back-to-listings").href;
+  assert.equal(app.get("copy-listing-link").hidden, false);
+  assert.equal(app.get("copy-listing-link").disabled, false);
+  assert.equal(app.get("copy-search-link").hidden, true);
+  assert.equal(copies.length, 0);
+  await app.click("copy-listing-link");
+  assert.deepEqual(copies, [`https://diyarak.example/app/index.html?listingId=${listingId}`]);
+  assert.equal(app.get("search-link-status").textContent, "Listing link copied.");
+  assert.equal(app.get("search-link-status").hidden, false);
+  assert.equal(app.get("search-link-status").focusCount, 0);
+  assert.equal(app.get("listing-grid").children[0], card);
+  assert.equal(app.get("back-to-listings").href, back);
+  assert.match(back, /city=Berlin&page=3/);
+  assert.equal(app.title(), title);
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.historyCalls.length, 0);
+});
+
+test("Copy listing link offers the public detail URL when clipboard is unavailable or denied", async () => {
+  for (const clipboard of [undefined, {}, { writeText: async () => { throw new Error("denied"); } }]) {
+    const app = await createApp([detailResponse({ listingId })], `${detailQuery}&returnSearch=city%3DBerlin`, undefined, clipboard);
+    await app.click("copy-listing-link");
+    assert.equal(app.get("search-link-status").textContent, `Copy this listing link manually: https://diyarak.example/app/index.html?listingId=${listingId}`);
+    assert.equal(app.get("search-link-status").hidden, false);
+    assert.equal(app.get("copy-listing-link").disabled, false);
+    assert.equal(app.requests.length, 1);
+  }
+});
+
+test("Copy listing link stays hidden for collection invalid unavailable or failed details", async () => {
+  const copies = [];
+  const clipboard = { writeText: async value => { copies.push(value); } };
+  const collection = await createApp([response(1, false)], "", undefined, clipboard);
+  assert.equal(collection.get("copy-listing-link").hidden, true);
+  await collection.click("copy-listing-link");
+  const invalid = await createApp([], "?listingId=invalid", undefined, clipboard);
+  assert.equal(invalid.get("copy-listing-link").hidden, true);
+  assert.equal(invalid.get("copy-listing-link").disabled, true);
+  await invalid.click("copy-listing-link");
+  assert.equal(invalid.requests.length, 0);
+  for (const result of [{ ok: false, status: 404 }, { ok: false, status: 503 }, new Error("offline"), detailResponse({ listingId: "invalid" })]) {
+    const app = await createApp([result], detailQuery, undefined, clipboard);
+    assert.equal(app.get("copy-listing-link").hidden, true);
+    assert.equal(app.get("copy-listing-link").disabled, true);
+    await app.click("copy-listing-link");
+    assert.equal(app.requests.length, 1);
+    assert.equal(app.get("search-link-status").hidden, true);
+  }
+  assert.equal(copies.length, 0);
+});
+
+test("pending listing copies block duplicates and cannot show stale status after refresh", async () => {
+  for (const reject of [false, true]) {
+    let finishCopy;
+    let calls = 0;
+    const pending = new Promise((resolve, rejectPromise) => { finishCopy = reject ? rejectPromise : resolve; });
+    const app = await createApp([detailResponse({ listingId }), { ok: false, status: 404 }], detailQuery, undefined,
+      { writeText: () => { calls++; return pending; } });
+    const copying = app.click("copy-listing-link");
+    assert.equal(app.get("copy-listing-link").disabled, true);
+    await app.click("copy-listing-link");
+    assert.equal(calls, 1);
+    await app.click("load-listings");
+    assert.equal(app.get("copy-listing-link").hidden, true);
+    finishCopy(reject ? new Error("denied") : undefined);
+    await copying;
+    assert.equal(app.get("search-link-status").hidden, true);
+    assert.equal(app.get("search-link-status").textContent, "");
+    assert.equal(app.get("copy-listing-link").disabled, true);
+  }
+});
+
+test("detail refresh clears copy status and hides sharing until the new response succeeds", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const copies = [];
+  const app = await createApp([detailResponse({ listingId }), () => pending], detailQuery, undefined,
+    { writeText: async value => { copies.push(value); } });
+  await app.click("copy-listing-link");
+  const loading = app.click("load-listings");
+  assert.equal(app.get("search-link-status").hidden, true);
+  assert.equal(app.get("copy-listing-link").hidden, true);
+  assert.equal(app.get("copy-listing-link").disabled, true);
+  await app.click("copy-listing-link");
+  assert.equal(copies.length, 1);
+  resolveResponse(detailResponse({ listingId }));
+  await loading;
+  assert.equal(app.get("copy-listing-link").hidden, false);
+  assert.equal(app.get("copy-listing-link").disabled, false);
+  await app.click("copy-listing-link");
+  assert.equal(copies.length, 2);
+  assert.equal(app.requests.length, 2);
+});
+
+test("successful detail Retry enables copying without another API request", async () => {
+  const copies = [];
+  const app = await createApp([{ ok: false, status: 503 }, detailResponse({ listingId })], detailQuery, undefined,
+    { writeText: async value => { copies.push(value); } });
+  await app.click("retry-listings");
+  assert.equal(app.get("copy-listing-link").hidden, false);
+  assert.equal(app.get("copy-listing-link").disabled, false);
+  await app.click("copy-listing-link");
+  assert.deepEqual(copies, [`https://diyarak.example/app/index.html?listingId=${listingId}`]);
+  assert.equal(app.requests.length, 2);
 });

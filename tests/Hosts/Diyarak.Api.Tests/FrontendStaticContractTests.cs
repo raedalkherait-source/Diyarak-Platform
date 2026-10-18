@@ -103,6 +103,8 @@ public sealed class FrontendStaticContractTests
 
         Assert.Contains("listing-card__detail-link", html);
         Assert.Contains("id=\"back-to-listings\"", html);
+        Assert.Contains("id=\"copy-listing-link\"", html);
+        Assert.Contains("Copy listing link", html);
         Assert.Contains("id=\"listing-heading\"", html);
         Assert.Contains("data-detail=\"publishingRole\"", html);
         Assert.Contains("data-detail=\"transactionIntent\"", html);

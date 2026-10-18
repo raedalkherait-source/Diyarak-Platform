@@ -72,7 +72,8 @@ const filterSummary = document.querySelector("#applied-filter-summary");
 const filterRemovalActions = document.querySelector("#filter-removal-actions");
 const editFiltersButton = document.querySelector("#edit-search-filters");
 const copySearchButton = document.querySelector("#copy-search-link");
-const searchLinkStatus = document.querySelector("#search-link-status");
+const copyListingButton = document.querySelector("#copy-listing-link");
+const linkCopyStatus = document.querySelector("#search-link-status");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
 const filterPanel = document.querySelector("#listing-filter-panel");
@@ -141,8 +142,9 @@ let previousUrl = null;
 let nextUrl = null;
 let isLoading = false;
 let appliedFilterSnapshot = null;
-let isCopyingSearchLink = false;
-let searchLinkVersion = 0;
+let isCopyingLink = false;
+let hasLoadedPublicListing = false;
+let linkCopyVersion = 0;
 let pendingHistorySearch = null;
 let cancelPublicRequest = null;
 let filterRemovalButtons = [];
@@ -190,37 +192,49 @@ pageJumpForm.addEventListener("submit", async event => {
 });
 
 copySearchButton.addEventListener("click", async () => {
-  if (isLoading || isDetailView || isCopyingSearchLink) {
+  if (isLoading || isDetailView || isCopyingLink) {
     return;
   }
-  const version = searchLinkVersion;
   const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
   const url = new URL("/app/index.html", window.location.origin);
   url.search = query.toString();
-  const link = url.href;
-  isCopyingSearchLink = true;
-  searchLinkStatus.textContent = "";
-  searchLinkStatus.hidden = true;
+  await copyPublicLink(url.href, "Search");
+});
+
+copyListingButton.addEventListener("click", async () => {
+  if (isLoading || !isDetailView || !hasLoadedPublicListing || isCopyingLink) {
+    return;
+  }
+  const url = new URL("/app/index.html", window.location.origin);
+  url.search = new URLSearchParams({ listingId: selectedListingId.toLowerCase() }).toString();
+  await copyPublicLink(url.href, "Listing");
+});
+
+async function copyPublicLink(link, label) {
+  const version = linkCopyVersion;
+  isCopyingLink = true;
+  linkCopyStatus.textContent = "";
+  linkCopyStatus.hidden = true;
   updatePagination();
   try {
     if (typeof navigator.clipboard?.writeText !== "function") {
       throw new Error("Clipboard is unavailable.");
     }
     await navigator.clipboard.writeText(link);
-    if (version === searchLinkVersion) {
-      searchLinkStatus.textContent = "Search link copied.";
-      searchLinkStatus.hidden = false;
+    if (version === linkCopyVersion) {
+      linkCopyStatus.textContent = `${label} link copied.`;
+      linkCopyStatus.hidden = false;
     }
   } catch {
-    if (version === searchLinkVersion) {
-      searchLinkStatus.textContent = `Copy this search link manually: ${link}`;
-      searchLinkStatus.hidden = false;
+    if (version === linkCopyVersion) {
+      linkCopyStatus.textContent = `Copy this ${label.toLowerCase()} link manually: ${link}`;
+      linkCopyStatus.hidden = false;
     }
   } finally {
-    isCopyingSearchLink = false;
+    isCopyingLink = false;
     updatePagination();
   }
-});
+}
 
 editFiltersButton.addEventListener("click", () => {
   if (isLoading || isDetailView) {
@@ -272,9 +286,9 @@ clearFiltersButton.addEventListener("click", async () => {
 if (!isDetailView) {
   window.addEventListener("popstate", async () => {
     pendingHistorySearch = getSupportedSearch(new URLSearchParams(window.location.search));
-    searchLinkVersion++;
-    searchLinkStatus.textContent = "";
-    searchLinkStatus.hidden = true;
+    linkCopyVersion++;
+    linkCopyStatus.textContent = "";
+    linkCopyStatus.hidden = true;
     if (isLoading) {
       cancelPublicRequest?.();
       return;
@@ -299,6 +313,7 @@ filterSummary.hidden = isDetailView;
 filterRemovalActions.hidden = true;
 editFiltersButton.hidden = isDetailView;
 copySearchButton.hidden = isDetailView;
+copyListingButton.hidden = true;
 filterPanel.hidden = isDetailView;
 filterForm.hidden = isDetailView;
 pageJumpForm.hidden = isDetailView;
@@ -751,6 +766,12 @@ async function loadPublicListing() {
   }
 
   document.title = "Listing details | Diyarak";
+  hasLoadedPublicListing = false;
+  copyListingButton.hidden = true;
+  linkCopyVersion++;
+  linkCopyStatus.textContent = "";
+  linkCopyStatus.hidden = true;
+  updatePagination();
   gridElement.replaceChildren();
   if (!isListingId(selectedListingId)) {
     document.title = "Invalid listing link | Diyarak";
@@ -782,11 +803,14 @@ async function loadPublicListing() {
     gridElement.append(createListingCard(listing, true));
     updateListingTitle(listing);
     setReadyState("Listing details loaded.");
+    hasLoadedPublicListing = true;
+    copyListingButton.hidden = false;
   } catch (error) {
     document.title = "Unable to load listing | Diyarak";
     setErrorState(publicRequestError(error));
   } finally {
     isLoading = false;
+    updatePagination();
   }
 }
 
@@ -796,9 +820,9 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
   }
 
   requestedUrl = url;
-  searchLinkVersion++;
-  searchLinkStatus.textContent = "";
-  searchLinkStatus.hidden = true;
+  linkCopyVersion++;
+  linkCopyStatus.textContent = "";
+  linkCopyStatus.hidden = true;
   const currentSearch = getSupportedSearch(new URL(url, window.location.origin).searchParams);
   pageJumpError.textContent = "";
   pageJumpError.hidden = true;
@@ -908,7 +932,8 @@ function updatePagination() {
     button.disabled = isLoading;
   }
   editFiltersButton.disabled = isLoading;
-  copySearchButton.disabled = isLoading || isCopyingSearchLink;
+  copySearchButton.disabled = isLoading || isCopyingLink;
+  copyListingButton.disabled = isLoading || isCopyingLink || !hasLoadedPublicListing;
   pageJumpFields.disabled = isLoading;
   filterFields.disabled = isLoading;
   for (const button of previousButtons) {

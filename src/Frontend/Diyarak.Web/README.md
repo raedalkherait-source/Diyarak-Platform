@@ -588,3 +588,22 @@ Values are assigned through document.title as text. Display values have
 collapsed whitespace and a limit of 80 Unicode code points per field; this
 does not alter filters, URLs, API requests or rendered listing fields. The
 static HTML title remains the fallback before JavaScript runs.
+
+## Copy a public listing link
+
+After a detail response is validated and displayed, Copy listing link shares
+an absolute frontend URL containing only the listing identifier. The identifier
+is normalized to lowercase; return-search filters and unrelated URL parameters
+are excluded. Back to listings still retains the original return search.
+
+A polite status confirms copying. Unavailable/denied clipboard access displays
+the link as text for manual copying. Copying changes no data, history, title,
+results or focus, and makes no API request. Repeated activation is blocked
+while a copy is pending. The control is hidden in collection view and until a
+detail loads successfully, including after invalid/not-found/failed requests.
+
+Refreshing details clears the copy status and hides the control until the
+new response succeeds. A copy that completes after refresh cannot display an
+outdated confirmation or fallback URL. The search-copy control keeps its
+existing collection behavior. Links may become unavailable if an advertisement
+is subsequently unpublished.
