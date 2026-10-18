@@ -73,6 +73,8 @@ const filterRemovalActions = document.querySelector("#filter-removal-actions");
 const editFiltersButton = document.querySelector("#edit-search-filters");
 const copySearchButton = document.querySelector("#copy-search-link");
 const copyListingButton = document.querySelector("#copy-listing-link");
+const printListingButton = document.querySelector("#print-listing");
+const pageShell = document.querySelector("#page-shell");
 const linkCopyStatus = document.querySelector("#search-link-status");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
@@ -210,6 +212,13 @@ copyListingButton.addEventListener("click", async () => {
   await copyPublicLink(url.href, "Listing");
 });
 
+printListingButton.addEventListener("click", () => {
+  if (isLoading || !isDetailView || !hasLoadedPublicListing) {
+    return;
+  }
+  window.print();
+});
+
 async function copyPublicLink(link, label) {
   const version = linkCopyVersion;
   isCopyingLink = true;
@@ -314,6 +323,8 @@ filterRemovalActions.hidden = true;
 editFiltersButton.hidden = isDetailView;
 copySearchButton.hidden = isDetailView;
 copyListingButton.hidden = true;
+printListingButton.hidden = true;
+pageShell.dataset.printListing = "";
 filterPanel.hidden = isDetailView;
 filterForm.hidden = isDetailView;
 pageJumpForm.hidden = isDetailView;
@@ -768,6 +779,8 @@ async function loadPublicListing() {
   document.title = "Listing details | Diyarak";
   hasLoadedPublicListing = false;
   copyListingButton.hidden = true;
+  printListingButton.hidden = true;
+  pageShell.dataset.printListing = "";
   linkCopyVersion++;
   linkCopyStatus.textContent = "";
   linkCopyStatus.hidden = true;
@@ -805,6 +818,8 @@ async function loadPublicListing() {
     setReadyState("Listing details loaded.");
     hasLoadedPublicListing = true;
     copyListingButton.hidden = false;
+    printListingButton.hidden = false;
+    pageShell.dataset.printListing = "ready";
   } catch (error) {
     document.title = "Unable to load listing | Diyarak";
     setErrorState(publicRequestError(error));
@@ -934,6 +949,7 @@ function updatePagination() {
   editFiltersButton.disabled = isLoading;
   copySearchButton.disabled = isLoading || isCopyingLink;
   copyListingButton.disabled = isLoading || isCopyingLink || !hasLoadedPublicListing;
+  printListingButton.disabled = isLoading || !hasLoadedPublicListing;
   pageJumpFields.disabled = isLoading;
   filterFields.disabled = isLoading;
   for (const button of previousButtons) {

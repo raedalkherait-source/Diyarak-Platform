@@ -607,3 +607,19 @@ new response succeeds. A copy that completes after refresh cannot display an
 outdated confirmation or fallback URL. The search-copy control keeps its
 existing collection behavior. Links may become unavailable if an advertisement
 is subsequently unpublished.
+
+
+## Print a public listing
+
+Print listing appears after a valid detail response is displayed. It opens the
+browser's print dialog for printing or saving a PDF, using the loaded data
+without an API request or a change to the URL, search, history or title.
+Canceling the dialog leaves the detail page available.
+
+The print stylesheet retains Diyarak branding and the public listing's details
+while hiding the hero introduction, filters, navigation, status and action
+controls. It removes decorative card shadows and keeps individual fact rows
+together where possible. Paper size and printer settings remain browser choices.
+These styles apply only while a valid detail is displayed; refreshing clears
+that state until the next response succeeds. The button is hidden for collection,
+invalid, unavailable and failed detail views, and during refresh.

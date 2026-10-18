@@ -309,3 +309,43 @@ button:disabled {
   outline: 2px solid currentColor;
   outline-offset: 4px;
 }
+
+
+@media print {
+  #page-shell[data-print-listing="ready"] {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
+    color: black;
+  }
+
+  #page-shell[data-print-listing="ready"] :is(.toolbar, #listing-filter-panel,
+    #applied-filter-summary, #filter-removal-actions, #edit-search-filters,
+    #copy-search-link, #search-link-status, #back-to-listings,
+    #copy-listing-link, #print-listing, #page-jump-form, .hero h1, .hero-copy) {
+    display: none !important;
+  }
+
+  #page-shell[data-print-listing="ready"] .hero {
+    padding: 0;
+    border-radius: 0;
+    background: white;
+    box-shadow: none;
+  }
+
+  #page-shell[data-print-listing="ready"] .listing-grid {
+    display: block;
+  }
+
+  #page-shell[data-print-listing="ready"] .listing-card {
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow-wrap: anywhere;
+  }
+
+  #page-shell[data-print-listing="ready"] .listing-card__facts div {
+    break-inside: avoid;
+  }
+}

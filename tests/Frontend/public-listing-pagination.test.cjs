@@ -38,7 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "listing-pagination", "listing-pagination-bottom", "previous-page-bottom", "next-page-bottom", "current-page-bottom", "listing-heading", "back-to-listings",
-    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "copy-listing-link", "search-link-status", "filter-removal-actions"]) {
+    "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "copy-listing-link", "print-listing", "page-shell", "search-link-status", "filter-removal-actions"]) {
     elements.set(`#${id}`, element());
   }
   for (const value of ["FittedKitchen", "Elevator", "BalconyOrTerrace", "GuestToilet", "GardenOrSharedGardenUse", "Basement", "StepFreeAccess", "SuitableForVacationRental", "HistoricMonument", "GarageOrParkingSpace"]) {
@@ -81,9 +81,10 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     location.search = new URL(historyEntries[index], "https://diyarak.example/app/").search;
     await windowListeners.popstate?.();
   }
+  let printCount = 0;
   const context = vm.createContext({ URL, URLSearchParams, Intl, Date, AbortController,
     setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout,
-    window: { location, addEventListener: (event, callback) => { windowListeners[event] = callback; },
+    window: { location, print: () => { printCount++; }, addEventListener: (event, callback) => { windowListeners[event] = callback; },
       history: { replaceState: (_state, _title, url) => recordHistory("replace", url),
         pushState: (_state, _title, url) => recordHistory("push", url) } },
     navigator: { clipboard },
@@ -96,7 +97,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
       return typeof result === "function" ? result() : result;
     } });
   await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
-  return { requests, historyUrls, historyCalls, historyEntries, signals,
+  return { requests, historyUrls, historyCalls, historyEntries, signals, printCount: () => printCount,
     back: () => moveHistory(-1), forward: () => moveHistory(1),
     popTo: async search => { location.search = search; await windowListeners.popstate?.(); },
     formatters: context.formatters, title: () => context.document.title, get: id => elements.get(`#${id}`),
@@ -207,6 +208,88 @@ const listingId = "12345678-1234-1234-1234-123456789abc";
 const detailUrl = `${endpoint}/${listingId}`;
 const detailQuery = `?listingId=${listingId}`;
 const detailResponse = listing => ({ ok: true, status: 200, json: async () => listing });
+
+test("Print listing opens the native dialog without changing the detail or requesting data", async () => {
+  const app = await createApp([detailResponse({ listingId, headline: "Apartment" })], detailQuery);
+  const card = app.get("listing-grid").children[0];
+  const title = app.title();
+  const history = [...app.historyCalls];
+  assert.equal(app.get("print-listing").hidden, false);
+  assert.equal(app.get("print-listing").disabled, false);
+  assert.equal(app.get("page-shell").dataset.printListing, "ready");
+  await app.click("print-listing");
+  await app.click("print-listing");
+  assert.equal(app.printCount(), 2);
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.get("listing-grid").children[0], card);
+  assert.equal(app.title(), title);
+  assert.deepEqual(app.historyCalls, history);
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("search-link-status").hidden, true);
+});
+
+test("Print listing stays unavailable without a validated displayed detail", async () => {
+  const apps = [await createApp([response(1, false)]), await createApp([], "?listingId=invalid")];
+  for (const result of [{ ok: false, status: 404 }, { ok: false, status: 503 }, new Error("offline"),
+    detailResponse({ listingId: "invalid" }), detailResponse({ listingId: "abcdefab-1234-1234-1234-123456789abc" })]) {
+    apps.push(await createApp([result], detailQuery));
+  }
+  for (const app of apps) {
+    assert.equal(app.get("print-listing").hidden, true);
+    assert.equal(app.get("print-listing").disabled, true);
+    assert.equal(app.get("page-shell").dataset.printListing, "");
+    await app.click("print-listing");
+    assert.equal(app.printCount(), 0);
+  }
+});
+
+test("detail refresh blocks printing until the replacement detail succeeds", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const app = await createApp([detailResponse({ listingId }), () => pending, { ok: false, status: 404 }], detailQuery);
+  const loading = app.click("load-listings");
+  assert.equal(app.get("print-listing").hidden, true);
+  assert.equal(app.get("print-listing").disabled, true);
+  assert.equal(app.get("page-shell").dataset.printListing, "");
+  await app.click("print-listing");
+  assert.equal(app.printCount(), 0);
+  resolveResponse(detailResponse({ listingId }));
+  await loading;
+  assert.equal(app.get("print-listing").hidden, false);
+  assert.equal(app.get("print-listing").disabled, false);
+  await app.click("print-listing");
+  assert.equal(app.printCount(), 1);
+  await app.click("load-listings");
+  assert.equal(app.get("print-listing").hidden, true);
+  assert.equal(app.get("print-listing").disabled, true);
+  assert.equal(app.get("page-shell").dataset.printListing, "");
+  await app.click("print-listing");
+  assert.equal(app.printCount(), 1);
+  assert.equal(app.requests.length, 3);
+});
+
+test("successful detail Retry enables printing", async () => {
+  const app = await createApp([{ ok: false, status: 503 }, detailResponse({ listingId })], detailQuery);
+  await app.click("retry-listings");
+  assert.equal(app.get("print-listing").hidden, false);
+  assert.equal(app.get("print-listing").disabled, false);
+  await app.click("print-listing");
+  assert.equal(app.printCount(), 1);
+  assert.equal(app.requests.length, 2);
+});
+
+test("printing remains available while copying a valid listing link", async () => {
+  let finishCopy;
+  const pending = new Promise(resolve => { finishCopy = resolve; });
+  const app = await createApp([detailResponse({ listingId })], detailQuery, undefined, { writeText: () => pending });
+  const copying = app.click("copy-listing-link");
+  assert.equal(app.get("print-listing").disabled, false);
+  await app.click("print-listing");
+  assert.equal(app.printCount(), 1);
+  finishCopy();
+  await copying;
+  assert.equal(app.requests.length, 1);
+});
 const cardOf = app => app.get("listing-grid").children[0].querySelector(".listing-card");
 
 test("collection cards link to valid public detail identifiers only", async () => {

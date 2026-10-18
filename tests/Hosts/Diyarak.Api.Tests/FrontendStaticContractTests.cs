@@ -105,6 +105,9 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"back-to-listings\"", html);
         Assert.Contains("id=\"copy-listing-link\"", html);
         Assert.Contains("Copy listing link", html);
+        Assert.Contains("id=\"page-shell\"", html);
+        Assert.Contains("id=\"print-listing\" class=\"secondary-button\" type=\"button\" hidden disabled", html);
+        Assert.Contains("Print listing", html);
         Assert.Contains("id=\"listing-heading\"", html);
         Assert.Contains("data-detail=\"publishingRole\"", html);
         Assert.Contains("data-detail=\"transactionIntent\"", html);
