@@ -609,6 +609,20 @@ existing collection behavior. Links may become unavailable if an advertisement
 is subsequently unpublished.
 
 
+## Empty listing results
+
+A successful collection response with no items displays a message beside the
+results. A filtered search offers Clear filters and show listings, resetting
+the search and page size to their defaults. An empty later page offers Return
+to first page, preserving applied filters and page size. Both actions discard
+unapplied form edits, record the changed search in browser history, and focus
+the results heading after success (or the error status after failure).
+
+An empty first page without filters explains that no public listings are
+available. Errors and timeouts retain the existing error/Retry behavior and
+do not display an empty-result message. The panel is hidden during requests,
+after nonempty results, and on detail pages.
+
 ## Print a public listing
 
 Print listing appears after a valid detail response is displayed. It opens the

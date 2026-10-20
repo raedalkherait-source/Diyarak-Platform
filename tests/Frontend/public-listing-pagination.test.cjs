@@ -37,6 +37,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   }
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
+    "empty-listings", "empty-listings-message", "empty-clear-filters", "empty-first-page",
     "listing-pagination", "listing-pagination-bottom", "previous-page-bottom", "next-page-bottom", "current-page-bottom", "listing-heading", "back-to-listings",
     "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "copy-listing-link", "print-listing", "page-shell", "search-link-status", "filter-removal-actions"]) {
     elements.set(`#${id}`, element());
@@ -106,6 +107,96 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
     click: id => elements.get(`#${id}`).listeners.click() };
 }
+
+test("empty filtered results offer clearing all filters and preserve history navigation", async () => {
+  const app = await createApp([response(1, false, null, []), response(1, false), response(1, false, null, [])],
+    "?priceMin=100&priceCurrency=EUR&pageSize=5");
+  assert.equal(app.get("empty-listings").hidden, false);
+  assert.match(app.get("empty-listings-message").textContent, /match your filters/);
+  assert.equal(app.get("empty-clear-filters").hidden, false);
+  assert.equal(app.get("empty-first-page").hidden, true);
+  app.get("filter-city").value = "Unapplied draft";
+  await app.click("empty-clear-filters");
+  assert.equal(app.requests.at(-1), endpoint);
+  assert.equal(app.get("filter-city").value, "");
+  assert.equal(app.get("filter-price-min").value, "");
+  assert.equal(app.get("filter-page-size").value, "");
+  assert.equal(app.get("empty-listings").hidden, true);
+  assert.equal(app.get("listing-heading").focusCount, 1);
+  await app.back();
+  assert.equal(app.get("empty-listings").hidden, false);
+  assert.equal(app.get("filter-price-min").value, "100");
+  assert.equal(app.get("filter-page-size").value, "5");
+});
+
+test("an empty later page can return to page one preserving applied filters and page size", async () => {
+  const app = await createApp([response(4, false, null, []), response(1, false)],
+    "?city=Berlin&transactionIntent=Rent&transactionIntent=Sell&pageSize=5&page=4");
+  assert.equal(app.get("empty-first-page").hidden, false);
+  assert.equal(app.get("empty-clear-filters").hidden, false);
+  assert.match(app.get("empty-listings-message").textContent, /on this page/);
+  app.get("filter-city").value = "Unapplied draft";
+  await app.click("empty-first-page");
+  assert.equal(app.requests.at(-1), `${endpoint}?city=Berlin&transactionIntent=Rent&transactionIntent=Sell&pageSize=5`);
+  assert.equal(app.get("filter-city").value, "Berlin");
+  assert.equal(app.get("filter-page-size").value, "5");
+  assert.equal(app.get("current-page").textContent, "Page 1");
+  assert.equal(app.get("listing-heading").focusCount, 1);
+  assert.equal(app.historyCalls.at(-1).type, "push");
+});
+
+test("unfiltered empty results distinguish an empty first page from a later page", async () => {
+  for (const page of [1, 3]) {
+    const app = await createApp([response(page, false, null, [])], `?page=${page}&pageSize=5`);
+    assert.equal(app.get("empty-listings").hidden, false);
+    assert.equal(app.get("empty-clear-filters").hidden, true);
+    assert.equal(app.get("empty-first-page").hidden, page === 1);
+    assert.match(app.get("empty-listings-message").textContent, page === 1 ? /available right now/ : /on this page/);
+    await app.click("empty-clear-filters");
+    assert.equal(app.requests.length, 1);
+  }
+});
+
+test("empty results are hidden on nonempty error timeout and detail responses", async () => {
+  for (const result of [response(1, false), { ok: false, status: 503 }, new Error("offline"),
+    { ok: true, headers: { get: () => null }, json: async () => ({ items: [] }) }]) {
+    const app = await createApp([result]);
+    assert.equal(app.get("empty-listings").hidden, true);
+    await app.click("empty-clear-filters");
+    await app.click("empty-first-page");
+    assert.equal(app.requests.length, 1);
+  }
+  const clock = manualClock();
+  const boot = createApp([neverRespond], "", clock);
+  clock.expire();
+  const timedOut = await boot;
+  assert.equal(timedOut.get("empty-listings").hidden, true);
+  assert.equal(timedOut.get("status").dataset.state, "error");
+  const detail = await createApp([detailResponse({ listingId })], detailQuery);
+  assert.equal(detail.get("empty-listings").hidden, true);
+  await detail.click("empty-clear-filters");
+  await detail.click("empty-first-page");
+  assert.equal(detail.requests.length, 1);
+});
+
+test("empty recovery hides stale results blocks duplicates and focuses request errors", async () => {
+  let resolveResponse;
+  const pending = new Promise(resolve => { resolveResponse = resolve; });
+  const app = await createApp([response(1, false, null, []), () => pending, response(1, false, null, [])], "?city=Berlin");
+  const loading = app.click("empty-clear-filters");
+  assert.equal(app.get("empty-listings").hidden, true);
+  assert.equal(app.get("empty-clear-filters").disabled, true);
+  await app.click("empty-clear-filters");
+  await app.click("empty-first-page");
+  assert.equal(app.requests.length, 2);
+  resolveResponse({ ok: false, status: 503 });
+  await loading;
+  assert.equal(app.get("empty-listings").hidden, true);
+  assert.equal(app.get("status").focusCount, 1);
+  await app.click("retry-listings");
+  assert.equal(app.get("empty-listings").hidden, false);
+  assert.equal(app.get("empty-clear-filters").hidden, true);
+});
 
 test("first, middle and final pages follow server links and preserve queries", async () => {
   const page3 = `${endpoint}?page=3&pageSize=1&city=Berlin`;

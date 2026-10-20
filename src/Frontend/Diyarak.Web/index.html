@@ -277,6 +277,12 @@
           <p id="page-jump-error" role="alert" tabindex="-1" hidden></p>
         </fieldset>
       </form>
+      <section id="empty-listings" class="empty-listings" aria-labelledby="empty-listings-heading" hidden>
+        <h3 id="empty-listings-heading">No listings found</h3>
+        <p id="empty-listings-message"></p>
+        <button id="empty-clear-filters" class="secondary-button" type="button" hidden>Clear filters and show listings</button>
+        <button id="empty-first-page" class="secondary-button" type="button" hidden>Return to first page</button>
+      </section>
       <div id="listing-grid" class="listing-grid" aria-live="polite" aria-busy="false"></div>
       <nav id="listing-pagination-bottom" class="toolbar" aria-label="Listing pages after results">
         <button id="previous-page-bottom" class="secondary-button" type="button" disabled>Previous page</button>

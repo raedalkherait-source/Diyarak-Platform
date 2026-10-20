@@ -53,6 +53,10 @@ const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits
 
 const statusElement = document.querySelector("#status");
 const gridElement = document.querySelector("#listing-grid");
+const emptyListings = document.querySelector("#empty-listings");
+const emptyListingsMessage = document.querySelector("#empty-listings-message");
+const emptyClearFiltersButton = document.querySelector("#empty-clear-filters");
+const emptyFirstPageButton = document.querySelector("#empty-first-page");
 const template = document.querySelector("#listing-card-template");
 const loadButton = document.querySelector("#load-listings");
 const retryButton = document.querySelector("#retry-listings");
@@ -283,14 +287,36 @@ restoreFiltersButton.addEventListener("click", () => {
 });
 
 clearFiltersButton.addEventListener("click", async () => {
+  await clearCollectionFilters();
+});
+
+emptyClearFiltersButton.addEventListener("click", async () => {
+  if (emptyListings.hidden || emptyClearFiltersButton.hidden) {
+    return;
+  }
+  await clearCollectionFilters(true);
+});
+
+emptyFirstPageButton.addEventListener("click", async () => {
+  if (isLoading || isDetailView || emptyListings.hidden || emptyFirstPageButton.hidden) {
+    return;
+  }
+  const search = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
+  search.delete("page");
+  restoreFilterForm(search);
+  firstPageUrl = collectionRequestUrl(search);
+  await loadPublicListings(firstPageUrl, "push", true);
+});
+
+async function clearCollectionFilters(focusResults = false) {
   if (isLoading || isDetailView) {
     return;
   }
 
   restoreFilterForm(new URLSearchParams());
   firstPageUrl = collectionUrl;
-  await loadPublicListings(firstPageUrl, "push");
-});
+  await loadPublicListings(firstPageUrl, "push", focusResults);
+}
 
 if (!isDetailView) {
   window.addEventListener("popstate", async () => {
@@ -325,6 +351,9 @@ copySearchButton.hidden = isDetailView;
 copyListingButton.hidden = true;
 printListingButton.hidden = true;
 pageShell.dataset.printListing = "";
+emptyListings.hidden = true;
+emptyClearFiltersButton.hidden = true;
+emptyFirstPageButton.hidden = true;
 filterPanel.hidden = isDetailView;
 filterForm.hidden = isDetailView;
 pageJumpForm.hidden = isDetailView;
@@ -880,6 +909,15 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
     pageJumpInput.value = String(payload.page);
 
     if (items.length === 0) {
+      const hasFilters = [...currentSearch.keys()].some(key => key !== "page" && key !== "pageSize");
+      emptyListingsMessage.textContent = payload.page > 1
+        ? "No public listings on this page. Return to the first page or adjust your filters."
+        : hasFilters
+          ? "No public listings match your filters. Adjust them or clear all filters to search again."
+          : "There are no public listings available right now. Please try again later.";
+      emptyClearFiltersButton.hidden = !hasFilters;
+      emptyFirstPageButton.hidden = payload.page <= 1;
+      emptyListings.hidden = false;
       setReadyState("No public listings found. Try again later or adjust your filters.");
       return;
     }
@@ -950,6 +988,8 @@ function updatePagination() {
   copySearchButton.disabled = isLoading || isCopyingLink;
   copyListingButton.disabled = isLoading || isCopyingLink || !hasLoadedPublicListing;
   printListingButton.disabled = isLoading || !hasLoadedPublicListing;
+  emptyClearFiltersButton.disabled = isLoading;
+  emptyFirstPageButton.disabled = isLoading;
   pageJumpFields.disabled = isLoading;
   filterFields.disabled = isLoading;
   for (const button of previousButtons) {
@@ -1090,6 +1130,7 @@ function formatDate(value) {
 }
 
 function setLoadingState() {
+  emptyListings.hidden = true;
   gridElement.setAttribute("aria-busy", "true");
   loadButton.disabled = true;
   retryButton.hidden = true;

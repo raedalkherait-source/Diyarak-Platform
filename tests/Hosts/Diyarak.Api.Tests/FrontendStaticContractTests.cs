@@ -94,6 +94,9 @@ public sealed class FrontendStaticContractTests
         Assert.Contains("id=\"next-page-bottom\"", html);
         Assert.Contains("id=\"next-page\"", html);
         Assert.Contains("id=\"current-page\"", html);
+        Assert.Contains("id=\"empty-listings\" class=\"empty-listings\" aria-labelledby=\"empty-listings-heading\" hidden", html);
+        Assert.Contains("id=\"empty-clear-filters\"", html);
+        Assert.Contains("id=\"empty-first-page\"", html);
     }
 
     [Fact]
