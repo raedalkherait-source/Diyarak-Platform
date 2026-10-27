@@ -171,6 +171,18 @@ app.Use(async (context, next) =>
         app.Environment.IsDevelopment() &&
         context.Request.Path.StartsWithSegments("/app");
 
+    if (isDevelopmentFrontend)
+    {
+        context.Response.OnStarting(
+            () =>
+            {
+                context.Response.Headers["Cache-Control"] =
+                    "no-store";
+
+                return Task.CompletedTask;
+            });
+    }
+
     context.Response.Headers["Content-Security-Policy"] =
         isDevelopmentFrontend
             ? "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"

@@ -47,7 +47,7 @@ public sealed class FrontendStaticFileEndpointTests
     [InlineData("/app/index.html?listingId=12345678-1234-1234-1234-123456789abc")]
     [InlineData("/app/src/app.js")]
     [InlineData("/app/src/styles/app.css")]
-    public async Task Development_frontend_allows_same_origin_assets_and_api(string path)
+    public async Task Development_frontend_allows_same_origin_assets_and_disables_caching(string path)
     {
         using var factory = new TestApiFactory();
         using HttpClient client = factory.CreateClient();
@@ -60,6 +60,23 @@ public sealed class FrontendStaticFileEndpointTests
         Assert.Equal(
             "nosniff",
             Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
+        Assert.True(response.Headers.CacheControl is { NoStore: true });
+
+        using var headRequest = new HttpRequestMessage(HttpMethod.Head, path);
+        using HttpResponseMessage headResponse = await client.SendAsync(headRequest);
+
+        Assert.Equal(HttpStatusCode.OK, headResponse.StatusCode);
+        Assert.True(headResponse.Headers.CacheControl is { NoStore: true });
+
+        Assert.NotNull(response.Headers.ETag);
+
+        using var conditionalRequest = new HttpRequestMessage(HttpMethod.Get, path);
+        conditionalRequest.Headers.IfNoneMatch.Add(response.Headers.ETag!);
+
+        using HttpResponseMessage conditionalResponse = await client.SendAsync(conditionalRequest);
+
+        Assert.Equal(HttpStatusCode.NotModified, conditionalResponse.StatusCode);
+        Assert.True(conditionalResponse.Headers.CacheControl is { NoStore: true });
     }
 
     [Theory]

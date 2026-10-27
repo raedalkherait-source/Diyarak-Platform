@@ -64,6 +64,19 @@ collection search carried by the detail link. This view uses the existing develo
 
 The frontend behavior test file covers pagination and detail loading.
 
+## Development browser cache
+
+In Development, responses under `/app` send `Cache-Control: no-store` so
+HTML, JavaScript and CSS are fetched again when the page is reloaded. This
+also applies to HEAD requests and conditional 304 responses. Public API
+responses keep their existing caching policy; Production does not serve this
+development frontend.
+
+Restart the API after applying host changes. A tab that already loaded older
+scripts keeps running them until it is reloaded. If the browser cached assets
+before this policy was added, perform one hard reload (Ctrl+F5) after restarting
+the API to receive the new policy. Existing tabs do not update automatically.
+
 ## Development content security policy
 
 Development responses under `/app` allow scripts, styles, and API connections
