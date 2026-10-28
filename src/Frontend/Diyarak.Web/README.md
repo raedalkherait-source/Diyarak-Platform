@@ -64,6 +64,14 @@ collection search carried by the detail link. This view uses the existing develo
 
 The frontend behavior test file covers pagination and detail loading.
 
+## Status beside listing results
+
+The loading, success, empty and error status appears directly below the
+results heading. Retry sits beside that status and repeats the failed request
+with its applied search. This location also applies to listing details.
+The status retains its accessible live announcement and focus target, and
+the status toolbar is hidden by the existing detail print stylesheet.
+
 ## Development browser cache
 
 In Development, responses under `/app` send `Cache-Control: no-store` so

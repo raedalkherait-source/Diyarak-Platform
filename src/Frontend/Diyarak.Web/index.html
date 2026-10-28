@@ -18,8 +18,6 @@
 
     <section class="toolbar" aria-label="Listing controls">
       <button id="load-listings" type="button">Refresh listings</button>
-      <p id="status" role="status" tabindex="-1">Ready.</p>
-      <button id="retry-listings" class="secondary-button" type="button" hidden>Retry</button>
       <a class="secondary-button" href="/api/market/public/listings" target="_blank" rel="noopener">Open API JSON</a>
       <a class="secondary-button" href="/openapi/v1.json" target="_blank" rel="noopener">OpenAPI</a>
       <a class="secondary-button" href="/app">Frontend Home</a>
@@ -254,6 +252,10 @@
 
     <section>
       <h2 id="listing-heading" tabindex="-1">Public listings</h2>
+      <div class="toolbar" aria-label="Listing status">
+        <p id="status" role="status" tabindex="-1">Ready.</p>
+        <button id="retry-listings" class="secondary-button" type="button" hidden>Retry</button>
+      </div>
       <p id="applied-filter-summary" class="applied-filter-summary" aria-live="polite" tabindex="-1">No filters applied.</p>
       <div id="filter-removal-actions" class="toolbar" role="group" aria-label="Remove applied search filters" hidden></div>
       <button id="edit-search-filters" class="secondary-button" type="button" aria-controls="listing-filter-panel">Edit search filters</button>
