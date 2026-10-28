@@ -64,6 +64,7 @@ const previousButton = document.querySelector("#previous-page");
 const nextButton = document.querySelector("#next-page");
 const previousButtons = [previousButton, document.querySelector("#previous-page-bottom")];
 const nextButtons = [nextButton, document.querySelector("#next-page-bottom")];
+const firstPageButtons = [document.querySelector("#first-page"), document.querySelector("#first-page-bottom")];
 const pageJumpForm = document.querySelector("#page-jump-form");
 const pageJumpFields = document.querySelector("#page-jump-fields");
 const pageJumpInput = document.querySelector("#page-jump-input");
@@ -146,6 +147,7 @@ let firstPageUrl = collectionRequestUrl(firstPageSearch);
 let requestedUrl = collectionUrl;
 let previousUrl = null;
 let nextUrl = null;
+let canReturnToFirstPage = false;
 let isLoading = false;
 let appliedFilterSnapshot = null;
 let isCopyingLink = false;
@@ -162,6 +164,17 @@ loadButton.addEventListener("click", async () => {
 retryButton.addEventListener("click", async () => {
   await loadSelectedView(requestedUrl);
 });
+
+for (const button of firstPageButtons) {
+  button.addEventListener("click", async () => {
+    if (isLoading || isDetailView || !canReturnToFirstPage) {
+      return;
+    }
+    const search = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
+    search.delete("page");
+    await loadPublicListings(collectionRequestUrl(search), "push", true);
+  });
+}
 
 for (const button of previousButtons) {
   button.addEventListener("click", async () => {
@@ -883,6 +896,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
   isLoading = true;
   previousUrl = null;
   nextUrl = null;
+  canReturnToFirstPage = false;
   setCurrentPageLabel("");
   updatePagination();
   setLoadingState();
@@ -901,6 +915,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
 
     validateCollectionResponse(payload);
     const items = payload.items;
+    canReturnToFirstPage = payload.page > 1;
     const linkHeader = response.headers.get("Link");
     previousUrl = getPageLink(linkHeader, "prev");
     nextUrl = payload.hasMore === true ? getPageLink(linkHeader, "next") : null;
@@ -939,6 +954,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
     }
     previousUrl = null;
     nextUrl = null;
+    canReturnToFirstPage = false;
     setCurrentPageLabel("");
     setErrorState(publicRequestError(error));
   } finally {
@@ -981,6 +997,9 @@ function setCurrentPageLabel(value) {
 }
 
 function updatePagination() {
+  for (const button of firstPageButtons) {
+    button.disabled = isLoading || isDetailView || !canReturnToFirstPage;
+  }
   for (const button of filterRemovalButtons) {
     button.disabled = isLoading;
   }

@@ -37,6 +37,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   }
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
+    "first-page", "first-page-bottom",
     "empty-listings", "empty-listings-message", "empty-clear-filters", "empty-first-page",
     "listing-pagination", "listing-pagination-bottom", "previous-page-bottom", "next-page-bottom", "current-page-bottom", "listing-heading", "back-to-listings",
     "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "copy-listing-link", "print-listing", "page-shell", "search-link-status", "filter-removal-actions"]) {
@@ -196,6 +197,80 @@ test("empty recovery hides stale results blocks duplicates and focuses request e
   await app.click("retry-listings");
   assert.equal(app.get("empty-listings").hidden, false);
   assert.equal(app.get("empty-clear-filters").hidden, true);
+});
+
+test("both First page buttons preserve applied search and size without requiring server links", async () => {
+  for (const id of ["first-page", "first-page-bottom"]) {
+    const query = "city=Berlin&transactionIntent=Rent&transactionIntent=Sell&pageSize=5";
+    const app = await createApp([response(4, false, null, []), response(1, false), response(4, false, null, [])], `?${query}&page=4`);
+    assert.equal(app.get("first-page").disabled, false);
+    assert.equal(app.get("first-page-bottom").disabled, false);
+    app.get("filter-city").value = "Unapplied draft";
+    await app.click(id);
+    assert.equal(app.requests.at(-1), `${endpoint}?${query}`);
+    assert.equal(app.get("current-page").textContent, "Page 1");
+    assert.equal(app.get("first-page").disabled, true);
+    assert.equal(app.get("first-page-bottom").disabled, true);
+    assert.equal(app.get("listing-heading").focusCount, 1);
+    await app.back();
+    assert.equal(app.get("filter-city").value, "Berlin");
+    assert.equal(app.get("current-page").textContent, "Page 4");
+    assert.equal(app.get(id).disabled, false);
+  }
+});
+
+test("First page stays disabled without a valid later collection page", async () => {
+  const apps = [await createApp([response(1, false)]),
+    await createApp([{ ok: false, status: 503 }], "?page=4"),
+    await createApp([detailResponse({ listingId })], detailQuery)];
+  for (const app of apps) {
+    for (const id of ["first-page", "first-page-bottom"]) {
+      assert.equal(app.get(id).disabled, true);
+      await app.click(id);
+    }
+    assert.equal(app.requests.length, 1);
+  }
+});
+
+test("First page blocks duplicate requests then focuses an error and supports Retry", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(3, false), () => pending, response(1, false)], "?city=Berlin&page=3");
+  const loading = app.click("first-page-bottom");
+  assert.equal(app.get("first-page").disabled, true);
+  assert.equal(app.get("first-page-bottom").disabled, true);
+  await app.click("first-page");
+  assert.equal(app.requests.length, 2);
+  finish({ ok: false, status: 503 });
+  await loading;
+  assert.equal(app.get("status").focusCount, 1);
+  assert.equal(app.get("first-page").disabled, true);
+  await app.click("retry-listings");
+  assert.equal(app.requests.at(-1), `${endpoint}?city=Berlin`);
+  assert.equal(app.get("current-page").textContent, "Page 1");
+});
+
+test("First page timeouts disable navigation and focus status", async () => {
+  const clock = manualClock();
+  const app = await createApp([response(2, false), neverRespond], "?page=2", clock);
+  const loading = app.click("first-page");
+  clock.expire();
+  await loading;
+  assert.equal(app.get("status").focusCount, 1);
+  assert.equal(app.get("first-page").disabled, true);
+  assert.equal(app.get("first-page-bottom").disabled, true);
+});
+
+test("history supersedes First page without moving focus to stale results", async () => {
+  const app = await createApp([response(3, false), neverRespond, response(2, false)], "?city=Berlin&page=3");
+  const loading = app.click("first-page");
+  await app.popTo("?city=Rome&page=2");
+  await loading;
+  assert.equal(app.get("current-page").textContent, "Page 2");
+  assert.equal(app.get("filter-city").value, "Rome");
+  assert.equal(app.get("first-page").disabled, false);
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("status").focusCount, 0);
 });
 
 test("first, middle and final pages follow server links and preserve queries", async () => {

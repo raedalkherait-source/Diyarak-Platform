@@ -136,6 +136,18 @@ Filters and page coordinates are stored in the collection URL. Detail navigation
 includes the return search, so Back to listings restores that page and its filters.
 The form does not add ranking or total-count semantics.
 
+## Return to the first results page
+
+Both pagination bars offer First page after a valid collection response for
+page two or later, including an empty later page. It retains the applied
+filters and page size, ignores unapplied form edits, and removes the page
+parameter to request page one. It works even without a previous-page Link.
+
+The buttons are disabled on page one, during loading, after errors, and on
+detail pages. Changed searches use normal browser history. Completion focuses
+the results heading, or the error status on failure; superseded history
+requests keep the existing cancellation behavior.
+
 ## Shareable search and return navigation
 
 Collection URLs restore `city`, `postalCode`, `transactionIntent`, `propertyCategory`, `commercialSubtype`, `furnishingQuality`, repeated `propertyFeature`, `page`,
