@@ -722,7 +722,7 @@ test("card detail links and Back to listings retain the exact supported search",
   assert.equal(detailLink.searchParams.get("returnSearch"),query.toString());
   const detail=await createApp([detailResponse({listingId})],detailLink.search);
   assert.deepEqual(detail.requests,[detailUrl]);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   assert.deepEqual(detail.historyUrls,[]);
   const returned=await createApp([response(2,false)],`?${query}`);
   assert.deepEqual(returned.requests,[`${endpoint}?${query}`]);
@@ -735,9 +735,22 @@ test("untrusted return parameters cannot redirect away from the local collection
     const back=new URL(app.get("back-to-listings").href,"https://diyarak.example/app/");
     assert.equal(back.origin,"https://diyarak.example");
     assert.equal(back.pathname,"/app/index.html");
+    assert.equal(back.hash,"#listing-heading");
     assert.equal(back.searchParams.has("returnTo"),false);
     assert.equal(back.searchParams.has("listingId"),false);
     assert.equal(back.searchParams.has("unknown"),false);
+  }
+});
+
+test("Back to listings targets results even when the detail is unavailable or invalid", async () => {
+  for (const [search, responses] of [
+    [detailQuery, [{ ok: false, status: 404 }]],
+    [detailQuery, [{ ok: false, status: 503 }]],
+    ["?listingId=invalid", []],
+  ]) {
+    const app = await createApp(responses, search);
+    assert.equal(app.get("back-to-listings").hidden, false);
+    assert.equal(app.get("back-to-listings").href, "./index.html#listing-heading");
   }
 });
 
@@ -774,7 +787,7 @@ test("unknown URL parameters are ignored and direct details default to the colle
   assert.deepEqual(collection.requests,[`${endpoint}?city=Berlin`]);
   assert.equal(collection.historyUrls.at(-1),"./index.html?city=Berlin");
   const detail=await createApp([detailResponse({listingId})],detailQuery);
-  assert.equal(detail.get("back-to-listings").href,"./index.html");
+  assert.equal(detail.get("back-to-listings").href,"./index.html#listing-heading");
 });
 
 test("price range submit retains decimal bounds and normalizes currency", async () => {
@@ -854,7 +867,7 @@ test("bookmarked price search and detail return retain price bounds and currency
   assert.equal(app.get("filter-price-currency").value,"EUR");
   const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   const detail=await createApp([detailResponse({listingId})],detailLink.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
 });
 
 test("price pagination failure and Retry preserve the server page request", async () => {
@@ -963,7 +976,7 @@ test("area bookmark reload and detail return restore the same search", async () 
   const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(detailLink.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],detailLink.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
@@ -1092,7 +1105,7 @@ test("room bookmark reload and detail return preserve all six bounds", async () 
   const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(detailLink.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],detailLink.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(3,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
@@ -1206,7 +1219,7 @@ test("year and parking bookmarks reload and return from details with all four va
   const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(detailLink.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],detailLink.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(3,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
@@ -1276,7 +1289,7 @@ test("furnishing bookmark reload and details restore the applied quality", async
   const detailLink=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(detailLink.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],detailLink.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
@@ -1359,7 +1372,7 @@ test("commercial bookmarks reload and details return to the same subtype search"
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],anchor.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
@@ -1430,7 +1443,7 @@ test("postal bookmark reload and details return preserve the complete search", a
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],anchor.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
@@ -1507,7 +1520,7 @@ test("feature bookmarks restore checkboxes, reload and return from details", asy
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],anchor.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);assert.equal(detail.get("listing-filters").hidden,true);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(2,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);assert.equal(reload.get("filter-feature-Elevator").checked,true);
 });
@@ -1596,7 +1609,7 @@ test("Clear restores unfiltered summary and details hide it", async () => {
   const params=new URLSearchParams({listingId,returnSearch:"city=Berlin"});
   const detail=await createApp([detailResponse({listingId})],`?${params}`);
   assert.equal(detail.get("applied-filter-summary").hidden,true);
-  assert.equal(detail.get("back-to-listings").href,"./index.html?city=Berlin");
+  assert.equal(detail.get("back-to-listings").href,"./index.html?city=Berlin#listing-heading");
 });
 
 test("untrusted location values become literal summary text and unknown enums use Unknown", async () => {
@@ -1661,7 +1674,7 @@ test("bookmarked page size reload and details return retain arbitrary supported 
   assert.equal(app.get("filter-page-size").value,"7");
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   const detail=await createApp([detailResponse({listingId})],anchor.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);assert.equal(detail.get("listing-filters").hidden,true);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);assert.equal(detail.get("listing-filters").hidden,true);
   const reload=await createApp([response(3,false)],new URL(app.historyUrls.at(-1),"https://diyarak.example/app/").search);
   assert.equal(reload.get("filter-page-size").value,"7");assert.deepEqual(reload.requests,[`${endpoint}?${query}`]);
 });
@@ -1748,7 +1761,7 @@ test("jumped page survives reload and detail return while details hide page form
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);
   const detail=await createApp([detailResponse({listingId})],anchor.search);assert.equal(detail.get("page-jump-form").hidden,true);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   const reload=await createApp([response(4,false)],`?${query}`);assert.equal(reload.get("page-jump-input").value,"4");
   assert.equal(reload.get("page-jump-form").hidden,false);
 });
@@ -1791,7 +1804,7 @@ test("detail timeout aborts and retries the same listing without changing return
   const clock=manualClock();const query=new URLSearchParams({listingId,returnSearch:"city=Berlin&page=2"});
   const boot=createApp([neverRespond,detailResponse({listingId})],`?${query}`,clock);clock.expire();const app=await boot;
   assert.equal(app.signals[0].aborted,true);assert.match(app.get("status").textContent,/longer than 15 seconds/);
-  assert.equal(app.get("back-to-listings").href,"./index.html?city=Berlin&page=2");
+  assert.equal(app.get("back-to-listings").href,"./index.html?city=Berlin&page=2#listing-heading");
   await app.click("retry-listings");assert.deepEqual(app.requests,[detailUrl,detailUrl]);
   assert.equal(app.get("status").textContent,"Listing details loaded.");assert.equal(clock.count(),0);
 });
@@ -2072,7 +2085,7 @@ test("multiple intent bookmarks restore every choice and survive detail return a
   assert.deepEqual(selectedIntents(app),["Rent","RentForLimitedPeriod"]);
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   const reload=await createApp([response(2,false)],`?${query}`);
   assert.deepEqual(selectedIntents(reload),["Rent","RentForLimitedPeriod"]);
 });
@@ -2142,7 +2155,7 @@ test("category bookmarks restore all selections and preserve detail return and r
   assert.deepEqual(selectedCategories(app),["Plot","CommercialProperty"]);
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(selectedCategories(reload),["Plot","CommercialProperty"]);
 });
 
@@ -2208,7 +2221,7 @@ test("furnishing bookmarks restore all choices and preserve detail return and re
   assert.deepEqual(selectedQualities(app),["Simple","Luxury"]);
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(selectedQualities(reload),["Simple","Luxury"]);
 });
 
@@ -2274,7 +2287,7 @@ test("commercial bookmarks restore every selected subtype through reload and det
   assert.deepEqual(selectedCommercialTypes(app),["OfficeOrPractice","Retail"]);
   const anchor=new URL(cardOf(app).querySelector(".listing-card__detail-link").href,"https://diyarak.example/app/");
   assert.equal(anchor.searchParams.get("returnSearch"),query);const detail=await createApp([detailResponse({listingId})],anchor.search);
-  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}`);
+  assert.equal(detail.get("back-to-listings").href,`./index.html?${query}#listing-heading`);
   const reload=await createApp([response(2,false)],`?${query}`);assert.deepEqual(selectedCommercialTypes(reload),["OfficeOrPractice","Retail"]);
 });
 

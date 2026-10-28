@@ -151,7 +151,10 @@ Card links include an encoded `returnSearch` query when there is collection
 state to restore. Back to listings always points to the local index page and
 uses only the supported collection parameters; arbitrary redirect destinations
 are never accepted. Direct detail links without returnSearch return to the
-initial collection. No local storage or extra entries per pagination click are
+initial collection. The return link includes `#listing-heading`, so the browser
+lands at the results heading instead of the top of the filter form. This fixed
+fragment does not change the API search or add an extra API request. Copy listing
+link still shares only the canonical detail identifier. No local storage or extra entries per pagination click are
 introduced. Unsupported URL parameters are ignored; the API validates supported
 parameter values, including malformed page coordinates.
 

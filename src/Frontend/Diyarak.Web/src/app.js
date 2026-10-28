@@ -343,7 +343,7 @@ async function loadPendingHistorySearch() {
 }
 
 restoreFilterForm(initialSearch);
-backLink.href = collectionPageUrl(initialSearch);
+backLink.href = `${collectionPageUrl(initialSearch)}#listing-heading`;
 filterSummary.hidden = isDetailView;
 filterRemovalActions.hidden = true;
 editFiltersButton.hidden = isDetailView;
