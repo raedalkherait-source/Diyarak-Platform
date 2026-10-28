@@ -3031,24 +3031,98 @@ test("history cancellation prevents a superseded page request from moving focus"
   assert.equal(app.get("status").focusCount, 0);
 });
 
-test("initial load Retry Refresh and filter submissions keep existing focus behavior", async () => {
+test("initial load Retry and Refresh keep focus while Apply and Clear focus results", async () => {
   const app = await createApp([{ ok: false, status: 503 }, response(1, false), response(1, false), response(1, false), response(1, false)]);
   assert.equal(app.get("status").focusCount, 0);
   await app.click("retry-listings");
   await app.click("load-listings");
+  assert.equal(app.get("listing-heading").focusCount, 0);
   app.get("filter-city").value = "Berlin";
   await app.submit();
   await app.click("clear-filters");
-  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("listing-heading").focusCount, 2);
   assert.equal(app.get("status").focusCount, 0);
   app.get("page-jump-input").value = "0";
   await app.jump();
   assert.equal(app.get("page-jump-error").focusCount, 1);
-  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("listing-heading").focusCount, 2);
   assert.equal(app.requests.length, 5);
   const detail = await createApp([detailResponse({ listingId })], detailQuery);
   assert.equal(detail.get("listing-heading").focusCount, 0);
   assert.equal(detail.get("status").focusCount, 0);
+});
+
+test("Apply and Clear focus empty successful results", async () => {
+  for (const action of [app => app.submit(), app => app.click("clear-filters")]) {
+    const app = await createApp([response(1, false), response(1, false, null, [])], "?city=Berlin");
+    await action(app);
+    assert.equal(app.get("empty-listings").hidden, false);
+    assert.equal(app.get("listing-heading").focusCount, 1);
+    assert.equal(app.get("status").focusCount, 0);
+  }
+});
+
+test("Apply and Clear failures focus the retryable error status", async () => {
+  for (const action of [app => app.submit(), app => app.click("clear-filters")]) {
+    for (const outcome of [{ ok: false, status: 503 }, new Error("offline")]) {
+      const app = await createApp([response(1, false), outcome], "?city=Berlin");
+      await action(app);
+      assert.equal(app.get("status").focusCount, 1);
+      assert.equal(app.get("listing-heading").focusCount, 0);
+      assert.equal(app.get("retry-listings").hidden, false);
+    }
+  }
+});
+
+test("Apply and Clear wait for completion and ignore duplicate activation", async () => {
+  for (const action of [app => app.submit(), app => app.click("clear-filters")]) {
+    let finish;
+    const pending = new Promise(resolve => { finish = resolve; });
+    const app = await createApp([response(1, false), () => pending], "?city=Berlin");
+    const loading = action(app);
+    assert.equal(app.get("listing-heading").focusCount, 0);
+    assert.equal(app.get("status").focusCount, 0);
+    await action(app);
+    assert.equal(app.requests.length, 2);
+    finish(response(1, false));
+    await loading;
+    assert.equal(app.get("listing-heading").focusCount, 1);
+  }
+});
+
+test("invalid Apply keeps focus on validation and does not request results", async () => {
+  const app = await createApp([response(1, false)]);
+  app.get("filter-page-size").value = "0";
+  await app.submit();
+  assert.equal(app.get("filter-error").focusCount, 1);
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("status").focusCount, 0);
+  assert.equal(app.requests.length, 1);
+});
+
+test("Apply and Clear timeouts focus the error status", async () => {
+  for (const action of [app => app.submit(), app => app.click("clear-filters")]) {
+    const clock = manualClock();
+    const app = await createApp([response(1, false), neverRespond], "?city=Berlin", clock);
+    const loading = action(app);
+    clock.expire();
+    await loading;
+    assert.equal(app.get("status").focusCount, 1);
+    assert.equal(app.get("listing-heading").focusCount, 0);
+  }
+});
+
+test("history cancellation prevents pending Apply and Clear from moving focus", async () => {
+  for (const action of [app => app.submit(), app => app.click("clear-filters")]) {
+    const app = await createApp([response(1, false), neverRespond, response(1, false)], "?city=Berlin");
+    app.get("filter-city").value = "Paris";
+    const loading = action(app);
+    await app.popTo("?city=Rome");
+    await loading;
+    assert.equal(app.get("filter-city").value, "Rome");
+    assert.equal(app.get("listing-heading").focusCount, 0);
+    assert.equal(app.get("status").focusCount, 0);
+  }
 });
 
 test("collection tab titles show normalized search context and validated response page", async () => {

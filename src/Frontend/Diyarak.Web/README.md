@@ -579,8 +579,15 @@ smooth animation. If that navigation fails, focus moves to the visible status
 message instead, where the user can find the error and Retry control.
 
 Both targets use tabindex=-1 and do not add ordinary Tab stops. Controls finish
-updating before focus moves. Initial load, Refresh, Retry, Apply/Clear, filter
+updating before focus moves. Initial load, Refresh, Retry, filter
 restoration and browser Back/Forward retain their existing focus behavior.
+
+Apply filters and Clear filters also move focus to the results heading after
+a successful response, including empty results. A failed request moves focus
+to the error status, where Retry is available. Focus stays in the form while a request
+is pending, and validation errors keep focus on the validation message. The
+filter panel remains open and entered values are preserved by Apply. A browser
+history navigation that supersedes the request prevents it from moving focus.
 History traversal that cancels an in-flight page request does not let that
 superseded request move focus. Invalid page jumps still focus their validation
 message and do not make a request.

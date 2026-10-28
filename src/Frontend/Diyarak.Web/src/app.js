@@ -276,7 +276,7 @@ filterForm.addEventListener("submit", async event => {
 
   rememberAppliedFilterState();
   firstPageUrl = buildFilteredCollectionUrl();
-  await loadPublicListings(firstPageUrl, "push");
+  await loadPublicListings(firstPageUrl, "push", true);
 });
 
 restoreFiltersButton.addEventListener("click", () => {
@@ -287,7 +287,7 @@ restoreFiltersButton.addEventListener("click", () => {
 });
 
 clearFiltersButton.addEventListener("click", async () => {
-  await clearCollectionFilters();
+  await clearCollectionFilters(true);
 });
 
 emptyClearFiltersButton.addEventListener("click", async () => {
