@@ -136,6 +136,14 @@ Filters and page coordinates are stored in the collection URL. Detail navigation
 includes the return search, so Back to listings restores that page and its filters.
 The form does not add ranking or total-count semantics.
 
+## Skip directly to listing results
+
+The first link on the page is Skip to listing results. It becomes visible
+when reached with Tab and uses native fragment navigation to the focusable
+results heading, bypassing the search form. It also targets the heading on
+detail pages. It requires no JavaScript or extra API request, keeps the
+current query parameters, and is hidden when printing.
+
 ## Return to the first results page
 
 Both pagination bars offer First page after a valid collection response for
