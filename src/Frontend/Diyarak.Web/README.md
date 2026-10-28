@@ -136,6 +136,19 @@ Filters and page coordinates are stored in the collection URL. Detail navigation
 includes the return search, so Back to listings restores that page and its filters.
 The form does not add ranking or total-count semantics.
 
+## Applied filter count
+
+Search filters shows the number of applied filter groups, including when the
+panel is closed. Each removable group counts once: a price range plus currency
+is one group, and repeated transaction choices or required features each form
+one group. Page number, page size and unsupported parameters are not counted.
+With no groups applied the title remains Search filters.
+
+The count follows the requested search through Apply, Clear, group removal,
+pagination and browser history. Unapplied edits and validation failures do not
+change it. It counts constraints rather than matching listings; an empty result
+or failed request does not erase the requested search's count.
+
 ## Skip directly to listing results
 
 The first link on the page is Skip to listing results. It becomes visible

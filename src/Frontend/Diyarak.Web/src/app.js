@@ -84,6 +84,7 @@ const linkCopyStatus = document.querySelector("#search-link-status");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
 const filterPanel = document.querySelector("#listing-filter-panel");
+const filterPanelTitle = document.querySelector("#filter-panel-title");
 const filterForm = document.querySelector("#listing-filters");
 const filterFields = document.querySelector("#listing-filter-fields");
 const cityInput = document.querySelector("#filter-city");
@@ -536,6 +537,10 @@ function renderFilterRemovalActions(query) {
     filterRemovalActions.append(button);
   }
   filterRemovalActions.hidden = isDetailView || filterRemovalButtons.length === 0;
+  const groupCount = filterRemovalButtons.length;
+  filterPanelTitle.textContent = groupCount === 0
+    ? "Search filters"
+    : `Search filters (${groupCount} ${groupCount === 1 ? "group" : "groups"} applied)`;
 }
 
 function browserTitleText(value) {

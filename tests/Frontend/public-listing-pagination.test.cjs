@@ -38,6 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "first-page", "first-page-bottom",
+    "filter-panel-title",
     "empty-listings", "empty-listings-message", "empty-clear-filters", "empty-first-page",
     "listing-pagination", "listing-pagination-bottom", "previous-page-bottom", "next-page-bottom", "current-page-bottom", "listing-heading", "back-to-listings",
     "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "copy-listing-link", "print-listing", "page-shell", "search-link-status", "filter-removal-actions"]) {
@@ -271,6 +272,55 @@ test("history supersedes First page without moving focus to stale results", asyn
   assert.equal(app.get("first-page").disabled, false);
   assert.equal(app.get("listing-heading").focusCount, 0);
   assert.equal(app.get("status").focusCount, 0);
+});
+
+test("filter panel counts removable groups rather than repeated choices or range fields", async () => {
+  const app = await createApp([response(3, false)], "?city=Berlin&priceMin=100&priceMax=500&priceCurrency=EUR&transactionIntent=Rent&transactionIntent=Sell&propertyFeature=Elevator&propertyFeature=BalconyOrTerrace&page=3&pageSize=5");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (4 groups applied)");
+  app.get("listing-filter-panel").open = false;
+  app.get("filter-city").value = "Draft";
+  await app.formEvent("input");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (4 groups applied)");
+  assert.equal(app.get("listing-filter-panel").open, false);
+});
+
+test("filter panel excludes pagination and unknown parameters from its count", async () => {
+  const app = await createApp([response(2, false)], "?page=2&pageSize=5&unknown=value");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters");
+});
+
+test("filter count follows Apply removal Clear and browser history", async () => {
+  const app = await createApp([response(1, false), response(1, false), response(1, false), response(1, false), response(1, false)], "?city=Berlin");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
+  app.get("filter-postal").value = "10115";
+  await app.submit();
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (2 groups applied)");
+  await removalButton(app, "city").listeners.click();
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
+  await app.click("clear-filters");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters");
+  await app.back();
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
+});
+
+test("invalid draft Apply does not alter the applied filter count", async () => {
+  const app = await createApp([response(1, false)], "?city=Berlin");
+  app.get("filter-postal").value = "Draft";
+  app.get("filter-page-size").value = "0";
+  await app.submit();
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
+  assert.equal(app.requests.length, 1);
+});
+
+test("empty failed and paginated results retain the requested filter count", async () => {
+  for (const outcome of [response(1, false, null, []), { ok: false, status: 503 }, new Error("offline")]) {
+    const app = await createApp([outcome], "?city=Berlin&priceMin=100&priceCurrency=EUR");
+    assert.equal(app.get("filter-panel-title").textContent, "Search filters (2 groups applied)");
+  }
+  const next = `${endpoint}?city=Berlin&page=2`;
+  const app = await createApp([response(1, true, link(next, "next")), response(2, false)], "?city=Berlin");
+  await app.click("next-page");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
 });
 
 test("first, middle and final pages follow server links and preserve queries", async () => {
