@@ -151,6 +151,13 @@ page one and focuses the results (or error status), just like the bottom action.
 All actions are inside the disabled-while-loading fieldset, and their handlers
 also ignore activation during a request or on a detail page.
 
+## Unapplied changes near the top actions
+
+The existing unapplied-changes message appears directly below the top filter
+actions, before City. It remains a single polite live region. Its existing
+comparison with applied values, validation behavior and clearing after Apply,
+Restore or Clear are unchanged. Editing form values does not request new results.
+
 ## Applied filter count
 
 Search filters shows the number of applied filter groups, including when the
