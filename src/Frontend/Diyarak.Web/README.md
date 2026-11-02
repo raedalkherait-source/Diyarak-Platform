@@ -136,6 +136,14 @@ Filters and page coordinates are stored in the collection URL. Detail navigation
 includes the return search, so Back to listings restores that page and its filters.
 The form does not add ranking or total-count semantics.
 
+## Apply filters from either end of the form
+
+Apply filters is available at the top and bottom of the search form. Both
+buttons submit the same form, including its validation and first-page reset,
+and focus the results after completion. They belong to the existing filter
+fieldset, so both are disabled while a request is pending. No duplicate
+submission handler or additional API request is introduced.
+
 ## Applied filter count
 
 Search filters shows the number of applied filter groups, including when the
