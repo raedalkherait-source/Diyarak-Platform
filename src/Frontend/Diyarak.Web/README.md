@@ -144,6 +144,13 @@ and focus the results after completion. They belong to the existing filter
 fieldset, so both are disabled while a request is pending. No duplicate
 submission handler or additional API request is introduced.
 
+Restore applied filters and Clear filters are also available in the top action
+row. Restore discards unapplied edits using the current applied search without
+an API request or history change. Clear resets filters and page size, loads
+page one and focuses the results (or error status), just like the bottom action.
+All actions are inside the disabled-while-loading fieldset, and their handlers
+also ignore activation during a request or on a detail page.
+
 ## Applied filter count
 
 Search filters shows the number of applied filter groups, including when the

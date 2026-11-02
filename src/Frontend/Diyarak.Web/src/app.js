@@ -293,16 +293,20 @@ filterForm.addEventListener("submit", async event => {
   await loadPublicListings(firstPageUrl, "push", true);
 });
 
-restoreFiltersButton.addEventListener("click", () => {
-  if (isLoading || isDetailView) {
-    return;
-  }
-  restoreFilterForm(getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams));
-});
+for (const button of [restoreFiltersButton, document.querySelector("#restore-filters-top")]) {
+  button.addEventListener("click", () => {
+    if (isLoading || isDetailView) {
+      return;
+    }
+    restoreFilterForm(getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams));
+  });
+}
 
-clearFiltersButton.addEventListener("click", async () => {
-  await clearCollectionFilters(true);
-});
+for (const button of [clearFiltersButton, document.querySelector("#clear-filters-top")]) {
+  button.addEventListener("click", async () => {
+    await clearCollectionFilters(true);
+  });
+}
 
 emptyClearFiltersButton.addEventListener("click", async () => {
   if (emptyListings.hidden || emptyClearFiltersButton.hidden) {

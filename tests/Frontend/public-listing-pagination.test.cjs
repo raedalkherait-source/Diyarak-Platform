@@ -39,6 +39,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "retry-listings", "previous-page", "next-page", "current-page",
     "first-page", "first-page-bottom",
     "filter-panel-title",
+    "restore-filters-top", "clear-filters-top",
     "empty-listings", "empty-listings-message", "empty-clear-filters", "empty-first-page",
     "listing-pagination", "listing-pagination-bottom", "previous-page-bottom", "next-page-bottom", "current-page-bottom", "listing-heading", "back-to-listings",
     "listing-filters", "listing-filter-fields", "filter-city", "filter-intent-Rent", "filter-intent-Sell", "filter-intent-RentForLimitedPeriod", "clear-filters", "filter-price-min", "filter-price-max", "filter-price-currency", "filter-error", "filter-area-min", "filter-area-max", "filter-area-unit", "filter-rooms-min", "filter-rooms-max", "filter-bedrooms-min", "filter-bedrooms-max", "filter-bathrooms-min", "filter-bathrooms-max", "filter-year-min", "filter-year-max", "filter-parking-min", "filter-parking-max", "filter-postal", "applied-filter-summary", "filter-page-size", "page-jump-form", "page-jump-fields", "page-jump-input", "page-jump-error", "restore-filters", "filter-draft-message", "listing-filter-panel", "edit-search-filters", "copy-search-link", "copy-listing-link", "print-listing", "page-shell", "search-link-status", "filter-removal-actions"]) {
@@ -321,6 +322,60 @@ test("empty failed and paginated results retain the requested filter count", asy
   const app = await createApp([response(1, true, link(next, "next")), response(2, false)], "?city=Berlin");
   await app.click("next-page");
   assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
+});
+
+test("top Restore restores applied fields and clears validation without requesting data", async () => {
+  const app = await createApp([response(3, false)], "?city=Berlin&postalCode=10115&page=3&pageSize=5");
+  const history = [...app.historyCalls];
+  app.get("filter-city").value = "Draft";
+  app.get("filter-page-size").value = "0";
+  await app.submit();
+  assert.equal(app.get("filter-error").hidden, false);
+  await app.click("restore-filters-top");
+  assert.equal(app.get("filter-city").value, "Berlin");
+  assert.equal(app.get("filter-postal").value, "10115");
+  assert.equal(app.get("filter-page-size").value, "5");
+  assert.equal(app.get("filter-error").hidden, true);
+  assert.equal(app.requests.length, 1);
+  assert.deepEqual(app.historyCalls, history);
+});
+
+test("top Clear resets the search and can restore it through browser history", async () => {
+  const app = await createApp([response(3, false), response(1, false), response(3, false)], "?city=Berlin&page=3&pageSize=5");
+  await app.click("clear-filters-top");
+  assert.equal(app.requests.at(-1), endpoint);
+  assert.equal(app.get("filter-city").value, "");
+  assert.equal(app.get("filter-page-size").value, "");
+  assert.equal(app.get("current-page").textContent, "Page 1");
+  assert.equal(app.get("listing-heading").focusCount, 1);
+  await app.back();
+  assert.equal(app.get("filter-city").value, "Berlin");
+  assert.equal(app.get("current-page").textContent, "Page 3");
+});
+
+test("top actions ignore activation during loading and on detail pages", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(1, false), () => pending], "?city=Berlin");
+  app.get("filter-city").value = "Draft";
+  const loading = app.click("load-listings");
+  await app.click("restore-filters-top");
+  await app.click("clear-filters-top");
+  assert.equal(app.get("filter-city").value, "Draft");
+  assert.equal(app.requests.length, 2);
+  finish(response(1, false));
+  await loading;
+  const detail = await createApp([detailResponse({ listingId })], detailQuery);
+  await detail.click("restore-filters-top");
+  await detail.click("clear-filters-top");
+  assert.equal(detail.requests.length, 1);
+});
+
+test("top Clear request failures focus the retryable error status", async () => {
+  const app = await createApp([response(1, false), { ok: false, status: 503 }], "?city=Berlin");
+  await app.click("clear-filters-top");
+  assert.equal(app.get("status").focusCount, 1);
+  assert.equal(app.get("retry-listings").hidden, false);
 });
 
 test("first, middle and final pages follow server links and preserve queries", async () => {
