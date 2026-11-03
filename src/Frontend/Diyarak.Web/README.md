@@ -158,6 +158,12 @@ actions, before City. It remains a single polite live region. Its existing
 comparison with applied values, validation behavior and clearing after Apply,
 Restore or Clear are unchanged. Editing form values does not request new results.
 
+The panel title also adds “unapplied changes” while the reminder is visible,
+so this state remains visible when the panel is closed. The applied group count
+still describes the requested search. Reverting edits or using Restore, Apply
+or Clear removes the marker according to the existing draft-state behavior.
+Validation errors keep the marker until the draft is applied or discarded.
+
 ## Applied filter count
 
 Search filters shows the number of applied filter groups, including when the

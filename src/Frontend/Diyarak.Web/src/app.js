@@ -405,6 +405,7 @@ function filterFormSnapshot() {
 function rememberAppliedFilterState() {
   appliedFilterSnapshot = filterFormSnapshot();
   filterDraftMessage.hidden = true;
+  updateFilterPanelTitle();
 }
 
 function updateFilterDraftState() {
@@ -412,6 +413,7 @@ function updateFilterDraftState() {
     return;
   }
   filterDraftMessage.hidden = filterFormSnapshot() === appliedFilterSnapshot;
+  updateFilterPanelTitle();
 }
 
 function restoreFilterForm(query) {
@@ -541,10 +543,17 @@ function renderFilterRemovalActions(query) {
     filterRemovalActions.append(button);
   }
   filterRemovalActions.hidden = isDetailView || filterRemovalButtons.length === 0;
+  updateFilterPanelTitle();
+}
+
+function updateFilterPanelTitle() {
   const groupCount = filterRemovalButtons.length;
-  filterPanelTitle.textContent = groupCount === 0
+  const appliedTitle = groupCount === 0
     ? "Search filters"
     : `Search filters (${groupCount} ${groupCount === 1 ? "group" : "groups"} applied)`;
+  filterPanelTitle.textContent = filterDraftMessage.hidden
+    ? appliedTitle
+    : `${appliedTitle} — unapplied changes`;
 }
 
 function browserTitleText(value) {

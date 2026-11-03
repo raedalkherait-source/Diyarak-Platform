@@ -281,7 +281,7 @@ test("filter panel counts removable groups rather than repeated choices or range
   app.get("listing-filter-panel").open = false;
   app.get("filter-city").value = "Draft";
   await app.formEvent("input");
-  assert.equal(app.get("filter-panel-title").textContent, "Search filters (4 groups applied)");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (4 groups applied) — unapplied changes");
   assert.equal(app.get("listing-filter-panel").open, false);
 });
 
@@ -376,6 +376,60 @@ test("top Clear request failures focus the retryable error status", async () => 
   await app.click("clear-filters-top");
   assert.equal(app.get("status").focusCount, 1);
   assert.equal(app.get("retry-listings").hidden, false);
+});
+
+test("collapsed filter title shows draft state and removes it when values are reverted", async () => {
+  const app = await createApp([response(1, false)], "?city=Berlin");
+  app.get("listing-filter-panel").open = false;
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied) — unapplied changes");
+  assert.equal(app.get("listing-filter-panel").open, false);
+  assert.equal(app.requests.length, 1);
+  app.get("filter-city").value = "Berlin";
+  await app.formEvent("input");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
+});
+
+test("draft title supports an unfiltered search and both Restore controls", async () => {
+  const app = await createApp([response(1, false)]);
+  for (const id of ["restore-filters", "restore-filters-top"]) {
+    app.get("filter-city").value = "Rome";
+    await app.formEvent("change");
+    assert.equal(app.get("filter-panel-title").textContent, "Search filters — unapplied changes");
+    await app.click(id);
+    assert.equal(app.get("filter-panel-title").textContent, "Search filters");
+  }
+  assert.equal(app.requests.length, 1);
+});
+
+test("invalid Apply retains the draft marker and valid Apply or Clear removes it", async () => {
+  const app = await createApp([response(1, false), { ok: false, status: 503 }, response(1, false)]);
+  app.get("filter-city").value = "Berlin";
+  app.get("filter-page-size").value = "0";
+  await app.formEvent("input");
+  await app.submit();
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters — unapplied changes");
+  app.get("filter-page-size").value = "5";
+  await app.formEvent("input");
+  await app.submit();
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  await app.click("clear-filters-top");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters");
+});
+
+test("history restores the applied title and discards a later draft", async () => {
+  const app = await createApp([response(1, false), response(1, false), response(1, false)], "?city=Berlin");
+  app.get("filter-city").value = "Paris";
+  await app.submit();
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  await app.back();
+  assert.equal(app.get("filter-city").value, "Berlin");
+  assert.equal(app.get("filter-panel-title").textContent, "Search filters (1 group applied)");
+  assert.equal(app.get("filter-draft-message").hidden, true);
 });
 
 test("first, middle and final pages follow server links and preserve queries", async () => {
