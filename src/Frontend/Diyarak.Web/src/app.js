@@ -60,6 +60,7 @@ const emptyFirstPageButton = document.querySelector("#empty-first-page");
 const template = document.querySelector("#listing-card-template");
 const loadButton = document.querySelector("#load-listings");
 const retryButton = document.querySelector("#retry-listings");
+const cancelButton = document.querySelector("#cancel-listings");
 const previousButton = document.querySelector("#previous-page");
 const nextButton = document.querySelector("#next-page");
 const previousButtons = [previousButton, document.querySelector("#previous-page-bottom")];
@@ -164,6 +165,14 @@ loadButton.addEventListener("click", async () => {
 
 retryButton.addEventListener("click", async () => {
   await loadSelectedView(requestedUrl);
+});
+
+cancelButton.addEventListener("click", () => {
+  if (!isLoading || !cancelPublicRequest || pendingHistorySearch !== null) {
+    return;
+  }
+  cancelButton.disabled = true;
+  cancelPublicRequest("user");
 });
 
 for (const button of firstPageButtons) {
@@ -785,9 +794,9 @@ async function fetchPublicResource(url) {
   const controller = new AbortController();
   let timer;
   const cancellation = new Promise((_, reject) => {
-    cancelPublicRequest = () => {
-      const error = new Error("Public API request canceled for history navigation.");
-      error.name = "AbortError";
+    cancelPublicRequest = reason => {
+      const error = new Error("Public API request canceled.");
+      error.name = reason === "user" ? "PublicRequestCanceled" : "AbortError";
       reject(error);
       controller.abort();
     };
@@ -892,6 +901,11 @@ async function loadPublicListing() {
     printListingButton.hidden = false;
     pageShell.dataset.printListing = "ready";
   } catch (error) {
+    if (error?.name === "PublicRequestCanceled") {
+      document.title = "Listing details | Diyarak";
+      setCanceledState();
+      return;
+    }
     document.title = "Unable to load listing | Diyarak";
     setErrorState(publicRequestError(error));
   } finally {
@@ -985,13 +999,17 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
     nextUrl = null;
     canReturnToFirstPage = false;
     setCurrentPageLabel("");
+    if (error?.name === "PublicRequestCanceled") {
+      setCanceledState();
+      return;
+    }
     setErrorState(publicRequestError(error));
   } finally {
     isLoading = false;
     updatePagination();
     if (pendingHistorySearch !== null) {
       await loadPendingHistorySearch();
-    } else if (focusResults) {
+    } else if (focusResults && statusElement.dataset.state !== "canceled") {
       const target = statusElement.dataset.state === "error" ? statusElement : headingElement;
       target.focus();
     }
@@ -1179,6 +1197,8 @@ function formatDate(value) {
 }
 
 function setLoadingState() {
+  cancelButton.hidden = false;
+  cancelButton.disabled = false;
   emptyListings.hidden = true;
   gridElement.setAttribute("aria-busy", "true");
   loadButton.disabled = true;
@@ -1188,6 +1208,8 @@ function setLoadingState() {
 }
 
 function setReadyState(message) {
+  cancelButton.hidden = true;
+  cancelButton.disabled = true;
   gridElement.setAttribute("aria-busy", "false");
   loadButton.disabled = false;
   retryButton.hidden = true;
@@ -1196,9 +1218,18 @@ function setReadyState(message) {
 }
 
 function setErrorState(message) {
+  cancelButton.hidden = true;
+  cancelButton.disabled = true;
   gridElement.setAttribute("aria-busy", "false");
   loadButton.disabled = false;
   retryButton.hidden = false;
   statusElement.dataset.state = "error";
   statusElement.textContent = message;
+}
+
+function setCanceledState() {
+  setReadyState("Request canceled. Retry to load the requested results.");
+  statusElement.dataset.state = "canceled";
+  retryButton.hidden = false;
+  statusElement.focus();
 }

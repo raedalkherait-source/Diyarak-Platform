@@ -172,6 +172,20 @@ valid Apply or Clear disables them again. They remain disabled during a request
 and on detail pages. Validation errors keep Restore available for discarding
 the invalid draft. This availability follows the same state as the draft reminder.
 
+## Cancel a public request
+
+Cancel request appears beside status while a collection or detail request is
+pending. It aborts the browser request, clears the timeout and offers Retry for
+the same requested URL. The canceled state focuses status, preserves the
+requested search/history and does not display an empty-results message. A late
+response cannot replace the canceled state. Cancellation also covers waiting
+for a JSON response body. The control is hidden after completion or cancellation.
+
+Browser Back/Forward retains its existing automatic request cancellation and
+restoration. Manual cancellation is ignored if a history restoration is already
+pending. Canceling stops the browser's wait; it does not guarantee that the
+server has stopped processing the request.
+
 ## Clear button availability
 
 Both Clear filters controls are disabled when the applied URL contains no

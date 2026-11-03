@@ -37,6 +37,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   }
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
+    "cancel-listings",
     "first-page", "first-page-bottom",
     "filter-panel-title",
     "restore-filters-top", "clear-filters-top",
@@ -543,6 +544,101 @@ test("Clear stays disabled during requests and on details then reflects the fail
     for (const id of ["clear-filters", "clear-filters-top"]) assert.equal(target.get(id).disabled, true);
   }
   assert.equal(app.get("retry-listings").hidden, false);
+});
+
+test("Cancel aborts a collection request and Retry repeats the canceled search", async () => {
+  const clock = manualClock();
+  const next = `${endpoint}?city=Berlin&page=2`;
+  const app = await createApp([response(1, true, link(next, "next")), neverRespond, response(2, false)], "?city=Berlin", clock);
+  assert.equal(app.get("cancel-listings").hidden, true);
+  const loading = app.click("next-page");
+  assert.equal(app.get("cancel-listings").hidden, false);
+  assert.equal(app.get("cancel-listings").disabled, false);
+  const history = [...app.historyCalls];
+  await app.click("cancel-listings");
+  await app.click("cancel-listings");
+  await loading;
+  assert.equal(app.signals[1].aborted, true);
+  assert.equal(app.get("status").dataset.state, "canceled");
+  assert.equal(app.get("status").focusCount, 1);
+  assert.equal(app.get("listing-heading").focusCount, 0);
+  assert.equal(app.get("retry-listings").hidden, false);
+  assert.equal(app.get("cancel-listings").hidden, true);
+  assert.equal(app.get("empty-listings").hidden, true);
+  assert.equal(app.get("listing-grid").getAttribute("aria-busy"), "false");
+  assert.deepEqual(app.historyCalls, history);
+  assert.equal(clock.count(), 0);
+  assert.equal(app.get("status").dataset.state, "canceled");
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests, [`${endpoint}?city=Berlin`, next, next]);
+  assert.equal(app.get("current-page").textContent, "Page 2");
+  assert.equal(app.get("cancel-listings").hidden, true);
+});
+
+test("Cancel aborts pending detail bodies and prevents late detail rendering", async () => {
+  let finishBody;
+  const body = new Promise(resolve => { finishBody = resolve; });
+  const app = await createApp([detailResponse({ listingId }), { ok: true, status: 200, json: () => body }, detailResponse({ listingId })], detailQuery);
+  const loading = app.click("load-listings");
+  await Promise.resolve();
+  await app.click("cancel-listings");
+  await loading;
+  assert.equal(app.get("status").dataset.state, "canceled");
+  assert.equal(app.get("copy-listing-link").hidden, true);
+  assert.equal(app.get("print-listing").hidden, true);
+  assert.equal(app.get("page-shell").dataset.printListing, "");
+  finishBody({ listingId, headline: "Late response" });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(app.get("listing-grid").children.length, 0);
+  assert.equal(app.get("status").dataset.state, "canceled");
+  await app.click("retry-listings");
+  assert.equal(app.get("copy-listing-link").hidden, false);
+  assert.equal(app.requests.length, 3);
+});
+
+test("Cancel is hidden and inert after successful failed empty and invalid responses", async () => {
+  const apps = [await createApp([response(1, false)]), await createApp([response(1, false, null, [])]),
+    await createApp([{ ok: false, status: 503 }]), await createApp([], "?listingId=invalid")];
+  for (const app of apps) {
+    const count = app.requests.length;
+    const status = app.get("status").textContent;
+    assert.equal(app.get("cancel-listings").hidden, true);
+    assert.equal(app.get("cancel-listings").disabled, true);
+    await app.click("cancel-listings");
+    assert.equal(app.requests.length, count);
+    assert.equal(app.get("status").textContent, status);
+  }
+});
+
+test("late canceled collection responses cannot replace a newer search", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(1, false), () => pending, response(1, false)], "?city=Berlin");
+  const loading = app.click("load-listings");
+  await app.click("cancel-listings");
+  await loading;
+  app.get("filter-city").value = "Rome";
+  await app.submit();
+  finish(response(9, false));
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(app.get("current-page").textContent, "Page 1");
+  assert.equal(app.get("status").dataset.state, "ready");
+  assert.equal(app.requests.at(-1), `${endpoint}?city=Rome`);
+});
+
+test("pending history restoration takes priority over manual cancellation", async () => {
+  const app = await createApp([response(1, false), neverRespond, response(2, false)], "?city=Berlin");
+  const loading = app.click("load-listings");
+  const history = app.popTo("?city=Rome&page=2");
+  const cancellation = app.click("cancel-listings");
+  await history;
+  await cancellation;
+  await loading;
+  assert.equal(app.get("current-page").textContent, "Page 2");
+  assert.equal(app.get("status").dataset.state, "ready");
+  assert.equal(app.get("status").focusCount, 0);
 });
 
 test("first, middle and final pages follow server links and preserve queries", async () => {
