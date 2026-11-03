@@ -432,6 +432,66 @@ test("history restores the applied title and discards a later draft", async () =
   assert.equal(app.get("filter-draft-message").hidden, true);
 });
 
+test("both Restore controls follow draft changes reverting and restoration", async () => {
+  const app = await createApp([response(1, false)], "?city=Berlin");
+  const controls = ["restore-filters", "restore-filters-top"];
+  for (const id of controls) assert.equal(app.get(id).disabled, true);
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  for (const id of controls) assert.equal(app.get(id).disabled, false);
+  app.get("filter-city").value = "Berlin";
+  await app.formEvent("input");
+  for (const id of controls) assert.equal(app.get(id).disabled, true);
+  for (const id of controls) {
+    app.get("filter-city").value = "Rome";
+    await app.formEvent("change");
+    await app.click(id);
+    for (const control of controls) assert.equal(app.get(control).disabled, true);
+  }
+  assert.equal(app.requests.length, 1);
+});
+
+test("invalid drafts keep Restore available while Apply and Clear reset availability", async () => {
+  const app = await createApp([response(1, false), response(1, false), response(1, false)]);
+  app.get("filter-page-size").value = "0";
+  await app.formEvent("input");
+  await app.submit();
+  assert.equal(app.get("restore-filters-top").disabled, false);
+  app.get("filter-page-size").value = "5";
+  await app.formEvent("input");
+  await app.submit();
+  assert.equal(app.get("restore-filters-top").disabled, true);
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  await app.click("clear-filters-top");
+  assert.equal(app.get("restore-filters").disabled, true);
+  assert.equal(app.get("restore-filters-top").disabled, true);
+});
+
+test("pending requests disable Restore and completion re-enables an existing draft", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(1, false), () => pending], "?city=Berlin");
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  const loading = app.click("load-listings");
+  for (const id of ["restore-filters", "restore-filters-top"]) assert.equal(app.get(id).disabled, true);
+  finish({ ok: false, status: 503 });
+  await loading;
+  for (const id of ["restore-filters", "restore-filters-top"]) assert.equal(app.get(id).disabled, false);
+});
+
+test("history restoration and detail mode leave Restore disabled", async () => {
+  const app = await createApp([response(1, false), response(1, false)], "?city=Berlin");
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  await app.popTo("?city=Paris");
+  const detail = await createApp([detailResponse({ listingId })], detailQuery);
+  for (const target of [app, detail]) {
+    for (const id of ["restore-filters", "restore-filters-top"]) assert.equal(target.get(id).disabled, true);
+  }
+});
+
 test("first, middle and final pages follow server links and preserve queries", async () => {
   const page3 = `${endpoint}?page=3&pageSize=1&city=Berlin`;
   const app = await createApp([

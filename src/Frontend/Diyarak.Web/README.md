@@ -164,6 +164,14 @@ still describes the requested search. Reverting edits or using Restore, Apply
 or Clear removes the marker according to the existing draft-state behavior.
 Validation errors keep the marker until the draft is applied or discarded.
 
+## Restore button availability
+
+Both Restore applied filters buttons are disabled until form values differ
+from the applied snapshot. Editing enables them; reverting values, Restore,
+valid Apply or Clear disables them again. They remain disabled during a request
+and on detail pages. Validation errors keep Restore available for discarding
+the invalid draft. This availability follows the same state as the draft reminder.
+
 ## Applied filter count
 
 Search filters shows the number of applied filter groups, including when the

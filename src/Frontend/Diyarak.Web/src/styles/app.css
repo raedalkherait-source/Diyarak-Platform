@@ -139,6 +139,11 @@ button:disabled {
   outline: 1px solid currentColor;
 }
 
+#restore-filters:disabled,
+#restore-filters-top:disabled {
+  cursor: default;
+}
+
 #status[data-state="error"] {
   font-weight: 700;
 }
