@@ -133,7 +133,7 @@ numericFilterRanges.push(
 const filterDraftMessage = document.querySelector("#filter-draft-message");
 const filterError = document.querySelector("#filter-error");
 const restoreFiltersButtons = [document.querySelector("#restore-filters"), document.querySelector("#restore-filters-top")];
-const clearFiltersButton = document.querySelector("#clear-filters");
+const clearFiltersButtons = [document.querySelector("#clear-filters"), document.querySelector("#clear-filters-top")];
 const parameters = new URLSearchParams(window.location.search);
 const isDetailView = parameters.has("listingId");
 const selectedListingId = parameters.get("listingId");
@@ -302,7 +302,7 @@ for (const button of restoreFiltersButtons) {
   });
 }
 
-for (const button of [clearFiltersButton, document.querySelector("#clear-filters-top")]) {
+for (const button of clearFiltersButtons) {
   button.addEventListener("click", async () => {
     await clearCollectionFilters(true);
   });
@@ -554,12 +554,16 @@ function updateFilterPanelTitle() {
   filterPanelTitle.textContent = filterDraftMessage.hidden
     ? appliedTitle
     : `${appliedTitle} — unapplied changes`;
-  updateRestoreFilterAvailability();
+  updateFilterActionAvailability();
 }
 
-function updateRestoreFilterAvailability() {
+function updateFilterActionAvailability() {
   for (const button of restoreFiltersButtons) {
     button.disabled = isLoading || isDetailView || filterDraftMessage.hidden;
+  }
+  const hasAppliedSearch = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams).size > 0;
+  for (const button of clearFiltersButtons) {
+    button.disabled = isLoading || isDetailView || (!hasAppliedSearch && filterDraftMessage.hidden);
   }
 }
 
@@ -1022,7 +1026,7 @@ function setCurrentPageLabel(value) {
 }
 
 function updatePagination() {
-  updateRestoreFilterAvailability();
+  updateFilterActionAvailability();
   for (const button of firstPageButtons) {
     button.disabled = isLoading || isDetailView || !canReturnToFirstPage;
   }

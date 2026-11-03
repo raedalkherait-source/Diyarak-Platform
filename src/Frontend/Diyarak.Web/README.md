@@ -172,6 +172,17 @@ valid Apply or Clear disables them again. They remain disabled during a request
 and on detail pages. Validation errors keep Restore available for discarding
 the invalid draft. This availability follows the same state as the draft reminder.
 
+## Clear button availability
+
+Both Clear filters controls are disabled when the applied URL contains no
+supported search parameters and the form has no unapplied edits. A filter,
+page or page-size parameter, or a form draft enables Clear. Unsupported URL
+parameters do not enable it. Clearing returns to the default collection and
+disables the controls again; Restore only removes drafts, so Clear remains
+available if the applied search still contains parameters. Both controls are
+disabled during requests and on detail pages, including after failed requests
+when the reset search is already empty.
+
 ## Applied filter count
 
 Search filters shows the number of applied filter groups, including when the

@@ -492,6 +492,59 @@ test("history restoration and detail mode leave Restore disabled", async () => {
   }
 });
 
+test("both Clear controls follow drafts when the applied search is empty", async () => {
+  const app = await createApp([response(1, false)]);
+  const ids = ["clear-filters", "clear-filters-top"];
+  for (const id of ids) assert.equal(app.get(id).disabled, true);
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  for (const id of ids) assert.equal(app.get(id).disabled, false);
+  app.get("filter-city").value = "";
+  await app.formEvent("input");
+  for (const id of ids) assert.equal(app.get(id).disabled, true);
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  await app.click("restore-filters-top");
+  for (const id of ids) assert.equal(app.get(id).disabled, true);
+  assert.equal(app.requests.length, 1);
+});
+
+test("Clear availability recognizes filters page and size but ignores unknown URL parameters", async () => {
+  for (const query of ["?city=Berlin", "?page=3", "?pageSize=5"]) {
+    const app = await createApp([response(1, false)], query);
+    for (const id of ["clear-filters", "clear-filters-top"]) assert.equal(app.get(id).disabled, false);
+  }
+  const app = await createApp([response(1, false)], "?unknown=value");
+  for (const id of ["clear-filters", "clear-filters-top"]) assert.equal(app.get(id).disabled, true);
+});
+
+test("Clear availability follows Restore Clear and browser history", async () => {
+  const app = await createApp([response(1, false), response(1, false), response(1, false)], "?city=Berlin");
+  app.get("filter-city").value = "Rome";
+  await app.formEvent("input");
+  await app.click("restore-filters-top");
+  assert.equal(app.get("clear-filters-top").disabled, false);
+  await app.click("clear-filters-top");
+  for (const id of ["clear-filters", "clear-filters-top"]) assert.equal(app.get(id).disabled, true);
+  await app.back();
+  for (const id of ["clear-filters", "clear-filters-top"]) assert.equal(app.get(id).disabled, false);
+});
+
+test("Clear stays disabled during requests and on details then reflects the failed reset search", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(1, false), () => pending], "?city=Berlin");
+  const loading = app.click("clear-filters-top");
+  for (const id of ["clear-filters", "clear-filters-top"]) assert.equal(app.get(id).disabled, true);
+  finish({ ok: false, status: 503 });
+  await loading;
+  const detail = await createApp([detailResponse({ listingId })], `${detailQuery}&returnSearch=city%3DBerlin`);
+  for (const target of [app, detail]) {
+    for (const id of ["clear-filters", "clear-filters-top"]) assert.equal(target.get(id).disabled, true);
+  }
+  assert.equal(app.get("retry-listings").hidden, false);
+});
+
 test("first, middle and final pages follow server links and preserve queries", async () => {
   const page3 = `${endpoint}?page=3&pageSize=1&city=Berlin`;
   const app = await createApp([

@@ -140,7 +140,9 @@ button:disabled {
 }
 
 #restore-filters:disabled,
-#restore-filters-top:disabled {
+#restore-filters-top:disabled,
+#clear-filters:disabled,
+#clear-filters-top:disabled {
   cursor: default;
 }
 
