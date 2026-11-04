@@ -167,13 +167,26 @@ retryButton.addEventListener("click", async () => {
   await loadSelectedView(requestedUrl);
 });
 
-cancelButton.addEventListener("click", () => {
-  if (!isLoading || !cancelPublicRequest || pendingHistorySearch !== null) {
+cancelButton.addEventListener("click", cancelActivePublicRequest);
+
+window.addEventListener("keydown", event => {
+  if (event.key !== "Escape" || event.defaultPrevented || event.isComposing
+      || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
     return;
+  }
+  if (cancelActivePublicRequest()) {
+    event.preventDefault();
+  }
+});
+
+function cancelActivePublicRequest() {
+  if (!isLoading || !cancelPublicRequest || pendingHistorySearch !== null) {
+    return false;
   }
   cancelButton.disabled = true;
   cancelPublicRequest("user");
-});
+  return true;
+}
 
 for (const button of firstPageButtons) {
   button.addEventListener("click", async () => {

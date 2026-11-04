@@ -104,6 +104,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   await vm.runInContext(`(async () => { ${source}\n globalThis.formatters = {formatLabel, formatLivingArea, formatNumber, formatYear, formatFeatures, formatPrice, formatDate}; })()`, context);
   return { requests, historyUrls, historyCalls, historyEntries, signals, printCount: () => printCount,
     back: () => moveHistory(-1), forward: () => moveHistory(1),
+    keydown: event => windowListeners.keydown?.(event),
     popTo: async search => { location.search = search; await windowListeners.popstate?.(); },
     formatters: context.formatters, title: () => context.document.title, get: id => elements.get(`#${id}`),
     formEvent: event => elements.get("#listing-filters").listeners[event](),
@@ -544,6 +545,76 @@ test("Clear stays disabled during requests and on details then reflects the fail
     for (const id of ["clear-filters", "clear-filters-top"]) assert.equal(target.get(id).disabled, true);
   }
   assert.equal(app.get("retry-listings").hidden, false);
+});
+
+test("Escape cancels collection loading and Retry preserves the requested search", async () => {
+  const clock = manualClock();
+  const app = await createApp([response(1, false), neverRespond, response(1, false)], "?city=Berlin", clock);
+  const loading = app.click("load-listings");
+  let prevented = 0;
+  app.keydown({ key: "Escape", preventDefault() { prevented++; } });
+  await loading;
+  assert.equal(prevented, 1);
+  assert.equal(app.signals[1].aborted, true);
+  assert.equal(clock.count(), 0);
+  assert.equal(app.get("status").dataset.state, "canceled");
+  assert.equal(app.get("status").focusCount, 1);
+  assert.equal(app.get("retry-listings").hidden, false);
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests, Array(3).fill(`${endpoint}?city=Berlin`));
+  assert.equal(app.get("status").dataset.state, "ready");
+});
+
+test("Escape cancels a pending detail body and ignores its late response", async () => {
+  let finish;
+  const body = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([detailResponse({ listingId }), { ok: true, status: 200, json: () => body }], detailQuery);
+  const loading = app.click("load-listings");
+  await Promise.resolve();
+  app.keydown({ key: "Escape", preventDefault() {} });
+  await loading;
+  finish({ listingId, headline: "Late detail" });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(app.signals[1].aborted, true);
+  assert.equal(app.get("status").dataset.state, "canceled");
+  assert.equal(app.get("listing-grid").children.length, 0);
+  assert.equal(app.get("print-listing").hidden, true);
+});
+
+test("keyboard cancellation ignores handled composition modifier and unrelated keys", async () => {
+  const app = await createApp([response(1, false), neverRespond]);
+  const loading = app.click("load-listings");
+  for (const properties of [{ key: "Enter" }, { defaultPrevented: true }, { isComposing: true },
+    { ctrlKey: true }, { altKey: true }, { metaKey: true }, { shiftKey: true }]) {
+    app.keydown({ key: "Escape", preventDefault() { assert.fail("Unrelated keyboard input was consumed"); }, ...properties });
+    assert.equal(app.signals[1].aborted, false);
+    assert.equal(app.get("status").dataset.state, "loading");
+  }
+  await app.click("cancel-listings");
+  await loading;
+});
+
+test("Escape without an active request does not consume the event or start a request", async () => {
+  for (const result of [response(1, false), response(1, false, null, []), { ok: false, status: 503 }]) {
+    const app = await createApp([result]);
+    const status = app.get("status").textContent;
+    app.keydown({ key: "Escape", preventDefault() { assert.fail("Idle Escape was consumed"); } });
+    assert.equal(app.requests.length, 1);
+    assert.equal(app.get("status").textContent, status);
+  }
+});
+
+test("Escape leaves pending browser history restoration in control", async () => {
+  const app = await createApp([response(1, false), neverRespond, response(2, false)], "?city=Berlin");
+  const loading = app.click("load-listings");
+  const history = app.popTo("?city=Rome&page=2");
+  app.keydown({ key: "Escape", preventDefault() { assert.fail("History restoration Escape was consumed"); } });
+  await history;
+  await loading;
+  assert.equal(app.get("status").dataset.state, "ready");
+  assert.equal(app.get("status").focusCount, 0);
+  assert.equal(app.requests.at(-1), `${endpoint}?city=Rome&page=2`);
 });
 
 test("Cancel aborts a collection request and Retry repeats the canceled search", async () => {

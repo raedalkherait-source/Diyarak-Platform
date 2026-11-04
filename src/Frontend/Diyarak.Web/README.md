@@ -181,6 +181,12 @@ requested search/history and does not display an empty-results message. A late
 response cannot replace the canceled state. Cancellation also covers waiting
 for a JSON response body. The control is hidden after completion or cancellation.
 
+Press Escape (Esc) to cancel the active request from anywhere on the page. The
+button shows the shortcut and exposes it through aria-keyshortcuts. Escape is
+left untouched when no request is active, history restoration is pending, the
+event was already handled, text composition is active, or a modifier is held.
+Keyboard cancellation uses the same status, focus and Retry behavior as clicking.
+
 Browser Back/Forward retains its existing automatic request cancellation and
 restoration. Manual cancellation is ignored if a history restoration is already
 pending. Canceling stops the browser's wait; it does not guarantee that the
