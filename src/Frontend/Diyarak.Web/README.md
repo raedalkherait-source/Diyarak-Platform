@@ -172,6 +172,15 @@ valid Apply or Clear disables them again. They remain disabled during a request
 and on detail pages. Validation errors keep Restore available for discarding
 the invalid draft. This availability follows the same state as the draft reminder.
 
+## Share a search after results
+
+Copy search link is available above and below results. Both controls copy the
+applied search and requested page, ignoring drafts and unsupported parameters.
+Feedback appears only beside the activated control; unavailable clipboard access
+shows a safe manual URL there. Starting another copy or search clears both status
+locations. Both buttons are disabled during loading or copying and hidden on
+detail pages. Late clipboard completions cannot restore stale feedback.
+
 ## Edit filters after results
 
 Edit search filters is available both above and below the listing results.

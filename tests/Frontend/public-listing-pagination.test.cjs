@@ -39,6 +39,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "retry-listings", "previous-page", "next-page", "current-page",
     "cancel-listings",
     "edit-search-filters-bottom",
+    "copy-search-link-bottom", "search-link-status-bottom",
     "first-page", "first-page-bottom",
     "filter-panel-title",
     "restore-filters-top", "clear-filters-top",
@@ -3109,6 +3110,98 @@ test("Copy search link uses applied filters and page while preserving draft and 
   assert.equal(app.get("search-link-status").focusCount, 0);
   assert.deepEqual(app.historyUrls, history);
   assert.equal(app.requests.length, 1);
+});
+
+test("bottom copy shares applied search and page without changing drafts or results", async () => {
+  const copies = [];
+  const app = await createApp([response(3, false)], "?city=Berlin&page=3&redirect=private", undefined,
+    { writeText: async value => { copies.push(value); } });
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  const history = [...app.historyCalls];
+  const card = app.get("listing-grid").children[0];
+  await app.click("copy-search-link-bottom");
+  assert.deepEqual(copies, ["https://diyarak.example/app/index.html?city=Berlin&page=3"]);
+  assert.equal(app.get("search-link-status-bottom").textContent, "Search link copied.");
+  assert.equal(app.get("search-link-status-bottom").hidden, false);
+  assert.equal(app.get("search-link-status").hidden, true);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, false);
+  assert.equal(app.get("listing-grid").children[0], card);
+  assert.deepEqual(app.historyCalls, history);
+  assert.equal(app.requests.length, 1);
+  await app.click("copy-search-link");
+  assert.equal(app.get("search-link-status-bottom").hidden, true);
+  assert.equal(app.get("search-link-status").hidden, false);
+});
+
+test("bottom copy offers a safe manual URL when clipboard is unavailable or denied", async () => {
+  for (const clipboard of [undefined, { writeText: async () => { throw new Error("denied"); } }]) {
+    const app = await createApp([response(1, false)], "?city=%3Cscript%3E&redirect=private", undefined, clipboard);
+    await app.click("copy-search-link-bottom");
+    assert.equal(app.get("search-link-status-bottom").textContent,
+      "Copy this search link manually: https://diyarak.example/app/index.html?city=%3Cscript%3E");
+    assert.equal(app.get("search-link-status").hidden, true);
+    assert.equal(app.get("search-link-status-bottom").hidden, false);
+  }
+});
+
+test("both copy buttons block duplicate clipboard writes and ignore late completion after refresh", async () => {
+  for (const denied of [false, true]) {
+    let finish;
+    let count = 0;
+    const pending = new Promise((resolve, reject) => { finish = denied ? reject : resolve; });
+    const app = await createApp([response(1, false), response(1, false)], "", undefined,
+      { writeText: () => { count++; return pending; } });
+    const copying = app.click("copy-search-link-bottom");
+    for (const id of ["copy-search-link", "copy-search-link-bottom"]) {
+      assert.equal(app.get(id).disabled, true);
+      await app.click(id);
+    }
+    assert.equal(count, 1);
+    await app.click("load-listings");
+    finish(denied ? new Error("denied") : undefined);
+    await copying;
+    for (const id of ["search-link-status", "search-link-status-bottom"]) {
+      assert.equal(app.get(id).hidden, true);
+      assert.equal(app.get(id).textContent, "");
+    }
+    assert.equal(app.get("copy-search-link-bottom").disabled, false);
+  }
+});
+
+test("bottom copy is blocked during requests and hidden on detail pages", async () => {
+  let count = 0;
+  const clipboard = { writeText: async () => { count++; } };
+  const app = await createApp([response(1, false), neverRespond], "", undefined, clipboard);
+  const loading = app.click("load-listings");
+  assert.equal(app.get("copy-search-link-bottom").disabled, true);
+  await app.click("copy-search-link-bottom");
+  assert.equal(count, 0);
+  await app.click("cancel-listings");
+  await loading;
+  assert.equal(app.get("copy-search-link-bottom").disabled, false);
+  for (const [results, query] of [[[detailResponse({ listingId })], detailQuery], [[], "?listingId=invalid"]]) {
+    const detail = await createApp(results, query, undefined, clipboard);
+    assert.equal(detail.get("copy-search-link-bottom").hidden, true);
+    await detail.click("copy-search-link-bottom");
+  }
+  assert.equal(count, 0);
+});
+
+test("bottom copy follows pagination and clears feedback on history navigation", async () => {
+  const next = `${endpoint}?city=Berlin&page=2`;
+  const copies = [];
+  const app = await createApp([response(1, true, link(next, "next")), response(2, false), response(1, false)],
+    "?city=Berlin", undefined, { writeText: async value => { copies.push(value); } });
+  await app.click("copy-search-link-bottom");
+  await app.click("next-page-bottom");
+  assert.equal(app.get("search-link-status-bottom").hidden, true);
+  await app.click("copy-search-link-bottom");
+  assert.equal(copies.at(-1), "https://diyarak.example/app/index.html?city=Berlin&page=2");
+  await app.back();
+  assert.equal(app.get("search-link-status-bottom").hidden, true);
+  assert.equal(app.get("search-link-status-bottom").textContent, "");
 });
 
 test("Copy search link follows server navigation and Clear restores the unfiltered URL", async () => {

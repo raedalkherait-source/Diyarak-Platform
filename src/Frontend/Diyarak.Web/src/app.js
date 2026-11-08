@@ -79,10 +79,12 @@ const filterRemovalActions = document.querySelector("#filter-removal-actions");
 const editFiltersButton = document.querySelector("#edit-search-filters");
 const editFiltersButtons = [editFiltersButton, document.querySelector("#edit-search-filters-bottom")];
 const copySearchButton = document.querySelector("#copy-search-link");
+const copySearchButtons = [copySearchButton, document.querySelector("#copy-search-link-bottom")];
 const copyListingButton = document.querySelector("#copy-listing-link");
 const printListingButton = document.querySelector("#print-listing");
 const pageShell = document.querySelector("#page-shell");
 const linkCopyStatus = document.querySelector("#search-link-status");
+const bottomLinkCopyStatus = document.querySelector("#search-link-status-bottom");
 const headingElement = document.querySelector("#listing-heading");
 const backLink = document.querySelector("#back-to-listings");
 const filterPanel = document.querySelector("#listing-filter-panel");
@@ -234,15 +236,17 @@ pageJumpForm.addEventListener("submit", async event => {
   await loadPublicListings(collectionRequestUrl(query), "push", true);
 });
 
-copySearchButton.addEventListener("click", async () => {
-  if (isLoading || isDetailView || isCopyingLink) {
-    return;
-  }
-  const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
-  const url = new URL("/app/index.html", window.location.origin);
-  url.search = query.toString();
-  await copyPublicLink(url.href, "Search");
-});
+for (const button of copySearchButtons) {
+  button.addEventListener("click", async () => {
+    if (isLoading || isDetailView || isCopyingLink) {
+      return;
+    }
+    const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
+    const url = new URL("/app/index.html", window.location.origin);
+    url.search = query.toString();
+    await copyPublicLink(url.href, "Search", button === copySearchButton ? linkCopyStatus : bottomLinkCopyStatus);
+  });
+}
 
 copyListingButton.addEventListener("click", async () => {
   if (isLoading || !isDetailView || !hasLoadedPublicListing || isCopyingLink) {
@@ -260,11 +264,17 @@ printListingButton.addEventListener("click", () => {
   window.print();
 });
 
-async function copyPublicLink(link, label) {
+function clearLinkCopyStatus() {
+  for (const status of [linkCopyStatus, bottomLinkCopyStatus]) {
+    status.textContent = "";
+    status.hidden = true;
+  }
+}
+
+async function copyPublicLink(link, label, status = linkCopyStatus) {
   const version = linkCopyVersion;
   isCopyingLink = true;
-  linkCopyStatus.textContent = "";
-  linkCopyStatus.hidden = true;
+  clearLinkCopyStatus();
   updatePagination();
   try {
     if (typeof navigator.clipboard?.writeText !== "function") {
@@ -272,13 +282,13 @@ async function copyPublicLink(link, label) {
     }
     await navigator.clipboard.writeText(link);
     if (version === linkCopyVersion) {
-      linkCopyStatus.textContent = `${label} link copied.`;
-      linkCopyStatus.hidden = false;
+      status.textContent = `${label} link copied.`;
+      status.hidden = false;
     }
   } catch {
     if (version === linkCopyVersion) {
-      linkCopyStatus.textContent = `Copy this ${label.toLowerCase()} link manually: ${link}`;
-      linkCopyStatus.hidden = false;
+      status.textContent = `Copy this ${label.toLowerCase()} link manually: ${link}`;
+      status.hidden = false;
     }
   } finally {
     isCopyingLink = false;
@@ -365,8 +375,7 @@ if (!isDetailView) {
   window.addEventListener("popstate", async () => {
     pendingHistorySearch = getSupportedSearch(new URLSearchParams(window.location.search));
     linkCopyVersion++;
-    linkCopyStatus.textContent = "";
-    linkCopyStatus.hidden = true;
+    clearLinkCopyStatus();
     if (isLoading) {
       cancelPublicRequest?.();
       return;
@@ -392,7 +401,9 @@ filterRemovalActions.hidden = true;
 for (const button of editFiltersButtons) {
   button.hidden = isDetailView;
 }
-copySearchButton.hidden = isDetailView;
+for (const button of copySearchButtons) {
+  button.hidden = isDetailView;
+}
 copyListingButton.hidden = true;
 printListingButton.hidden = true;
 pageShell.dataset.printListing = "";
@@ -880,8 +891,7 @@ async function loadPublicListing() {
   printListingButton.hidden = true;
   pageShell.dataset.printListing = "";
   linkCopyVersion++;
-  linkCopyStatus.textContent = "";
-  linkCopyStatus.hidden = true;
+  clearLinkCopyStatus();
   updatePagination();
   gridElement.replaceChildren();
   if (!isListingId(selectedListingId)) {
@@ -939,8 +949,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
 
   requestedUrl = url;
   linkCopyVersion++;
-  linkCopyStatus.textContent = "";
-  linkCopyStatus.hidden = true;
+  clearLinkCopyStatus();
   const currentSearch = getSupportedSearch(new URL(url, window.location.origin).searchParams);
   pageJumpError.textContent = "";
   pageJumpError.hidden = true;
@@ -1072,7 +1081,9 @@ function updatePagination() {
   for (const button of editFiltersButtons) {
     button.disabled = isLoading || isDetailView;
   }
-  copySearchButton.disabled = isLoading || isCopyingLink;
+  for (const button of copySearchButtons) {
+    button.disabled = isLoading || isDetailView || isCopyingLink;
+  }
   copyListingButton.disabled = isLoading || isCopyingLink || !hasLoadedPublicListing;
   printListingButton.disabled = isLoading || !hasLoadedPublicListing;
   emptyClearFiltersButton.disabled = isLoading;
