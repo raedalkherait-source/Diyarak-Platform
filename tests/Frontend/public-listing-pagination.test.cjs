@@ -38,6 +38,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
   for (const id of ["status", "listing-grid", "listing-card-template", "load-listings",
     "retry-listings", "previous-page", "next-page", "current-page",
     "cancel-listings",
+    "edit-search-filters-bottom",
     "first-page", "first-page-bottom",
     "filter-panel-title",
     "restore-filters-top", "clear-filters-top",
@@ -2949,6 +2950,73 @@ test("loading and detail views ignore draft events and notification never moves 
   const detail=await createApp([detailResponse({listingId})],detailQuery);detail.get("filter-city").value="Paris";await detail.formEvent("input");assert.equal(detail.get("filter-draft-message").hidden,true);
 });
 
+
+test("bottom Edit search filters preserves draft validation results and history", async () => {
+  const app = await createApp([response(3, false)], "?city=Berlin&page=3");
+  app.get("listing-filter-panel").open = false;
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  app.get("filter-error").textContent = "Existing validation";
+  app.get("filter-error").hidden = false;
+  const history = [...app.historyCalls];
+  const card = app.get("listing-grid").children[0];
+  await app.click("edit-search-filters-bottom");
+  assert.equal(app.get("listing-filter-panel").open, true);
+  assert.equal(app.get("filter-city").focusCount, 1);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, false);
+  assert.equal(app.get("filter-error").textContent, "Existing validation");
+  assert.equal(app.get("filter-error").hidden, false);
+  assert.equal(app.get("listing-grid").children[0], card);
+  assert.deepEqual(app.historyCalls, history);
+  assert.equal(app.requests.length, 1);
+});
+
+test("both edit controls block loading and return after cancel or timeout", async () => {
+  for (const finish of ["cancel", "timeout"]) {
+    const clock = manualClock();
+    const app = await createApp([response(1, false), neverRespond], "", clock);
+    app.get("listing-filter-panel").open = false;
+    const loading = app.click("load-listings");
+    for (const id of ["edit-search-filters", "edit-search-filters-bottom"]) {
+      assert.equal(app.get(id).disabled, true);
+      await app.click(id);
+    }
+    assert.equal(app.get("listing-filter-panel").open, false);
+    assert.equal(app.get("filter-city").focusCount, 0);
+    if (finish === "cancel") await app.click("cancel-listings");
+    else clock.expire();
+    await loading;
+    for (const id of ["edit-search-filters", "edit-search-filters-bottom"]) {
+      assert.equal(app.get(id).disabled, false);
+    }
+    await app.click("edit-search-filters-bottom");
+    assert.equal(app.get("listing-filter-panel").open, true);
+    assert.equal(app.get("filter-city").focusCount, 1);
+    assert.equal(app.requests.length, 2);
+  }
+});
+
+test("bottom edit control works after empty or failed results and stays hidden for details", async () => {
+  for (const result of [response(1, false, null, []), { ok: false, status: 503 }]) {
+    const app = await createApp([result]);
+    const state = app.get("status").dataset.state;
+    assert.equal(app.get("edit-search-filters-bottom").hidden, false);
+    assert.equal(app.get("edit-search-filters-bottom").disabled, false);
+    await app.click("edit-search-filters-bottom");
+    assert.equal(app.get("filter-city").focusCount, 1);
+    assert.equal(app.get("status").dataset.state, state);
+    assert.equal(app.requests.length, 1);
+  }
+  for (const [results, query] of [[[detailResponse({ listingId })], detailQuery], [[], "?listingId=invalid"]]) {
+    const app = await createApp(results, query);
+    for (const id of ["edit-search-filters", "edit-search-filters-bottom"]) {
+      assert.equal(app.get(id).hidden, true);
+      await app.click(id);
+    }
+    assert.equal(app.get("filter-city").focusCount, 0);
+  }
+});
 
 test("Edit search filters opens the panel and focuses City without changing search state", async () => {
   const app = await createApp([response(1, false)], "?city=Berlin&page=3");

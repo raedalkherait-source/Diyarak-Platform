@@ -172,6 +172,14 @@ valid Apply or Clear disables them again. They remain disabled during a request
 and on detail pages. Validation errors keep Restore available for discarding
 the invalid draft. This availability follows the same state as the draft reminder.
 
+## Edit filters after results
+
+Edit search filters is available both above and below the listing results.
+Either control opens the filter panel and focuses City without applying or
+discarding draft edits, changing history, or issuing a request. Both controls
+are disabled during loading and hidden on detail pages. They become available
+again after success, empty results, failure, timeout or manual cancellation.
+
 ## Cancel a public request
 
 Cancel request appears beside status while a collection or detail request is

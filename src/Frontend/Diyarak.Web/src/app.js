@@ -77,6 +77,7 @@ const paginationElements = [paginationElement, document.querySelector("#listing-
 const filterSummary = document.querySelector("#applied-filter-summary");
 const filterRemovalActions = document.querySelector("#filter-removal-actions");
 const editFiltersButton = document.querySelector("#edit-search-filters");
+const editFiltersButtons = [editFiltersButton, document.querySelector("#edit-search-filters-bottom")];
 const copySearchButton = document.querySelector("#copy-search-link");
 const copyListingButton = document.querySelector("#copy-listing-link");
 const printListingButton = document.querySelector("#print-listing");
@@ -285,13 +286,15 @@ async function copyPublicLink(link, label) {
   }
 }
 
-editFiltersButton.addEventListener("click", () => {
-  if (isLoading || isDetailView) {
-    return;
-  }
-  filterPanel.open = true;
-  cityInput.focus();
-});
+for (const button of editFiltersButtons) {
+  button.addEventListener("click", () => {
+    if (isLoading || isDetailView) {
+      return;
+    }
+    filterPanel.open = true;
+    cityInput.focus();
+  });
+}
 
 filterForm.addEventListener("input", updateFilterDraftState);
 filterForm.addEventListener("change", updateFilterDraftState);
@@ -386,7 +389,9 @@ restoreFilterForm(initialSearch);
 backLink.href = `${collectionPageUrl(initialSearch)}#listing-heading`;
 filterSummary.hidden = isDetailView;
 filterRemovalActions.hidden = true;
-editFiltersButton.hidden = isDetailView;
+for (const button of editFiltersButtons) {
+  button.hidden = isDetailView;
+}
 copySearchButton.hidden = isDetailView;
 copyListingButton.hidden = true;
 printListingButton.hidden = true;
@@ -1064,7 +1069,9 @@ function updatePagination() {
   for (const button of filterRemovalButtons) {
     button.disabled = isLoading;
   }
-  editFiltersButton.disabled = isLoading;
+  for (const button of editFiltersButtons) {
+    button.disabled = isLoading || isDetailView;
+  }
   copySearchButton.disabled = isLoading || isCopyingLink;
   copyListingButton.disabled = isLoading || isCopyingLink || !hasLoadedPublicListing;
   printListingButton.disabled = isLoading || !hasLoadedPublicListing;
