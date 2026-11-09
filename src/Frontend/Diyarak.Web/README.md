@@ -708,6 +708,9 @@ The lower navigation has its own accessible landmark name. Only the original
 page indicator announces live updates, avoiding duplicate page announcements.
 Both sets are hidden on details and disabled when their links are unavailable.
 An empty later page can still use its valid previous link from either set.
+The lower navigation shows the number of listings on the returned page, including
+zero on an empty page. This is a page count rather than a search total. The count
+clears during loading, failure or cancellation and is hidden on details.
 
 ## Focus after page navigation
 

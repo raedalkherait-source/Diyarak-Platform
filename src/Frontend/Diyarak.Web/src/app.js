@@ -75,6 +75,7 @@ const pageJumpControls = ["", "-bottom"].map(suffix => ({
 const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
 const pageElements = [pageElement, document.querySelector("#current-page-bottom")];
+const listingPageCount = document.querySelector("#listing-page-count");
 const paginationElements = [paginationElement, document.querySelector("#listing-pagination-bottom")];
 const filterSummary = document.querySelector("#applied-filter-summary");
 const filterRemovalActions = document.querySelector("#filter-removal-actions");
@@ -426,6 +427,7 @@ for (const pagination of paginationElements) {
 backLink.hidden = !isDetailView;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
+setCurrentPageLabel("");
 await loadSelectedView(initialCollectionUrl);
 
 async function loadSelectedView(url = firstPageUrl, historyMode = "replace") {
@@ -996,11 +998,14 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
 
     validateCollectionResponse(payload);
     const items = payload.items;
+    const listingCount = items.length;
+    const listingLabel = listingCount === 1 ? "listing" : "listings";
+    const countLabel = `${listingCount} ${listingLabel}`;
     canReturnToFirstPage = payload.page > 1;
     const linkHeader = response.headers.get("Link");
     previousUrl = getPageLink(linkHeader, "prev");
     nextUrl = payload.hasMore === true ? getPageLink(linkHeader, "next") : null;
-    setCurrentPageLabel(`Page ${payload.page}`);
+    setCurrentPageLabel(`Page ${payload.page}`, `${countLabel} on this page`);
     updateCollectionTitle(currentSearch, payload.page);
     for (const { input } of pageJumpControls) {
       input.value = String(payload.page);
@@ -1024,12 +1029,10 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
       gridElement.append(createListingCard(listing));
     }
 
-    const listingCount = items.length;
-    const listingLabel = listingCount === 1 ? "listing" : "listings";
     setReadyState(
       payload.hasMore
-        ? `Loaded ${listingCount} ${listingLabel}. More pages are available.`
-        : `Loaded ${listingCount} ${listingLabel}.`,
+        ? `Loaded ${countLabel}. More pages are available.`
+        : `Loaded ${countLabel}.`,
     );
   } catch (error) {
     if (pendingHistorySearch !== null) {
@@ -1077,10 +1080,12 @@ function getPageLink(header, relation) {
   return null;
 }
 
-function setCurrentPageLabel(value) {
+function setCurrentPageLabel(value, countLabel = "") {
   for (const element of pageElements) {
     element.textContent = value;
   }
+  listingPageCount.textContent = countLabel;
+  listingPageCount.hidden = countLabel === "";
 }
 
 function updatePagination() {

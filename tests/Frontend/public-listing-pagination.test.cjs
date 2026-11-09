@@ -39,6 +39,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "retry-listings", "previous-page", "next-page", "current-page",
     "cancel-listings",
     "edit-search-filters-bottom",
+    "listing-page-count",
     "copy-search-link-bottom", "search-link-status-bottom",
     "page-jump-form-bottom", "page-jump-fields-bottom", "page-jump-input-bottom", "page-jump-error-bottom",
     "first-page", "first-page-bottom",
@@ -3118,6 +3119,49 @@ function cardShare(app, index = 0) {
   return { button: card.querySelector(".listing-card__copy-link"),
     status: card.querySelector(".listing-card__copy-status") };
 }
+
+test("bottom count describes returned items across partial and empty pages", async () => {
+  const app = await createApp([
+    response(1, true, link(page2, "next"), [{}, {}, {}]),
+    response(2, false, link(page1, "prev"), []),
+    response(1, false, null, [{}]),
+  ], "?city=Berlin&pageSize=20");
+  const count = app.get("listing-page-count");
+  assert.equal(count.hidden, false);
+  assert.equal(count.textContent, "3 listings on this page");
+  await app.click("next-page-bottom");
+  assert.equal(count.hidden, false);
+  assert.equal(count.textContent, "0 listings on this page");
+  await app.back();
+  assert.equal(count.textContent, "1 listing on this page");
+});
+
+test("bottom count clears for pending canceled or failed requests and recovers on Retry", async () => {
+  for (const outcome of ["cancel", "failure"]) {
+    let finish;
+    const pending = new Promise(resolve => { finish = resolve; });
+    const app = await createApp([response(1, false, null, [{}, {}]), () => pending, response(1, false)]);
+    const count = app.get("listing-page-count");
+    assert.equal(count.textContent, "2 listings on this page");
+    const loading = app.click("load-listings");
+    assert.equal(count.hidden, true);
+    assert.equal(count.textContent, "");
+    if (outcome === "cancel") await app.click("cancel-listings");
+    else finish({ ok: false, status: 503 });
+    await loading;
+    assert.equal(count.hidden, true);
+    assert.equal(count.textContent, "");
+    await app.click("retry-listings");
+    assert.equal(count.hidden, false);
+    assert.equal(count.textContent, "1 listing on this page");
+  }
+});
+
+test("bottom count stays hidden on listing details", async () => {
+  const app = await createApp([detailResponse({ listingId })], detailQuery);
+  assert.equal(app.get("listing-page-count").hidden, true);
+  assert.equal(app.get("listing-page-count").textContent, "");
+});
 
 test("bottom page jump preserves applied filters and drafts and synchronizes both inputs through history", async () => {
   const query = "city=Berlin&propertyFeature=Elevator&propertyFeature=BalconyOrTerrace&pageSize=5";
