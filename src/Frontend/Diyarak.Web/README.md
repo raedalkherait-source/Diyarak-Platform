@@ -712,6 +712,10 @@ The lower navigation shows the number of listings on the returned page, includin
 zero on an empty page. This is a page count rather than a search total. The count
 clears during loading, failure or cancellation and is hidden on details.
 
+Top of results moves focus to the results heading without changing the search,
+page, drafts or browser history. It also works while loading, so users at the
+bottom can reach the request status. The button is hidden on detail pages.
+
 ## Focus after page navigation
 
 Activating either Previous/Next control or submitting a valid page jump moves

@@ -89,6 +89,7 @@ const pageShell = document.querySelector("#page-shell");
 const linkCopyStatus = document.querySelector("#search-link-status");
 const bottomLinkCopyStatus = document.querySelector("#search-link-status-bottom");
 const headingElement = document.querySelector("#listing-heading");
+const topOfResultsButton = document.querySelector("#top-of-results");
 const backLink = document.querySelector("#back-to-listings");
 const filterPanel = document.querySelector("#listing-filter-panel");
 const filterPanelTitle = document.querySelector("#filter-panel-title");
@@ -312,6 +313,12 @@ for (const button of editFiltersButtons) {
   });
 }
 
+topOfResultsButton.addEventListener("click", () => {
+  if (!isDetailView) {
+    headingElement.focus();
+  }
+});
+
 filterForm.addEventListener("input", updateFilterDraftState);
 filterForm.addEventListener("change", updateFilterDraftState);
 
@@ -425,6 +432,7 @@ for (const pagination of paginationElements) {
   pagination.hidden = isDetailView;
 }
 backLink.hidden = !isDetailView;
+topOfResultsButton.hidden = isDetailView;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
 setCurrentPageLabel("");

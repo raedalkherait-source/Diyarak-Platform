@@ -40,6 +40,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "cancel-listings",
     "edit-search-filters-bottom",
     "listing-page-count",
+    "top-of-results",
     "copy-search-link-bottom", "search-link-status-bottom",
     "page-jump-form-bottom", "page-jump-fields-bottom", "page-jump-input-bottom", "page-jump-error-bottom",
     "first-page", "first-page-bottom",
