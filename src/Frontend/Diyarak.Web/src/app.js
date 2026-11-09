@@ -66,10 +66,12 @@ const nextButton = document.querySelector("#next-page");
 const previousButtons = [previousButton, document.querySelector("#previous-page-bottom")];
 const nextButtons = [nextButton, document.querySelector("#next-page-bottom")];
 const firstPageButtons = [document.querySelector("#first-page"), document.querySelector("#first-page-bottom")];
-const pageJumpForm = document.querySelector("#page-jump-form");
-const pageJumpFields = document.querySelector("#page-jump-fields");
-const pageJumpInput = document.querySelector("#page-jump-input");
-const pageJumpError = document.querySelector("#page-jump-error");
+const pageJumpControls = ["", "-bottom"].map(suffix => ({
+  form: document.querySelector(`#page-jump-form${suffix}`),
+  fields: document.querySelector(`#page-jump-fields${suffix}`),
+  input: document.querySelector(`#page-jump-input${suffix}`),
+  error: document.querySelector(`#page-jump-error${suffix}`),
+}));
 const pageElement = document.querySelector("#current-page");
 const paginationElement = document.querySelector("#listing-pagination");
 const pageElements = [pageElement, document.querySelector("#current-page-bottom")];
@@ -219,23 +221,25 @@ for (const button of nextButtons) {
   });
 }
 
-pageJumpForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  if (isLoading || isDetailView) {
-    return;
-  }
-  const value = pageJumpInput.value.trim();
-  const valid = /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 2147483647;
-  pageJumpError.textContent = valid ? "" : "Enter a whole-number page between 1 and 2147483647.";
-  pageJumpError.hidden = valid;
-  if (!valid) {
-    pageJumpError.focus();
-    return;
-  }
-  const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
-  query.set("page", String(Number(value)));
-  await loadPublicListings(collectionRequestUrl(query), "push", true);
-});
+for (const { form, input, error } of pageJumpControls) {
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (isLoading || isDetailView) {
+      return;
+    }
+    const value = input.value.trim();
+    const valid = /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 2147483647;
+    if (!valid) {
+      error.textContent = "Enter a whole-number page between 1 and 2147483647.";
+      error.hidden = false;
+      error.focus();
+      return;
+    }
+    const query = getSupportedSearch(new URL(requestedUrl, window.location.origin).searchParams);
+    query.set("page", String(Number(value)));
+    await loadPublicListings(collectionRequestUrl(query), "push", true);
+  });
+}
 
 for (const button of copySearchButtons) {
   button.addEventListener("click", async () => {
@@ -413,7 +417,9 @@ emptyClearFiltersButton.hidden = true;
 emptyFirstPageButton.hidden = true;
 filterPanel.hidden = isDetailView;
 filterForm.hidden = isDetailView;
-pageJumpForm.hidden = isDetailView;
+for (const { form } of pageJumpControls) {
+  form.hidden = isDetailView;
+}
 for (const pagination of paginationElements) {
   pagination.hidden = isDetailView;
 }
@@ -953,9 +959,11 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
   linkCopyVersion++;
   clearLinkCopyStatus();
   const currentSearch = getSupportedSearch(new URL(url, window.location.origin).searchParams);
-  pageJumpError.textContent = "";
-  pageJumpError.hidden = true;
-  pageJumpInput.value = currentSearch.get("page") ?? "1";
+  for (const { error, input } of pageJumpControls) {
+    error.textContent = "";
+    error.hidden = true;
+    input.value = currentSearch.get("page") ?? "1";
+  }
   filterSummary.textContent = describeAppliedFilters(currentSearch);
   updateCollectionTitle(currentSearch);
   renderFilterRemovalActions(currentSearch);
@@ -994,7 +1002,9 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
     nextUrl = payload.hasMore === true ? getPageLink(linkHeader, "next") : null;
     setCurrentPageLabel(`Page ${payload.page}`);
     updateCollectionTitle(currentSearch, payload.page);
-    pageJumpInput.value = String(payload.page);
+    for (const { input } of pageJumpControls) {
+      input.value = String(payload.page);
+    }
 
     if (items.length === 0) {
       const hasFilters = [...currentSearch.keys()].some(key => key !== "page" && key !== "pageSize");
@@ -1094,7 +1104,9 @@ function updatePagination() {
   printListingButton.disabled = isLoading || !hasLoadedPublicListing;
   emptyClearFiltersButton.disabled = isLoading;
   emptyFirstPageButton.disabled = isLoading;
-  pageJumpFields.disabled = isLoading;
+  for (const { fields } of pageJumpControls) {
+    fields.disabled = isLoading || isDetailView;
+  }
   filterFields.disabled = isLoading;
   for (const button of previousButtons) {
     button.disabled = isLoading || !previousUrl;

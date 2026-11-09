@@ -40,6 +40,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "cancel-listings",
     "edit-search-filters-bottom",
     "copy-search-link-bottom", "search-link-status-bottom",
+    "page-jump-form-bottom", "page-jump-fields-bottom", "page-jump-input-bottom", "page-jump-error-bottom",
     "first-page", "first-page-bottom",
     "filter-panel-title",
     "restore-filters-top", "clear-filters-top",
@@ -110,7 +111,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     popTo: async search => { location.search = search; await windowListeners.popstate?.(); },
     formatters: context.formatters, title: () => context.document.title, get: id => elements.get(`#${id}`),
     formEvent: event => elements.get("#listing-filters").listeners[event](),
-    jump: () => elements.get("#page-jump-form").listeners.submit({ preventDefault() {} }),
+    jump: (suffix = "") => elements.get(`#page-jump-form${suffix}`).listeners.submit({ preventDefault() {} }),
     submit: () => elements.get("#listing-filters").listeners.submit({ preventDefault() {} }),
     click: id => elements.get(`#${id}`).listeners.click() };
 }
@@ -3117,6 +3118,76 @@ function cardShare(app, index = 0) {
   return { button: card.querySelector(".listing-card__copy-link"),
     status: card.querySelector(".listing-card__copy-status") };
 }
+
+test("bottom page jump preserves applied filters and drafts and synchronizes both inputs through history", async () => {
+  const query = "city=Berlin&propertyFeature=Elevator&propertyFeature=BalconyOrTerrace&pageSize=5";
+  const app = await createApp([response(1, false), response(5, false), response(1, false), response(5, false)], `?${query}`);
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  app.get("page-jump-input-bottom").value = "005";
+  await app.jump("-bottom");
+  assert.equal(app.requests.at(-1), `${endpoint}?${query}&page=5`);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, false);
+  assert.equal(app.get("listing-heading").focusCount, 1);
+  assert.equal(app.historyCalls.at(-1).type, "push");
+  for (const [move, page] of [[null, "5"], [app.back, "1"], [app.forward, "5"]]) {
+    if (move) await move();
+    assert.equal(app.get("page-jump-input").value, page);
+    assert.equal(app.get("page-jump-input-bottom").value, page);
+  }
+});
+
+test("bottom page jump validation stays beside its form and clears on navigation", async () => {
+  const app = await createApp([response(1, false), response(2, false)], "?city=Berlin");
+  const history = [...app.historyCalls];
+  const card = app.get("listing-grid").children[0];
+  app.get("page-jump-input-bottom").value = "2147483648";
+  await app.jump("-bottom");
+  assert.equal(app.get("page-jump-error-bottom").hidden, false);
+  assert.equal(app.get("page-jump-error-bottom").focusCount, 1);
+  assert.equal(app.get("page-jump-error").hidden, true);
+  assert.equal(app.get("listing-grid").children[0], card);
+  assert.deepEqual(app.historyCalls, history);
+  assert.equal(app.requests.length, 1);
+  app.get("page-jump-input").value = "2";
+  await app.jump();
+  assert.equal(app.get("page-jump-error-bottom").hidden, true);
+  assert.equal(app.get("page-jump-error-bottom").textContent, "");
+  assert.equal(app.get("page-jump-input-bottom").value, "2");
+});
+
+test("both page jump forms block duplicate requests and recover after failure", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(1, false), () => pending, response(3, false)]);
+  app.get("page-jump-input-bottom").value = "3";
+  const loading = app.jump("-bottom");
+  for (const suffix of ["", "-bottom"]) {
+    assert.equal(app.get(`page-jump-fields${suffix}`).disabled, true);
+    await app.jump(suffix);
+  }
+  assert.equal(app.requests.length, 2);
+  finish({ ok: false, status: 503 });
+  await loading;
+  assert.equal(app.get("status").dataset.state, "error");
+  assert.equal(app.get("status").focusCount, 1);
+  for (const suffix of ["", "-bottom"]) {
+    assert.equal(app.get(`page-jump-fields${suffix}`).disabled, false);
+    assert.equal(app.get(`page-jump-input${suffix}`).value, "3");
+  }
+  await app.click("retry-listings");
+  assert.equal(app.requests.at(-1), `${endpoint}?page=3`);
+  assert.equal(app.get("current-page-bottom").textContent, "Page 3");
+});
+
+test("bottom page jump is hidden and inert on detail pages", async () => {
+  const app = await createApp([detailResponse({ listingId })], detailQuery);
+  assert.equal(app.get("page-jump-form-bottom").hidden, true);
+  app.get("page-jump-input-bottom").value = "2";
+  await app.jump("-bottom");
+  assert.equal(app.requests.length, 1);
+});
 
 test("card sharing copies only the canonical identifier and preserves search drafts and history", async () => {
   const copies = [];

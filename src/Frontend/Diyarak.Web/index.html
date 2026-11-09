@@ -300,6 +300,16 @@
         <span id="current-page-bottom"></span>
         <button id="next-page-bottom" class="secondary-button" type="button" disabled>Next page</button>
       </nav>
+      <form id="page-jump-form-bottom" aria-label="Go to listing page after results">
+        <fieldset id="page-jump-fields-bottom">
+          <legend>Go to page</legend>
+          <label for="page-jump-input-bottom">Page number</label>
+          <input id="page-jump-input-bottom" name="page" type="number" min="1" max="2147483647" step="1" required aria-describedby="page-jump-help-bottom page-jump-error-bottom">
+          <button type="submit">Go</button>
+          <p id="page-jump-help-bottom">Keeps your applied filters and page size. A page may have no results.</p>
+          <p id="page-jump-error-bottom" role="alert" tabindex="-1" hidden></p>
+        </fieldset>
+      </form>
       <button id="edit-search-filters-bottom" class="secondary-button" type="button" aria-controls="listing-filter-panel">Edit search filters</button>
       <button id="copy-search-link-bottom" class="secondary-button" type="button">Copy search link</button>
       <p id="search-link-status-bottom" role="status" aria-live="polite" hidden></p>
