@@ -158,6 +158,7 @@ let appliedFilterSnapshot = null;
 let isCopyingLink = false;
 let hasLoadedPublicListing = false;
 let linkCopyVersion = 0;
+let listingShareControls = [];
 let pendingHistorySearch = null;
 let cancelPublicRequest = null;
 let filterRemovalButtons = [];
@@ -265,7 +266,7 @@ printListingButton.addEventListener("click", () => {
 });
 
 function clearLinkCopyStatus() {
-  for (const status of [linkCopyStatus, bottomLinkCopyStatus]) {
+  for (const status of [linkCopyStatus, bottomLinkCopyStatus, ...listingShareControls.map(control => control.status)]) {
     status.textContent = "";
     status.hidden = true;
   }
@@ -894,6 +895,7 @@ async function loadPublicListing() {
   clearLinkCopyStatus();
   updatePagination();
   gridElement.replaceChildren();
+  listingShareControls = [];
   if (!isListingId(selectedListingId)) {
     document.title = "Invalid listing link | Diyarak";
     setReadyState("Invalid listing link. Return to public listings.");
@@ -971,6 +973,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
   updatePagination();
   setLoadingState();
   gridElement.replaceChildren();
+  listingShareControls = [];
 
   try {
     const { response, payload } = await fetchPublicResource(requestedUrl);
@@ -1084,6 +1087,9 @@ function updatePagination() {
   for (const button of copySearchButtons) {
     button.disabled = isLoading || isDetailView || isCopyingLink;
   }
+  for (const { button } of listingShareControls) {
+    button.disabled = isLoading || isCopyingLink;
+  }
   copyListingButton.disabled = isLoading || isCopyingLink || !hasLoadedPublicListing;
   printListingButton.disabled = isLoading || !hasLoadedPublicListing;
   emptyClearFiltersButton.disabled = isLoading;
@@ -1104,6 +1110,23 @@ function createListingCard(listing, showDetails = false) {
   const property = listing.property ?? {};
   const location = property.location ?? {};
   const detailLink = card.querySelector(".listing-card__detail-link");
+  const shareButton = card.querySelector(".listing-card__copy-link");
+  const shareStatus = card.querySelector(".listing-card__copy-status");
+  shareButton.hidden = showDetails || !isListingId(listing.listingId);
+  shareStatus.hidden = true;
+  if (!shareButton.hidden) {
+    listingShareControls.push({ button: shareButton, status: shareStatus });
+    shareButton.setAttribute("aria-label", `Copy listing link: ${listing.headline ?? "Untitled listing"}`);
+    shareButton.addEventListener("click", async () => {
+      if (isLoading || isDetailView || isCopyingLink
+          || !listingShareControls.some(control => control.button === shareButton)) {
+        return;
+      }
+      const url = new URL("/app/index.html", window.location.origin);
+      url.search = new URLSearchParams({ listingId: listing.listingId.toLowerCase() }).toString();
+      await copyPublicLink(url.href, "Listing", shareStatus);
+    });
+  }
   detailLink.hidden = showDetails || !isListingId(listing.listingId);
   if (!detailLink.hidden) {
     const detailParameters = new URLSearchParams({ listingId: listing.listingId });

@@ -172,6 +172,16 @@ valid Apply or Clear disables them again. They remain disabled during a request
 and on detail pages. Validation errors keep Restore available for discarding
 the invalid draft. This availability follows the same state as the draft reminder.
 
+## Share individual listing cards
+
+Listing cards with a valid public identifier also offer Copy listing link.
+This copies a canonical detail URL containing only that identifier, with feedback
+inside the card and a manual URL if clipboard access is unavailable. The button's
+accessible name includes the listing headline. Card, search and detail copy actions
+share busy state; a new copy clears previous feedback. Search navigation clears
+card feedback and ignores late clipboard completions. Card sharing is hidden on
+detail views and for missing or invalid identifiers.
+
 ## Share a search after results
 
 Copy search link is available above and below results. Both controls copy the

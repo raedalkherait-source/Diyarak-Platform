@@ -3112,6 +3112,105 @@ test("Copy search link uses applied filters and page while preserving draft and 
   assert.equal(app.requests.length, 1);
 });
 
+function cardShare(app, index = 0) {
+  const card = app.get("listing-grid").children[index].querySelector(".listing-card");
+  return { button: card.querySelector(".listing-card__copy-link"),
+    status: card.querySelector(".listing-card__copy-status") };
+}
+
+test("card sharing copies only the canonical identifier and preserves search drafts and history", async () => {
+  const copies = [];
+  const app = await createApp([response(2, false, null, [{ listingId: listingId.toUpperCase(), headline: "Sunny home" }])],
+    "?city=Berlin&page=2&redirect=private", undefined, { writeText: async value => { copies.push(value); } });
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  const history = [...app.historyCalls];
+  const share = cardShare(app);
+  assert.equal(share.button.hidden, false);
+  assert.equal(share.button.getAttribute("aria-label"), "Copy listing link: Sunny home");
+  await share.button.listeners.click();
+  assert.deepEqual(copies, [`https://diyarak.example/app/index.html?listingId=${listingId}`]);
+  assert.equal(share.status.textContent, "Listing link copied.");
+  assert.equal(share.status.hidden, false);
+  assert.equal(app.get("search-link-status").hidden, true);
+  assert.equal(app.get("search-link-status-bottom").hidden, true);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, false);
+  assert.deepEqual(app.historyCalls, history);
+  assert.equal(app.requests.length, 1);
+  await app.click("copy-search-link-bottom");
+  assert.equal(share.status.hidden, true);
+  assert.equal(share.status.textContent, "");
+});
+
+test("card sharing offers a safe manual URL and clears another card's feedback", async () => {
+  for (const clipboard of [undefined, { writeText: async () => { throw new Error("denied"); } }]) {
+    const app = await createApp([response(1, false, null, [{ listingId }, { listingId }])], "", undefined, clipboard);
+    const first = cardShare(app);
+    const second = cardShare(app, 1);
+    await first.button.listeners.click();
+    assert.equal(first.status.textContent, `Copy this listing link manually: https://diyarak.example/app/index.html?listingId=${listingId}`);
+    await second.button.listeners.click();
+    assert.equal(first.status.hidden, true);
+    assert.equal(second.status.hidden, false);
+    assert.equal(second.status.textContent, `Copy this listing link manually: https://diyarak.example/app/index.html?listingId=${listingId}`);
+  }
+});
+
+test("card copy shares busy state and ignores stale success or failure after navigation", async () => {
+  for (const denied of [false, true]) {
+    let finish;
+    let calls = 0;
+    const pending = new Promise((resolve, reject) => { finish = denied ? reject : resolve; });
+    const app = await createApp([response(1, false, null, [{ listingId }, { listingId }]), response(1, false)],
+      "", undefined, { writeText: () => { calls++; return pending; } });
+    const first = cardShare(app);
+    const second = cardShare(app, 1);
+    const copying = first.button.listeners.click();
+    assert.equal(first.button.disabled, true);
+    assert.equal(second.button.disabled, true);
+    assert.equal(app.get("copy-search-link-bottom").disabled, true);
+    await second.button.listeners.click();
+    await app.click("copy-search-link");
+    assert.equal(calls, 1);
+    await app.click("load-listings");
+    finish(denied ? new Error("denied") : undefined);
+    await copying;
+    assert.equal(first.status.hidden, true);
+    assert.equal(first.status.textContent, "");
+    await first.button.listeners.click();
+    assert.equal(calls, 1);
+  }
+});
+
+test("card copy blocks request loading and enables fresh cards after Retry", async () => {
+  let calls = 0;
+  const app = await createApp([response(1, false, null, [{ listingId }]), neverRespond, response(1, false, null, [{ listingId }])], "", undefined,
+    { writeText: async () => { calls++; } });
+  const share = cardShare(app);
+  const loading = app.click("load-listings");
+  assert.equal(share.button.disabled, true);
+  await share.button.listeners.click();
+  assert.equal(calls, 0);
+  await app.click("cancel-listings");
+  await loading;
+  await share.button.listeners.click();
+  assert.equal(calls, 0);
+  await app.click("retry-listings");
+  const fresh = cardShare(app);
+  assert.equal(fresh.button.disabled, false);
+  await fresh.button.listeners.click();
+  assert.equal(calls, 1);
+});
+
+test("card sharing is hidden for invalid identifiers and detail view cards", async () => {
+  const app = await createApp([response(1, false, null, [{}, { listingId: "invalid" }, { listingId: "https://evil.example" }])]);
+  for (let index = 0; index < 3; index++) assert.equal(cardShare(app, index).button.hidden, true);
+  const detail = await createApp([detailResponse({ listingId })], detailQuery);
+  assert.equal(cardShare(detail).button.hidden, true);
+  assert.equal(cardShare(detail).status.hidden, true);
+});
+
 test("bottom copy shares applied search and page without changing drafts or results", async () => {
   const copies = [];
   const app = await createApp([response(3, false)], "?city=Berlin&page=3&redirect=private", undefined,
