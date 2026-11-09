@@ -716,6 +716,11 @@ Top of results moves focus to the results heading without changing the search,
 page, drafts or browser history. It also works while loading, so users at the
 bottom can reach the request status. The button is hidden on detail pages.
 
+Refresh this page reloads the requested page with its applied filters and page
+size. It preserves filter drafts and replaces the current browser history entry.
+The button is disabled while loading and hidden on detail pages. A successful
+refresh focuses the results heading; a failed refresh focuses the request status.
+
 ## Focus after page navigation
 
 Activating either Previous/Next control or submitting a valid page jump moves

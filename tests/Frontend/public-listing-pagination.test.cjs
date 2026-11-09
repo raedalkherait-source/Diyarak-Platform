@@ -41,6 +41,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "edit-search-filters-bottom",
     "listing-page-count",
     "top-of-results",
+    "refresh-current-page",
     "copy-search-link-bottom", "search-link-status-bottom",
     "page-jump-form-bottom", "page-jump-fields-bottom", "page-jump-input-bottom", "page-jump-error-bottom",
     "first-page", "first-page-bottom",
@@ -3120,6 +3121,47 @@ function cardShare(app, index = 0) {
   return { button: card.querySelector(".listing-card__copy-link"),
     status: card.querySelector(".listing-card__copy-status") };
 }
+
+test("Refresh this page keeps the applied page and draft without adding history", async () => {
+  const search = "?city=Berlin&pageSize=5&page=3";
+  const app = await createApp([response(3, false), response(3, false, null, [{}, {}])], search);
+  app.get("filter-city").value = "Paris";
+  await app.formEvent("input");
+  const entries = [...app.historyEntries];
+  assert.equal(app.get("refresh-current-page").hidden, false);
+  await app.click("refresh-current-page");
+  assert.deepEqual(app.requests, [`${endpoint}${search}`, `${endpoint}${search}`]);
+  assert.deepEqual(app.historyEntries, entries);
+  assert.equal(app.get("filter-city").value, "Paris");
+  assert.equal(app.get("filter-draft-message").hidden, false);
+  assert.equal(app.get("current-page-bottom").textContent, "Page 3");
+  assert.equal(app.get("listing-page-count").textContent, "2 listings on this page");
+  assert.equal(app.get("listing-heading").focusCount, 1);
+});
+
+test("Refresh this page blocks duplicates and Retry keeps the same page after failure", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(4, false), () => pending, response(4, false)], "?page=4");
+  const button = app.get("refresh-current-page");
+  const loading = app.click("refresh-current-page");
+  assert.equal(button.disabled, true);
+  await app.click("refresh-current-page");
+  assert.equal(app.requests.length, 2);
+  finish({ ok: false, status: 503 });
+  await loading;
+  assert.equal(button.disabled, false);
+  assert.equal(app.get("status").focusCount, 1);
+  await app.click("retry-listings");
+  assert.deepEqual(app.requests, Array(3).fill(`${endpoint}?page=4`));
+});
+
+test("Refresh this page is hidden and inert on listing details", async () => {
+  const app = await createApp([detailResponse({ listingId })], detailQuery);
+  assert.equal(app.get("refresh-current-page").hidden, true);
+  await app.click("refresh-current-page");
+  assert.equal(app.requests.length, 1);
+});
 
 test("bottom count describes returned items across partial and empty pages", async () => {
   const app = await createApp([

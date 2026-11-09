@@ -59,6 +59,7 @@ const emptyClearFiltersButton = document.querySelector("#empty-clear-filters");
 const emptyFirstPageButton = document.querySelector("#empty-first-page");
 const template = document.querySelector("#listing-card-template");
 const loadButton = document.querySelector("#load-listings");
+const refreshCurrentPageButton = document.querySelector("#refresh-current-page");
 const retryButton = document.querySelector("#retry-listings");
 const cancelButton = document.querySelector("#cancel-listings");
 const previousButton = document.querySelector("#previous-page");
@@ -169,6 +170,12 @@ let filterRemovalButtons = [];
 
 loadButton.addEventListener("click", async () => {
   await loadSelectedView(firstPageUrl, "push");
+});
+
+refreshCurrentPageButton.addEventListener("click", async () => {
+  if (!isDetailView) {
+    await loadPublicListings(requestedUrl, "replace", true);
+  }
 });
 
 retryButton.addEventListener("click", async () => {
@@ -433,6 +440,7 @@ for (const pagination of paginationElements) {
 }
 backLink.hidden = !isDetailView;
 topOfResultsButton.hidden = isDetailView;
+refreshCurrentPageButton.hidden = isDetailView;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
 setCurrentPageLabel("");
@@ -1098,6 +1106,7 @@ function setCurrentPageLabel(value, countLabel = "") {
 
 function updatePagination() {
   updateFilterActionAvailability();
+  refreshCurrentPageButton.disabled = isLoading || isDetailView;
   for (const button of firstPageButtons) {
     button.disabled = isLoading || isDetailView || !canReturnToFirstPage;
   }
