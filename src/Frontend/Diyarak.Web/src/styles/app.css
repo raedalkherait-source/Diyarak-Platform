@@ -146,7 +146,8 @@ button:disabled {
   cursor: default;
 }
 
-#status[data-state="error"] {
+#status[data-state="error"],
+#listing-status-bottom[data-state="error"] {
   font-weight: 700;
 }
 .toolbar {

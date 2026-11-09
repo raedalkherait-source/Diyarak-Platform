@@ -52,6 +52,7 @@ const publicLabels = {
 const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 20 });
 
 const statusElement = document.querySelector("#status");
+const bottomStatusElement = document.querySelector("#listing-status-bottom");
 const gridElement = document.querySelector("#listing-grid");
 const emptyListings = document.querySelector("#empty-listings");
 const emptyListingsMessage = document.querySelector("#empty-listings-message");
@@ -441,6 +442,7 @@ for (const pagination of paginationElements) {
 backLink.hidden = !isDetailView;
 topOfResultsButton.hidden = isDetailView;
 refreshCurrentPageButton.hidden = isDetailView;
+bottomStatusElement.hidden = isDetailView;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
 setCurrentPageLabel("");
@@ -928,8 +930,7 @@ async function loadPublicListing() {
   }
 
   isLoading = true;
-  setLoadingState();
-  statusElement.textContent = "Loading listing details...";
+  setLoadingState("Loading listing details...");
   try {
     const { response, payload: listing } = await fetchPublicResource(`${collectionUrl}/${encodeURIComponent(selectedListingId)}`);
     if (response.status === 404) {
@@ -1284,25 +1285,32 @@ function formatDate(value) {
   });
 }
 
-function setLoadingState() {
+function setRequestStatus(state, message) {
+  statusElement.dataset.state = state;
+  statusElement.textContent = message;
+  if (!isDetailView) {
+    bottomStatusElement.dataset.state = state;
+    bottomStatusElement.textContent = message;
+  }
+}
+
+function setLoadingState(message = "Loading public listings...") {
   cancelButton.hidden = false;
   cancelButton.disabled = false;
   emptyListings.hidden = true;
   gridElement.setAttribute("aria-busy", "true");
   loadButton.disabled = true;
   retryButton.hidden = true;
-  statusElement.dataset.state = "loading";
-  statusElement.textContent = "Loading public listings...";
+  setRequestStatus("loading", message);
 }
 
-function setReadyState(message) {
+function setReadyState(message, state = "ready") {
   cancelButton.hidden = true;
   cancelButton.disabled = true;
   gridElement.setAttribute("aria-busy", "false");
   loadButton.disabled = false;
   retryButton.hidden = true;
-  statusElement.dataset.state = "ready";
-  statusElement.textContent = message;
+  setRequestStatus(state, message);
 }
 
 function setErrorState(message) {
@@ -1311,13 +1319,11 @@ function setErrorState(message) {
   gridElement.setAttribute("aria-busy", "false");
   loadButton.disabled = false;
   retryButton.hidden = false;
-  statusElement.dataset.state = "error";
-  statusElement.textContent = message;
+  setRequestStatus("error", message);
 }
 
 function setCanceledState() {
-  setReadyState("Request canceled. Retry to load the requested results.");
-  statusElement.dataset.state = "canceled";
+  setReadyState("Request canceled. Retry to load the requested results.", "canceled");
   retryButton.hidden = false;
   statusElement.focus();
 }

@@ -721,6 +721,10 @@ size. It preserves filter drafts and replaces the current browser history entry.
 The button is disabled while loading and hidden on detail pages. A successful
 refresh focuses the results heading; a failed refresh focuses the request status.
 
+The request message below results mirrors loading, success, empty results,
+errors and cancellation. The original status remains the only live announcement
+for requests. The lower message is hidden on detail pages.
+
 ## Focus after page navigation
 
 Activating either Previous/Next control or submitting a valid page jump moves

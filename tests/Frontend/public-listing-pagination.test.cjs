@@ -42,6 +42,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "listing-page-count",
     "top-of-results",
     "refresh-current-page",
+    "listing-status-bottom",
     "copy-search-link-bottom", "search-link-status-bottom",
     "page-jump-form-bottom", "page-jump-fields-bottom", "page-jump-input-bottom", "page-jump-error-bottom",
     "first-page", "first-page-bottom",
@@ -3121,6 +3122,51 @@ function cardShare(app, index = 0) {
   return { button: card.querySelector(".listing-card__copy-link"),
     status: card.querySelector(".listing-card__copy-status") };
 }
+
+test("bottom request status follows refresh through loading, empty results and recovery", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(1, false), () => pending, response(1, false, null, [{}, {}])]);
+  const status = app.get("listing-status-bottom");
+  assert.equal(status.hidden, false);
+  assert.equal(status.textContent, "Loaded 1 listing.");
+  const loading = app.click("refresh-current-page");
+  assert.equal(status.dataset.state, "loading");
+  assert.equal(status.textContent, "Loading public listings...");
+  finish(response(1, false, null, []));
+  await loading;
+  assert.equal(status.dataset.state, "ready");
+  assert.match(status.textContent, /No public listings found/);
+  await app.click("refresh-current-page");
+  assert.equal(status.textContent, "Loaded 2 listings.");
+});
+
+test("bottom request status mirrors failure and cancellation without stale text", async () => {
+  const app = await createApp([response(1, false), { ok: false, status: 503 }, neverRespond, response(1, false)]);
+  const bottom = app.get("listing-status-bottom");
+  const top = app.get("status");
+  await app.click("refresh-current-page");
+  assert.equal(bottom.dataset.state, "error");
+  assert.match(bottom.textContent, /HTTP 503/);
+  assert.equal(bottom.textContent, top.textContent);
+  const loading = app.click("retry-listings");
+  await app.click("cancel-listings");
+  await loading;
+  assert.equal(bottom.dataset.state, "canceled");
+  assert.match(bottom.textContent, /Request canceled/);
+  assert.equal(bottom.textContent, top.textContent);
+  await app.click("retry-listings");
+  assert.equal(bottom.dataset.state, "ready");
+  assert.equal(bottom.textContent, "Loaded 1 listing.");
+});
+
+test("bottom request status remains hidden and empty on details", async () => {
+  const app = await createApp([detailResponse({ listingId }), { ok: false, status: 503 }], detailQuery);
+  await app.click("load-listings");
+  assert.equal(app.get("status").dataset.state, "error");
+  assert.equal(app.get("listing-status-bottom").hidden, true);
+  assert.equal(app.get("listing-status-bottom").textContent, "");
+});
 
 test("Refresh this page keeps the applied page and draft without adding history", async () => {
   const search = "?city=Berlin&pageSize=5&page=3";
