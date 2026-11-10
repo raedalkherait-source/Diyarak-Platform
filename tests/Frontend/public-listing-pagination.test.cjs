@@ -43,6 +43,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "top-of-results",
     "refresh-current-page",
     "listing-status-bottom",
+    "compact-cards-control", "compact-cards",
     "retry-listings-bottom", "cancel-listings-bottom",
     "copy-search-link-bottom", "search-link-status-bottom",
     "page-jump-form-bottom", "page-jump-fields-bottom", "page-jump-input-bottom", "page-jump-error-bottom",
@@ -3123,6 +3124,39 @@ function cardShare(app, index = 0) {
   return { button: card.querySelector(".listing-card__copy-link"),
     status: card.querySelector(".listing-card__copy-status") };
 }
+
+test("compact cards changes presentation without a request and stays enabled across pagination", async () => {
+  const app = await createApp([response(1, true, link(page2, "next")), response(2, false)], "?city=Berlin");
+  const input = app.get("compact-cards");
+  const grid = app.get("listing-grid");
+  const history = [...app.historyEntries];
+  const card = grid.children[0];
+  assert.equal(app.get("compact-cards-control").hidden, false);
+  assert.equal(input.checked, false);
+  input.checked = true;
+  await input.listeners.change();
+  assert.equal(grid.dataset.compact, "true");
+  assert.equal(grid.children[0], card);
+  assert.equal(app.requests.length, 1);
+  assert.deepEqual(app.historyEntries, history);
+  await app.click("next-page-bottom");
+  assert.equal(grid.dataset.compact, "true");
+  assert.equal(input.checked, true);
+  input.checked = false;
+  await input.listeners.change();
+  assert.equal(grid.dataset.compact, "false");
+  assert.equal(app.requests.length, 2);
+});
+
+test("compact cards is hidden and does not change the detail layout", async () => {
+  const app = await createApp([detailResponse({ listingId })], detailQuery);
+  assert.equal(app.get("compact-cards-control").hidden, true);
+  const input = app.get("compact-cards");
+  input.checked = true;
+  await input.listeners.change();
+  assert.notEqual(app.get("listing-grid").dataset.compact, "true");
+  assert.equal(app.requests.length, 1);
+});
 
 test("bottom Cancel keeps focus beside Retry and Retry reloads the canceled page", async () => {
   const search = "?city=Berlin&page=3";

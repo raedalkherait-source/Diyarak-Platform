@@ -54,6 +54,8 @@ const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits
 const statusElement = document.querySelector("#status");
 const bottomStatusElement = document.querySelector("#listing-status-bottom");
 const gridElement = document.querySelector("#listing-grid");
+const compactCardsControl = document.querySelector("#compact-cards-control");
+const compactCardsInput = document.querySelector("#compact-cards");
 const emptyListings = document.querySelector("#empty-listings");
 const emptyListingsMessage = document.querySelector("#empty-listings-message");
 const emptyClearFiltersButton = document.querySelector("#empty-clear-filters");
@@ -341,6 +343,12 @@ topOfResultsButton.addEventListener("click", () => {
   }
 });
 
+compactCardsInput.addEventListener("change", () => {
+  if (!isDetailView) {
+    gridElement.dataset.compact = String(compactCardsInput.checked);
+  }
+});
+
 filterForm.addEventListener("input", updateFilterDraftState);
 filterForm.addEventListener("change", updateFilterDraftState);
 
@@ -457,6 +465,8 @@ backLink.hidden = !isDetailView;
 topOfResultsButton.hidden = isDetailView;
 refreshCurrentPageButton.hidden = isDetailView;
 bottomStatusElement.hidden = isDetailView;
+compactCardsControl.hidden = isDetailView;
+compactCardsInput.checked = false;
 headingElement.textContent = isDetailView ? "Listing details" : "Public listings";
 loadButton.textContent = isDetailView ? "Refresh listing" : "Refresh listings";
 setCurrentPageLabel("");

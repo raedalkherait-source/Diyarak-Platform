@@ -121,6 +121,21 @@ button {
   gap: 16px;
 }
 
+#compact-cards-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-inline: 0.5rem;
+}
+
+.listing-grid[data-compact="true"] .listing-card {
+  padding: 16px;
+}
+
+.listing-grid[data-compact="true"] .listing-card__facts {
+  display: none;
+}
+
 dt {
   font-weight: 700;
 }

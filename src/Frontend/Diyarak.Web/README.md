@@ -697,6 +697,14 @@ based on another group, including category/commercial-type intersections.
 Bookmarks, draft detection, Restore/Clear, removal buttons, Copy search link,
 browser Back/Forward and detail return links retain their existing behavior.
 
+## Compact cards
+
+Use Compact cards above the results to hide the property facts in collection
+cards while keeping the headline, location, price and card actions visible.
+The choice stays in effect when navigating, refreshing or changing filters
+within the page. Changing the choice does not request data or alter the search
+URL. A full page load starts with full cards. Detail pages always show all facts.
+
 ## Pagination below results
 
 Previous/Next controls and the current page are available above and below the
