@@ -63,6 +63,8 @@ const loadButton = document.querySelector("#load-listings");
 const refreshCurrentPageButton = document.querySelector("#refresh-current-page");
 const retryButton = document.querySelector("#retry-listings");
 const cancelButton = document.querySelector("#cancel-listings");
+const bottomRetryButton = document.querySelector("#retry-listings-bottom");
+const bottomCancelButton = document.querySelector("#cancel-listings-bottom");
 const previousButton = document.querySelector("#previous-page");
 const nextButton = document.querySelector("#next-page");
 const previousButtons = [previousButton, document.querySelector("#previous-page-bottom")];
@@ -183,7 +185,18 @@ retryButton.addEventListener("click", async () => {
   await loadSelectedView(requestedUrl);
 });
 
-cancelButton.addEventListener("click", cancelActivePublicRequest);
+bottomRetryButton.addEventListener("click", async () => {
+  if (!bottomRetryButton.hidden) {
+    await loadPublicListings(requestedUrl, "replace", true);
+  }
+});
+
+cancelButton.addEventListener("click", () => cancelActivePublicRequest());
+bottomCancelButton.addEventListener("click", () => {
+  if (!bottomCancelButton.hidden) {
+    cancelActivePublicRequest(true);
+  }
+});
 
 window.addEventListener("keydown", event => {
   if (event.key !== "Escape" || event.defaultPrevented || event.isComposing
@@ -195,12 +208,13 @@ window.addEventListener("keydown", event => {
   }
 });
 
-function cancelActivePublicRequest() {
-  if (!isLoading || !cancelPublicRequest || pendingHistorySearch !== null) {
+function cancelActivePublicRequest(focusBottomStatus = false) {
+  if (!isLoading || !cancelPublicRequest || cancelButton.disabled || pendingHistorySearch !== null) {
     return false;
   }
   cancelButton.disabled = true;
-  cancelPublicRequest("user");
+  bottomCancelButton.disabled = true;
+  cancelPublicRequest("user", focusBottomStatus);
   return true;
 }
 
@@ -850,9 +864,10 @@ async function fetchPublicResource(url) {
   const controller = new AbortController();
   let timer;
   const cancellation = new Promise((_, reject) => {
-    cancelPublicRequest = reason => {
+    cancelPublicRequest = (reason, focusBottomStatus = false) => {
       const error = new Error("Public API request canceled.");
       error.name = reason === "user" ? "PublicRequestCanceled" : "AbortError";
+      error.focusBottomStatus = focusBottomStatus;
       reject(error);
       controller.abort();
     };
@@ -1060,7 +1075,7 @@ async function loadPublicListings(url = collectionUrl, historyMode = "replace", 
     canReturnToFirstPage = false;
     setCurrentPageLabel("");
     if (error?.name === "PublicRequestCanceled") {
-      setCanceledState();
+      setCanceledState(error.focusBottomStatus ? bottomStatusElement : statusElement);
       return;
     }
     setErrorState(publicRequestError(error));
@@ -1292,6 +1307,10 @@ function setRequestStatus(state, message) {
     bottomStatusElement.dataset.state = state;
     bottomStatusElement.textContent = message;
   }
+  bottomCancelButton.hidden = isDetailView || state !== "loading";
+  bottomCancelButton.disabled = bottomCancelButton.hidden;
+  bottomRetryButton.hidden = isDetailView || (state !== "error" && state !== "canceled");
+  bottomRetryButton.disabled = bottomRetryButton.hidden;
 }
 
 function setLoadingState(message = "Loading public listings...") {
@@ -1322,8 +1341,8 @@ function setErrorState(message) {
   setRequestStatus("error", message);
 }
 
-function setCanceledState() {
+function setCanceledState(focusTarget = statusElement) {
   setReadyState("Request canceled. Retry to load the requested results.", "canceled");
   retryButton.hidden = false;
-  statusElement.focus();
+  focusTarget.focus();
 }

@@ -725,6 +725,11 @@ The request message below results mirrors loading, success, empty results,
 errors and cancellation. The original status remains the only live announcement
 for requests. The lower message is hidden on detail pages.
 
+The lower request actions show Cancel request during loading and Retry after an
+error or cancellation. Retry repeats the same requested page and filters. A
+click on the lower Cancel request leaves focus on the lower status, next to
+Retry. Both actions are hidden on detail pages.
+
 ## Focus after page navigation
 
 Activating either Previous/Next control or submitting a valid page jump moves

@@ -43,6 +43,7 @@ async function createApp(responses, search = "", clock = { setTimeout, clearTime
     "top-of-results",
     "refresh-current-page",
     "listing-status-bottom",
+    "retry-listings-bottom", "cancel-listings-bottom",
     "copy-search-link-bottom", "search-link-status-bottom",
     "page-jump-form-bottom", "page-jump-fields-bottom", "page-jump-input-bottom", "page-jump-error-bottom",
     "first-page", "first-page-bottom",
@@ -3122,6 +3123,83 @@ function cardShare(app, index = 0) {
   return { button: card.querySelector(".listing-card__copy-link"),
     status: card.querySelector(".listing-card__copy-status") };
 }
+
+test("bottom Cancel keeps focus beside Retry and Retry reloads the canceled page", async () => {
+  const search = "?city=Berlin&page=3";
+  const app = await createApp([response(3, false), neverRespond, response(3, false)], search);
+  const cancel = app.get("cancel-listings-bottom");
+  const retry = app.get("retry-listings-bottom");
+  const history = [...app.historyEntries];
+  assert.equal(cancel.hidden, true);
+  assert.equal(retry.hidden, true);
+  const loading = app.click("refresh-current-page");
+  assert.equal(cancel.hidden, false);
+  assert.equal(cancel.disabled, false);
+  assert.equal(retry.hidden, true);
+  await app.click("cancel-listings-bottom");
+  await loading;
+  assert.equal(app.signals[1].aborted, true);
+  assert.equal(cancel.hidden, true);
+  assert.equal(retry.hidden, false);
+  assert.equal(retry.disabled, false);
+  assert.equal(app.get("listing-status-bottom").focusCount, 1);
+  assert.equal(app.get("status").focusCount, 0);
+  await app.click("retry-listings-bottom");
+  assert.deepEqual(app.requests, Array(3).fill(`${endpoint}${search}`));
+  assert.deepEqual(app.historyEntries, history);
+  assert.equal(retry.hidden, true);
+  assert.equal(app.get("current-page-bottom").textContent, "Page 3");
+});
+
+test("bottom Retry recovers from timeout and does not start duplicate requests", async () => {
+  const clock = manualClock();
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([response(1, false), neverRespond, () => pending], "?city=Berlin", clock);
+  const loading = app.click("refresh-current-page");
+  clock.expire();
+  await loading;
+  assert.equal(app.get("listing-status-bottom").dataset.state, "error");
+  assert.equal(app.get("retry-listings-bottom").hidden, false);
+  const retrying = app.click("retry-listings-bottom");
+  assert.equal(app.get("retry-listings-bottom").hidden, true);
+  assert.equal(app.get("cancel-listings-bottom").hidden, false);
+  await app.click("retry-listings-bottom");
+  assert.equal(app.requests.length, 3);
+  finish(response(1, false));
+  await retrying;
+  assert.equal(app.get("listing-status-bottom").dataset.state, "ready");
+  assert.equal(app.get("cancel-listings-bottom").hidden, true);
+});
+
+test("lower Cancel does not override pending browser history restoration", async () => {
+  const app = await createApp([response(1, false), neverRespond, response(2, false)], "?city=Berlin");
+  const loading = app.click("refresh-current-page");
+  const restoring = app.popTo("?city=Rome&page=2");
+  await app.click("cancel-listings-bottom");
+  await restoring;
+  await loading;
+  assert.equal(app.requests.at(-1), `${endpoint}?city=Rome&page=2`);
+  assert.equal(app.get("listing-status-bottom").focusCount, 0);
+  assert.equal(app.get("listing-status-bottom").dataset.state, "ready");
+  assert.equal(app.get("retry-listings-bottom").hidden, true);
+});
+
+test("lower request actions remain hidden and inert while details are loading or failed", async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const app = await createApp([detailResponse({ listingId }), () => pending], detailQuery);
+  const loading = app.click("load-listings");
+  assert.equal(app.get("cancel-listings-bottom").hidden, true);
+  await app.click("cancel-listings-bottom");
+  assert.equal(app.signals[1].aborted, false);
+  finish({ ok: false, status: 503 });
+  await loading;
+  assert.equal(app.get("retry-listings").hidden, false);
+  assert.equal(app.get("retry-listings-bottom").hidden, true);
+  await app.click("retry-listings-bottom");
+  assert.equal(app.requests.length, 2);
+});
 
 test("bottom request status follows refresh through loading, empty results and recovery", async () => {
   let finish;
