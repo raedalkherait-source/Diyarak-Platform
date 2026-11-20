@@ -151,3 +151,15 @@ curl -X POST "http://localhost:5000/api/market/listings/<listingId>/photos" \
   -H "Content-Type: image/jpeg" \
   --data-binary @photo.jpg
 ```
+
+## Running the portal against the API
+
+Per-client rate limits see the portal server as one client unless the API trusts it as a proxy.
+When the portal and API run on the same machine:
+
+```bash
+export ReverseProxy__KnownProxies__0=127.0.0.1
+export ReverseProxy__KnownProxies__1=::1
+```
+
+Only list addresses of proxies you operate. Forwarded headers from any other address are ignored.

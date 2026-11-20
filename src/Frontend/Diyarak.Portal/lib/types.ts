@@ -40,6 +40,14 @@ export interface PublicListing {
   };
   availableFromDate: string | null;
   photos: PublicListingPhoto[];
+  /** Which contact channels exist. The number itself is fetched on demand. */
+  contact: { allowCalls: boolean; allowWhatsApp: boolean } | null;
+}
+
+export interface PublicListingContact {
+  phoneNumber: string;
+  callUrl: string | null;
+  whatsAppUrl: string | null;
 }
 
 export interface PublicListingPage {

@@ -9,7 +9,13 @@ internal sealed class MarketListingRecordConfiguration
     public void Configure(
         EntityTypeBuilder<MarketListingRecord> builder)
     {
-        builder.ToTable("listings", "market");
+        builder.ToTable(
+            "listings",
+            "market",
+            tableBuilder => tableBuilder.HasCheckConstraint(
+                "ck_market_listings_contact_options",
+                "(contact_allow_calls IS NULL) = (contact_allow_whatsapp IS NULL) AND " +
+                "(contact_allow_calls IS NULL OR contact_allow_calls OR contact_allow_whatsapp)"));
 
         builder.HasKey(record => record.Id);
 
@@ -86,5 +92,13 @@ internal sealed class MarketListingRecordConfiguration
         builder.Property(record => record.AvailableFromDate)
             .HasColumnName("available_from_date")
             .HasColumnType("date");
+
+        builder.Property(record => record.ContactAllowCalls)
+            .HasColumnName("contact_allow_calls")
+            .HasColumnType("boolean");
+
+        builder.Property(record => record.ContactAllowWhatsApp)
+            .HasColumnName("contact_allow_whatsapp")
+            .HasColumnType("boolean");
     }
 }

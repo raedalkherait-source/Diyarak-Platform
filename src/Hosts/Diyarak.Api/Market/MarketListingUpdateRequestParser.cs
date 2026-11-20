@@ -34,11 +34,21 @@ internal static class MarketListingUpdateRequestParser
         bool updateAvailableFromDate = request.TryGetProperty(
             "availableFromDate",
             out JsonElement availableFromDateElement);
+        bool updateContact = request.TryGetProperty(
+            "contact",
+            out JsonElement contactElement);
 
         ListingContext? context = null;
         ListingHeadline? headline = null;
         ListingPrice? price = null;
         ListingAvailableFromDate? availableFromDate = null;
+        ListingContactOptions? contact = null;
+
+        if (updateContact &&
+            !TryParseContact(contactElement, out contact))
+        {
+            return false;
+        }
 
         if (updateContext &&
             !TryParseContext(contextElement, out context))
@@ -75,7 +85,9 @@ internal static class MarketListingUpdateRequestParser
             updatePrice,
             price,
             updateAvailableFromDate,
-            availableFromDate);
+            availableFromDate,
+            updateContact,
+            contact);
 
         return true;
     }
@@ -206,6 +218,38 @@ internal static class MarketListingUpdateRequestParser
         }
 
         availableFromDate = new ListingAvailableFromDate(date);
+        return true;
+    }
+
+    /// <summary>
+    /// <c>null</c> clears the contact options; otherwise both booleans are required and at least
+    /// one channel must be allowed.
+    /// </summary>
+    private static bool TryParseContact(
+        JsonElement element,
+        out ListingContactOptions? contact)
+    {
+        contact = null;
+
+        if (element.ValueKind == JsonValueKind.Null)
+            return true;
+
+        if (element.ValueKind != JsonValueKind.Object ||
+            !element.TryGetProperty("allowCalls", out JsonElement callsElement) ||
+            !element.TryGetProperty("allowWhatsApp", out JsonElement whatsAppElement) ||
+            callsElement.ValueKind is not (JsonValueKind.True or JsonValueKind.False) ||
+            whatsAppElement.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+        {
+            return false;
+        }
+
+        bool allowCalls = callsElement.GetBoolean();
+        bool allowWhatsApp = whatsAppElement.GetBoolean();
+
+        if (!allowCalls && !allowWhatsApp)
+            return false;
+
+        contact = new ListingContactOptions(allowCalls, allowWhatsApp);
         return true;
     }
 }

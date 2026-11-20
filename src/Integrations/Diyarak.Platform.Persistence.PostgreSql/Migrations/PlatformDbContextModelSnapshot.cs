@@ -183,6 +183,14 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         .HasColumnType("date")
                         .HasColumnName("available_from_date");
 
+                    b.Property<bool?>("ContactAllowCalls")
+                        .HasColumnType("boolean")
+                        .HasColumnName("contact_allow_calls");
+
+                    b.Property<bool?>("ContactAllowWhatsApp")
+                        .HasColumnType("boolean")
+                        .HasColumnName("contact_allow_whatsapp");
+
                     b.Property<string>("Headline")
                         .HasColumnType("text")
                         .HasColumnName("headline");
@@ -237,7 +245,10 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                     b.HasIndex("Status", "Id")
                         .HasDatabaseName("ix_market_listings_status_id");
 
-                    b.ToTable("listings", "market");
+                    b.ToTable("listings", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_listings_contact_options", "(contact_allow_calls IS NULL) = (contact_allow_whatsapp IS NULL) AND (contact_allow_calls IS NULL OR contact_allow_calls OR contact_allow_whatsapp)");
+                        });
                 });
 
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketPropertyRecord", b =>

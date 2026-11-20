@@ -69,6 +69,10 @@ public static class PersistenceServiceCollectionExtensions
             PostgreSqlMarketPropertyRepository>();
 
         services.AddScoped<
+            IPublisherPhoneLookup,
+            PostgreSqlPublisherPhoneLookup>();
+
+        services.AddScoped<
             IListingPhotoRepository,
             PostgreSqlListingPhotoRepository>();
 

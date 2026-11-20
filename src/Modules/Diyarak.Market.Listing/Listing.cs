@@ -62,6 +62,8 @@ public sealed class Listing : AggregateRoot<Guid>
 
     public ListingAvailableFromDate? AvailableFromDate { get; private set; }
 
+    public ListingContactOptions? Contact { get; private set; }
+
     public static Listing Restore(
         Guid id,
         Guid publisherUserId,
@@ -106,6 +108,21 @@ public sealed class Listing : AggregateRoot<Guid>
         EnsureDraftForEditing();
 
         AvailableFromDate = null;
+    }
+
+    public void SetContact(ListingContactOptions contact)
+    {
+        ArgumentNullException.ThrowIfNull(contact);
+        EnsureDraftForEditing();
+
+        Contact = contact;
+    }
+
+    public void ClearContact()
+    {
+        EnsureDraftForEditing();
+
+        Contact = null;
     }
 
     public void Publish()

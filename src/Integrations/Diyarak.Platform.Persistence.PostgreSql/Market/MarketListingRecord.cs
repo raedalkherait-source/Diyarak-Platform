@@ -27,4 +27,8 @@ internal sealed class MarketListingRecord
     public string? PriceCurrency { get; set; }
 
     public DateOnly? AvailableFromDate { get; set; }
+
+    public bool? ContactAllowCalls { get; set; }
+
+    public bool? ContactAllowWhatsApp { get; set; }
 }

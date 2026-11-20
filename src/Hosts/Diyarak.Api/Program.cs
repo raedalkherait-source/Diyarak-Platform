@@ -89,6 +89,9 @@ builder.Services
 builder.Services.AddClientRateLimiting(
     builder.Configuration);
 
+bool trustedProxiesConfigured =
+    builder.Services.AddTrustedProxies(builder.Configuration);
+
 builder.Services.AddRequestTimeouts(options =>
 {
     options.DefaultPolicy = new RequestTimeoutPolicy
@@ -123,8 +126,14 @@ builder.Services.AddScoped<UploadListingPhotoUseCase>();
 builder.Services.AddScoped<ListListingPhotosUseCase>();
 builder.Services.AddScoped<DeleteListingPhotoUseCase>();
 builder.Services.AddScoped<GetListingPhotoContentUseCase>();
+builder.Services.AddScoped<GetListingContactUseCase>();
 
 var app = builder.Build();
+
+if (trustedProxiesConfigured)
+{
+    app.UseForwardedHeaders();
+}
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
@@ -281,6 +290,7 @@ app.MapGet(
 
 app.MapPublicMarketListingEndpoints();
 app.MapPublicMarketListingPhotoEndpoints();
+app.MapPublicListingContactEndpoints();
 
 if (phoneAuthentication.Enabled)
 {

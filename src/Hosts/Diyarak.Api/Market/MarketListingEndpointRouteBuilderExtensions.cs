@@ -283,7 +283,10 @@ public static class MarketListingEndpointRouteBuilderExtensions
                     price.Amount?.Amount,
                     price.Amount?.Currency.Code)
                 : null,
-            listing.AvailableFromDate?.Value);
+            listing.AvailableFromDate?.Value,
+            listing.Contact is { } contact
+                ? new MarketListingContactOptionsResponse(contact.AllowCalls, contact.AllowWhatsApp)
+                : null);
     }
 
     private static Guid GetRequiredActorUserId(
@@ -353,7 +356,12 @@ public static class MarketListingEndpointRouteBuilderExtensions
         MarketListingContextResponse? Context,
         string? Headline,
         MarketListingPriceResponse? Price,
-        DateOnly? AvailableFromDate);
+        DateOnly? AvailableFromDate,
+        MarketListingContactOptionsResponse? Contact);
+
+    internal sealed record MarketListingContactOptionsResponse(
+        bool AllowCalls,
+        bool AllowWhatsApp);
 
     internal sealed record MarketListingSubjectResponse(
         Guid SubjectId,
