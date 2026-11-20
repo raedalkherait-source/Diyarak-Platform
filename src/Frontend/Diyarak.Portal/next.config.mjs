@@ -4,7 +4,10 @@ const apiUrl = (process.env.DIYARAK_API_URL ?? "http://localhost:5080").replace(
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  output: "standalone",
+  experimental: {
+    // Photo uploads go through a server action, one file per call (API limit: 10 MB).
+    serverActions: { bodySizeLimit: "11mb" },
+  },
   async rewrites() {
     // Photos are served through the portal origin so pages need no cross-origin image access.
     return [

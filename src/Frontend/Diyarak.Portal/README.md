@@ -20,8 +20,9 @@ npm install
 DIYARAK_API_URL=http://localhost:5080 npm run dev
 ```
 
-`DIYARAK_API_URL` is the server-side base URL of `Diyarak.Api` and defaults to
-`http://localhost:5080`. The portal only reads anonymous public endpoints.
+- `DIYARAK_API_URL`: server-side base URL of `Diyarak.Api` (default `http://localhost:5080`).
+- `PORTAL_PUBLIC_URL`: public origin used for absolute Open Graph image URLs
+  (default `http://localhost:3000`).
 
 ## Checks
 
