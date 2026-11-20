@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { errorMessage } from "@/lib/errors";
 import { parseListingEditForm, parseListingForm, type FormValues } from "@/lib/listingForm";
-import { managementFetch } from "@/lib/managementApi";
-import { clearSession } from "@/lib/session";
+import { managementFetch, publicPost } from "@/lib/managementApi";
+import { clearSession, getRefreshToken } from "@/lib/session";
 import { isListingId } from "@/lib/contact";
 
 export interface CreateListingState {
@@ -99,8 +99,16 @@ export async function publishListing(listingId: string, version: number, _state:
 }
 
 export async function logout(): Promise<void> {
+  const refreshToken = await getRefreshToken();
+  if (refreshToken) await publicPost("/api/auth/session/logout", { refreshToken }).catch(() => undefined);
   await clearSession();
   redirect("/");
+}
+
+export async function logoutEverywhere(): Promise<void> {
+  await managementFetch("/api/auth/session/logout-all", { method: "POST", json: {} });
+  await clearSession();
+  redirect("/login?signedOut=all");
 }
 
 export interface EditListingState {

@@ -55,6 +55,9 @@ internal static class PhoneAuthenticationServiceCollectionExtensions
         }
         services.AddScoped<RequestPhoneVerificationUseCase>();
         services.AddScoped<VerifyPhoneUseCase>();
+        services.AddScoped<RefreshSessionUseCase>();
+        services.AddScoped<RevokeSessionUseCase>();
+        services.AddScoped<RevokeAllSessionsUseCase>();
 
         AuthenticationBuilder authentication = services.AddAuthentication();
 

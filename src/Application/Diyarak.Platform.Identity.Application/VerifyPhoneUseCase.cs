@@ -6,7 +6,8 @@ namespace Diyarak.Platform.Identity.Application;
 public sealed record PhoneSignInResult(
     Guid UserId,
     bool IsNewUser,
-    IssuedAccessToken AccessToken);
+    IssuedAccessToken AccessToken,
+    IssuedRefreshToken? RefreshToken = null);
 
 public sealed class VerifyPhoneUseCase
 {
@@ -15,14 +16,17 @@ public sealed class VerifyPhoneUseCase
     private readonly IIdentityUnitOfWork _unitOfWork;
     private readonly IAccessTokenIssuer _tokenIssuer;
     private readonly IClock _clock;
+    private readonly IUserSessionRepository? _sessions;
 
     public VerifyPhoneUseCase(
         IPhoneVerificationChallengeRepository challenges,
         IPhoneAccountRepository accounts,
         IIdentityUnitOfWork unitOfWork,
         IAccessTokenIssuer tokenIssuer,
-        IClock clock)
+        IClock clock,
+        IUserSessionRepository? sessions = null)
     {
+        _sessions = sessions;
         ArgumentNullException.ThrowIfNull(challenges);
         ArgumentNullException.ThrowIfNull(accounts);
         ArgumentNullException.ThrowIfNull(unitOfWork);
@@ -95,6 +99,11 @@ public sealed class VerifyPhoneUseCase
                 cancellationToken);
         }
 
+        // The session is committed together with the consumed challenge and any new account.
+        IssuedRefreshToken? refreshToken = _sessions is null
+            ? null
+            : await UserSessions.StartAsync(_sessions, account.UserId, now, cancellationToken);
+
         if (!await _unitOfWork.SaveChangesAsync(cancellationToken))
         {
             return Result.Failure<PhoneSignInResult>(
@@ -105,6 +114,7 @@ public sealed class VerifyPhoneUseCase
             new PhoneSignInResult(
                 account.UserId,
                 isNewUser,
-                _tokenIssuer.Issue(account.UserId)));
+                _tokenIssuer.Issue(account.UserId),
+                refreshToken));
     }
 }

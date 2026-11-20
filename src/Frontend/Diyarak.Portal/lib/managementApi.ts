@@ -101,7 +101,8 @@ export async function publicPost<T>(path: string, json: unknown): Promise<ApiRes
     return { ok: false, status: response.status, code };
   }
 
-  return { ok: true, value: (await response.json()) as T };
+  const text = await response.text();
+  return { ok: true, value: (text ? JSON.parse(text) : null) as T };
 }
 
 export function apiBaseUrl(): string {

@@ -123,6 +123,54 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Identity.UserSessionRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CurrentTokenHash")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("current_token_hash");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset>("LastRotatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_rotated_at");
+
+                    b.Property<string>("PreviousTokenHash")
+                        .HasColumnType("text")
+                        .HasColumnName("previous_token_hash");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_user_sessions");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_user_sessions_user_id");
+
+                    b.ToTable("user_sessions", "identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_user_sessions_user_id_non_empty", "user_id <> '00000000-0000-0000-0000-000000000000'::uuid");
+                        });
+                });
+
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingPhotoRecord", b =>
                 {
                     b.Property<Guid>("Id")

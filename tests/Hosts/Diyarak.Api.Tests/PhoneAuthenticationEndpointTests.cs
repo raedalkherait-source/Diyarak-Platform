@@ -80,6 +80,77 @@ public sealed class PhoneAuthenticationEndpointTests
     }
 
     [Fact]
+    public async Task Refresh_token_renews_session_rotates_and_supports_logout()
+    {
+        using var factory = new TestApiFactory();
+        using HttpClient client = factory.CreateClient();
+
+        await client.PostAsJsonAsync("/api/auth/phone/request", new { phoneNumber = Phone });
+        HttpResponseMessage verified = await client.PostAsJsonAsync(
+            "/api/auth/phone/verify",
+            new { phoneNumber = Phone, code = factory.Sender.Sent[0].Code });
+        using JsonDocument signIn = JsonDocument.Parse(await verified.Content.ReadAsStringAsync());
+        string refresh1 = signIn.RootElement.GetProperty("refreshToken").GetString()!;
+        Assert.True(signIn.RootElement.GetProperty("refreshTokenExpiresAt").GetDateTimeOffset() > DateTimeOffset.UtcNow.AddDays(29));
+
+        HttpResponseMessage refreshed = await client.PostAsJsonAsync("/api/auth/session/refresh", new { refreshToken = refresh1 });
+        Assert.Equal(HttpStatusCode.OK, refreshed.StatusCode);
+        Assert.Equal("no-store", refreshed.Headers.CacheControl?.ToString());
+        using JsonDocument tokens = JsonDocument.Parse(await refreshed.Content.ReadAsStringAsync());
+        string refresh2 = tokens.RootElement.GetProperty("refreshToken").GetString()!;
+        string access2 = tokens.RootElement.GetProperty("accessToken").GetString()!;
+        Assert.NotEqual(refresh1, refresh2);
+
+        using (var request = new HttpRequestMessage(HttpMethod.Get, "/api/market/properties"))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", access2);
+            Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(request)).StatusCode);
+        }
+
+        HttpResponseMessage stale = await client.PostAsJsonAsync("/api/auth/session/refresh", new { refreshToken = refresh1 });
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        await AssertProblemCodeAsync(stale, SessionErrors.Stale.Code);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/api/auth/session/logout", new { refreshToken = refresh2 })).StatusCode);
+        HttpResponseMessage afterLogout = await client.PostAsJsonAsync("/api/auth/session/refresh", new { refreshToken = refresh2 });
+        Assert.Equal(HttpStatusCode.Unauthorized, afterLogout.StatusCode);
+        await AssertProblemCodeAsync(afterLogout, SessionErrors.Invalid.Code);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/api/auth/session/logout", new { refreshToken = "garbage" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Logout_all_requires_sign_in_and_revokes_every_session()
+    {
+        using var factory = new TestApiFactory();
+        using HttpClient client = factory.CreateClient();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/api/auth/session/logout-all", null)).StatusCode);
+
+        async Task<(string Access, string Refresh)> SignIn(int index)
+        {
+            await client.PostAsJsonAsync("/api/auth/phone/request", new { phoneNumber = Phone });
+            HttpResponseMessage verified = await client.PostAsJsonAsync(
+                "/api/auth/phone/verify",
+                new { phoneNumber = Phone, code = factory.Sender.Sent[index].Code });
+            using JsonDocument body = JsonDocument.Parse(await verified.Content.ReadAsStringAsync());
+            return (body.RootElement.GetProperty("accessToken").GetString()!, body.RootElement.GetProperty("refreshToken").GetString()!);
+        }
+
+        (string access, string refreshA) = await SignIn(0);
+        (_, string refreshB) = await SignIn(1);
+
+        using (var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/session/logout-all"))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", access);
+            Assert.Equal(HttpStatusCode.NoContent, (await client.SendAsync(request)).StatusCode);
+        }
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/session/refresh", new { refreshToken = refreshA })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/session/refresh", new { refreshToken = refreshB })).StatusCode);
+    }
+
+    [Fact]
     public async Task Wrong_code_returns_400_with_stable_error_code()
     {
         using var factory = new TestApiFactory();
@@ -390,6 +461,8 @@ public sealed class PhoneAuthenticationEndpointTests
                     services.AddSingleton<IPhoneVerificationChallengeRepository>(Store);
                     services.AddSingleton<IPhoneAccountRepository>(Store);
                     services.AddSingleton<IIdentityUnitOfWork>(Store);
+                    services.RemoveAll<IUserSessionRepository>();
+                    services.AddSingleton<IUserSessionRepository>(Store);
 
                     services.RemoveAll<IExternalIdentityResolver>();
                     services.AddSingleton<IExternalIdentityResolver>(Store);
@@ -454,8 +527,39 @@ public sealed class PhoneAuthenticationEndpointTests
         : IPhoneVerificationChallengeRepository,
           IPhoneAccountRepository,
           IIdentityUnitOfWork,
-          IExternalIdentityResolver
+          IExternalIdentityResolver,
+          IUserSessionRepository
     {
+        private readonly Dictionary<Guid, UserSession> _sessions = [];
+
+        public Task AddAsync(UserSession session, CancellationToken cancellationToken = default) =>
+            Stage(() => _sessions[session.Id] = session);
+
+        public Task<UserSession?> FindAsync(Guid sessionId, CancellationToken cancellationToken = default)
+        {
+            lock (_gate)
+            {
+                return Task.FromResult(
+                    _sessions.TryGetValue(sessionId, out UserSession? s)
+                        ? UserSession.Restore(s.Id, s.UserId, s.CurrentTokenHash, s.PreviousTokenHash, s.CreatedAt, s.LastRotatedAt, s.ExpiresAt, s.RevokedAt)
+                        : null);
+            }
+        }
+
+        public Task UpdateAsync(UserSession session, CancellationToken cancellationToken = default) =>
+            Stage(() => _sessions[session.Id] = session);
+
+        public Task RevokeAllAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken = default)
+        {
+            lock (_gate)
+            {
+                foreach (UserSession session in _sessions.Values.Where(item => item.UserId == userId))
+                    session.Revoke(now);
+            }
+
+            return Task.CompletedTask;
+        }
+
         private readonly Lock _gate = new();
         private readonly List<Action> _staged = [];
         private readonly Dictionary<Guid, PhoneVerificationChallenge> _challenges = [];

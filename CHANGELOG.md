@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Long-lived sessions: rotating 30-day refresh tokens with reuse detection, refresh, logout and
+  logout-all endpoints, and automatic renewal in the portal middleware (ADR-0062).
 - Search-engine visibility: `robots.txt`, `sitemap.xml`, schema.org `RealEstateListing` data,
   canonical URLs, and `noindex` on deep filter combinations; listing photos served as resized
   AVIF/WebP (ADR-0061).
