@@ -60,14 +60,20 @@ function decimal(value: string, min: number, max: number): number | null | "inva
   return parsed >= min && parsed <= max ? parsed : "invalid";
 }
 
-/** Validates the "new listing" form and maps it to API payloads. */
-export function parseListingForm(form: FormData): ParseResult {
-  const values = readValues(form);
-  const v = (name: string) => values[name] as string;
-  const errors: Record<string, string> = {};
+/** Property fields the portal edits; any other property data is preserved on update. */
+export const managedPropertyKeys = [
+  "livingArea", "totalRooms", "bedroomCount", "bathroomCount", "floorNumber", "buildingFloorCount",
+  "legalTitleType", "finishingLevel", "commercialSubtype", "features",
+] as const;
 
-  if (!oneOf(v("category"), categoryLabels)) errors.category = "اختر نوع العقار.";
-  if (v("category") === "CommercialProperty" && v("commercialSubtype") && !oneOf(v("commercialSubtype"), commercialSubtypeLabels))
+/**
+ * Validates location and property fields (everything but the category) and returns the property
+ * payload for the given category. Errors are added to {@link errors}.
+ */
+function parsePropertyFields(values: FormValues, category: string, errors: Record<string, string>): Record<string, unknown> {
+  const v = (name: string) => values[name] as string;
+
+  if (category === "CommercialProperty" && v("commercialSubtype") && !oneOf(v("commercialSubtype"), commercialSubtypeLabels))
     errors.commercialSubtype = "النوع التجاري غير صالح.";
   if (!oneOf(v("governorate"), governorateLabels)) errors.governorate = "اختر المحافظة.";
   if (!v("city") || v("city").length > 100) errors.city = "أدخل المدينة.";
@@ -93,6 +99,37 @@ export function parseListingForm(form: FormData): ParseResult {
   const features = values.features as string[];
   if (features.some((feature) => !oneOf(feature, featureLabels))) errors.features = "ميزة غير معروفة.";
 
+  const property: Record<string, unknown> = {
+    category,
+    address: {
+      governorate: v("governorate"),
+      city: v("city"),
+      ...(v("district") ? { district: v("district") } : {}),
+    },
+  };
+  const optional: Record<string, unknown> = {
+    livingArea: livingArea === null || livingArea === "invalid" ? undefined : { value: livingArea, unit: "SquareMeter" },
+    totalRooms, bedroomCount, bathroomCount, floorNumber, buildingFloorCount,
+    legalTitleType: v("legalTitleType") || undefined,
+    finishingLevel: v("finishingLevel") || undefined,
+    commercialSubtype: category === "CommercialProperty" ? v("commercialSubtype") || undefined : undefined,
+    features: features.length > 0 ? features : undefined,
+  };
+  for (const [key, value] of Object.entries(optional))
+    if (value !== null && value !== undefined && value !== "invalid") property[key] = value;
+
+  return property;
+}
+
+/** Validates the "new listing" form and maps it to API payloads. */
+export function parseListingForm(form: FormData): ParseResult {
+  const values = readValues(form);
+  const v = (name: string) => values[name] as string;
+  const errors: Record<string, string> = {};
+
+  if (!oneOf(v("category"), categoryLabels)) errors.category = "اختر نوع العقار.";
+  const property = parsePropertyFields(values, v("category"), errors);
+
   if (!oneOf(v("transactionIntent"), transactionIntentLabels)) errors.transactionIntent = "اختر نوع العرض.";
   if (!oneOf(v("publishingRole"), publishingRoleLabels)) errors.publishingRole = "اختر صفة المعلن.";
   if (v("headline").length < 5 || v("headline").length > 120) errors.headline = "العنوان بين 5 و 120 حرفاً.";
@@ -110,24 +147,6 @@ export function parseListingForm(form: FormData): ParseResult {
 
   if (Object.keys(errors).length > 0) return { ok: false, errors, values };
 
-  const property: Record<string, unknown> = {
-    category: v("category"),
-    address: {
-      governorate: v("governorate"),
-      city: v("city"),
-      ...(v("district") ? { district: v("district") } : {}),
-    },
-  };
-  const optional: Record<string, unknown> = {
-    livingArea: livingArea === null ? undefined : { value: livingArea, unit: "SquareMeter" },
-    totalRooms, bedroomCount, bathroomCount, floorNumber, buildingFloorCount,
-    legalTitleType: v("legalTitleType") || undefined,
-    finishingLevel: v("finishingLevel") || undefined,
-    commercialSubtype: v("category") === "CommercialProperty" ? v("commercialSubtype") || undefined : undefined,
-    features: features.length > 0 ? features : undefined,
-  };
-  for (const [key, value] of Object.entries(optional)) if (value !== null && value !== undefined) property[key] = value;
-
   return {
     ok: true,
     values,
@@ -141,6 +160,96 @@ export function parseListingForm(form: FormData): ParseResult {
       },
     },
   };
+}
+
+/** The property as returned by GET /api/market/properties/{id}. */
+export interface ManagementProperty {
+  propertyId: string;
+  version: number;
+  category: string;
+  address: {
+    street: string | null;
+    houseNumber: string | null;
+    postalCode: string | null;
+    city: string;
+    location: { latitude: number; longitude: number } | null;
+    governorate: string | null;
+    district: string | null;
+  };
+  livingArea: { value: number; unit: string } | null;
+  totalRooms: number | null;
+  bedroomCount: number | null;
+  bathroomCount: number | null;
+  floorNumber: number | null;
+  buildingFloorCount: number | null;
+  legalTitleType: string | null;
+  finishingLevel: string | null;
+  commercialSubtype: string | null;
+  features: string[];
+  [key: string]: unknown;
+}
+
+/** Prefills the property edit form from the stored property. */
+export function propertyFormValues(property: ManagementProperty): FormValues {
+  const text = (value: unknown) => (value === null || value === undefined ? "" : String(value));
+  return {
+    governorate: text(property.address.governorate),
+    city: property.address.city,
+    district: text(property.address.district),
+    livingArea: text(property.livingArea?.value),
+    totalRooms: text(property.totalRooms),
+    bedroomCount: text(property.bedroomCount),
+    bathroomCount: text(property.bathroomCount),
+    floorNumber: text(property.floorNumber),
+    buildingFloorCount: text(property.buildingFloorCount),
+    legalTitleType: text(property.legalTitleType),
+    finishingLevel: text(property.finishingLevel),
+    commercialSubtype: text(property.commercialSubtype),
+    features: property.features.filter((feature) => oneOf(feature, featureLabels)),
+  };
+}
+
+function withoutNulls(value: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== null && item !== undefined));
+}
+
+/**
+ * Builds the full replacement body for PUT /api/market/properties/{id}: the stored property with
+ * the portal-managed fields replaced by {@link edited}. Fields the portal does not show (street,
+ * coordinates, other areas, years, features without a portal label…) are kept unchanged.
+ */
+export function mergePropertyReplacement(existing: ManagementProperty, edited: Record<string, unknown>): Record<string, unknown> {
+  const { propertyId: _id, version, address, features, ...details } = existing;
+  const body = withoutNulls(details);
+  for (const key of managedPropertyKeys) delete body[key];
+
+  const editedAddress = edited.address as Record<string, unknown>;
+  const mergedAddress = withoutNulls({ ...address, governorate: undefined, city: undefined, district: undefined });
+  const preservedFeatures = features.filter((feature) => !oneOf(feature, featureLabels));
+  const editedFeatures = (edited.features as string[] | undefined) ?? [];
+  const mergedFeatures = [...editedFeatures, ...preservedFeatures];
+
+  const result: Record<string, unknown> = { ...body };
+  for (const [key, value] of Object.entries(edited)) if (key !== "address" && key !== "features") result[key] = value;
+  result.category = existing.category;
+  result.address = { ...mergedAddress, ...editedAddress };
+  if (mergedFeatures.length > 0) result.features = mergedFeatures;
+  result.version = version;
+  return result;
+}
+
+export type PropertyEditParseResult =
+  | { ok: true; replacement: Record<string, unknown>; values: FormValues }
+  | { ok: false; errors: Record<string, string>; values: FormValues };
+
+/** Validates the property edit form and merges it onto the stored property. */
+export function parsePropertyEditForm(form: FormData, existing: ManagementProperty): PropertyEditParseResult {
+  const values = readValues(form);
+  const errors: Record<string, string> = {};
+  const edited = parsePropertyFields(values, existing.category, errors);
+
+  if (Object.keys(errors).length > 0) return { ok: false, errors, values };
+  return { ok: true, values, replacement: mergePropertyReplacement(existing, edited) };
 }
 
 export interface ListingEdit {

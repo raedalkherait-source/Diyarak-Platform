@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { errorMessage } from "@/lib/errors";
-import { parseListingEditForm, parseListingForm, type FormValues } from "@/lib/listingForm";
+import {
+  parseListingEditForm,
+  parseListingForm,
+  parsePropertyEditForm,
+  type FormValues,
+  type ManagementProperty,
+} from "@/lib/listingForm";
 import { managementFetch, publicPost } from "@/lib/managementApi";
 import { clearSession, getRefreshToken } from "@/lib/session";
 import { isListingId } from "@/lib/contact";
@@ -141,6 +147,48 @@ export async function updateListing(
   revalidatePath(`/my/listings/${listingId}`);
   revalidatePath(`/listings/${listingId}`);
   redirect(`/my/listings/${listingId}?notice=updated`);
+}
+
+export interface EditPropertyState {
+  errors?: Record<string, string>;
+  formError?: string;
+  values?: FormValues;
+}
+
+const propertyIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Updates the property behind a listing. The stored property is re-read so fields the portal does
+ * not show are preserved; {@link version} is the version the form was rendered from, so edits made
+ * elsewhere in the meantime are reported instead of overwritten.
+ */
+export async function updateProperty(
+  listingId: string,
+  propertyId: string,
+  version: number,
+  _state: EditPropertyState,
+  form: FormData,
+): Promise<EditPropertyState> {
+  if (!isListingId(listingId) || !propertyIdPattern.test(propertyId)) return { formError: errorMessage(null, 404) };
+
+  const current = await managementFetch<ManagementProperty>(`/api/market/properties/${propertyId}`);
+  if (!current.ok) return { formError: errorMessage(current.code, current.status) };
+
+  const parsed = parsePropertyEditForm(form, current.value);
+  if (!parsed.ok) return { errors: parsed.errors, values: parsed.values };
+  if (current.value.version !== version)
+    return { formError: errorMessage("market.property.concurrent_modification"), values: parsed.values };
+
+  const result = await managementFetch(`/api/market/properties/${propertyId}`, {
+    method: "PUT",
+    json: parsed.replacement,
+  });
+  if (!result.ok) return { formError: errorMessage(result.code, result.status), values: parsed.values };
+
+  revalidatePath("/my");
+  revalidatePath(`/my/listings/${listingId}`);
+  revalidatePath(`/listings/${listingId}`);
+  redirect(`/my/listings/${listingId}?notice=property-updated`);
 }
 
 const statusActions = new Set(["pause", "resume", "close"]);

@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Portal: publishers can edit property details (location, area, rooms, floor, legal title,
+  finishing, features) of a listing that is not closed. Fields the portal does not show are
+  preserved, and edits made elsewhere in the meantime are reported instead of overwritten.
 - `Messaging:Sms:Http:BasicAuthUsername` for SMS providers that use HTTP Basic authentication,
   such as Twilio API keys; a Twilio example in the development runbook and `api.env.example`.
 - Long-lived sessions: rotating 30-day refresh tokens with reuse detection, refresh, logout and

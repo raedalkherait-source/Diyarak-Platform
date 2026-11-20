@@ -3,16 +3,8 @@
 import { useActionState, useState } from "react";
 import { createListing, type CreateListingState } from "@/app/my/actions";
 import { Options } from "@/components/Options";
-import {
-  categoryLabels,
-  commercialSubtypeLabels,
-  featureLabels,
-  finishingLevelLabels,
-  governorateLabels,
-  legalTitleLabels,
-  publishingRoleLabels,
-  transactionIntentLabels,
-} from "@/lib/labels";
+import { PropertyFields } from "@/components/PropertyFields";
+import { publishingRoleLabels, transactionIntentLabels } from "@/lib/labels";
 
 export function ListingForm() {
   const [state, action, pending] = useActionState<CreateListingState, FormData>(createListing, {});
@@ -54,103 +46,13 @@ export function ListingForm() {
         </div>
       </fieldset>
 
-      <fieldset className="panel">
-        <legend>الموقع</legend>
-        <div className="form-grid">
-          <label className="field">
-            المحافظة *
-            <select name="governorate" defaultValue={value("governorate")} required>
-              <Options labels={governorateLabels} placeholder="اختر" />
-            </select>
-            {error("governorate")}
-          </label>
-          <label className="field">
-            المدينة *
-            <input name="city" defaultValue={value("city")} maxLength={100} required />
-            {error("city")}
-          </label>
-          <label className="field">
-            الحي / المنطقة
-            <input name="district" defaultValue={value("district")} maxLength={100} />
-            {error("district")}
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset className="panel">
-        <legend>العقار</legend>
-        <div className="form-grid">
-          <label className="field">
-            نوع العقار *
-            <select name="category" value={category} onChange={(event) => setCategory(event.target.value)} required>
-              <Options labels={categoryLabels} placeholder="اختر" />
-            </select>
-            {error("category")}
-          </label>
-          {category === "CommercialProperty" ? (
-            <label className="field">
-              النوع التجاري
-              <select name="commercialSubtype" defaultValue={value("commercialSubtype")}>
-                <Options labels={commercialSubtypeLabels} placeholder="اختر" />
-              </select>
-              {error("commercialSubtype")}
-            </label>
-          ) : null}
-          <label className="field">
-            المساحة (م²)
-            <input name="livingArea" inputMode="decimal" defaultValue={value("livingArea")} />
-            {error("livingArea")}
-          </label>
-          <label className="field">
-            عدد الغرف
-            <input name="totalRooms" inputMode="numeric" defaultValue={value("totalRooms")} />
-            {error("totalRooms")}
-          </label>
-          <label className="field">
-            غرف النوم
-            <input name="bedroomCount" inputMode="numeric" defaultValue={value("bedroomCount")} />
-            {error("bedroomCount")}
-          </label>
-          <label className="field">
-            الحمامات
-            <input name="bathroomCount" inputMode="numeric" defaultValue={value("bathroomCount")} />
-            {error("bathroomCount")}
-          </label>
-          <label className="field">
-            الطابق (0 = أرضي)
-            <input name="floorNumber" inputMode="numeric" defaultValue={value("floorNumber")} />
-            {error("floorNumber")}
-          </label>
-          <label className="field">
-            عدد طوابق البناء
-            <input name="buildingFloorCount" inputMode="numeric" defaultValue={value("buildingFloorCount")} />
-            {error("buildingFloorCount")}
-          </label>
-          <label className="field">
-            الوضع القانوني
-            <select name="legalTitleType" defaultValue={value("legalTitleType")}>
-              <Options labels={legalTitleLabels} placeholder="غير محدد" />
-            </select>
-            {error("legalTitleType")}
-          </label>
-          <label className="field">
-            الإكساء
-            <select name="finishingLevel" defaultValue={value("finishingLevel")}>
-              <Options labels={finishingLevelLabels} placeholder="غير محدد" />
-            </select>
-            {error("finishingLevel")}
-          </label>
-        </div>
-        <div className="checkbox-grid" role="group" aria-label="المزايا">
-          {Object.entries(featureLabels).map(([feature, text]) => (
-            <label key={feature} className="checkbox">
-              <input type="checkbox" name="features" value={feature} defaultChecked={selectedFeatures.includes(feature)} />
-              {text}
-            </label>
-          ))}
-        </div>
-        {error("features")}
-      </fieldset>
+      <PropertyFields
+        value={value}
+        error={error}
+        selectedFeatures={selectedFeatures}
+        category={category}
+        onCategoryChange={setCategory}
+      />
 
       <fieldset className="panel">
         <legend>السعر</legend>

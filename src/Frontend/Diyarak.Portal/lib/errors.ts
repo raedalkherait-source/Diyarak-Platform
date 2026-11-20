@@ -7,6 +7,8 @@ const messages: Record<string, string> = {
   "identity.phone.concurrent_modification": "حدث تعارض. حاول مرة أخرى.",
   "identity.phone.delivery_failed": "تعذر إرسال رسالة الرمز حالياً. حاول بعد دقائق.",
   "market.property.invalid_create_request": "بعض بيانات العقار غير صالحة. راجع الحقول.",
+  "market.property.invalid_update": "بعض بيانات العقار غير صالحة. راجع الحقول.",
+  "market.property.concurrent_modification": "تغيّرت تفاصيل العقار في مكان آخر. حدّث الصفحة وحاول مجدداً.",
   "market.listing.invalid_patch": "بعض بيانات الإعلان غير صالحة.",
   "market.listing.concurrent_modification": "تغيّر الإعلان في مكان آخر. حدّث الصفحة وحاول مجدداً.",
   "market.listing.cannot_edit": "لا يمكن تعديل إعلان منتهٍ.",
