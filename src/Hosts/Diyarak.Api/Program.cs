@@ -119,6 +119,10 @@ builder.Services.AddScoped<UpdateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
 builder.Services.AddScoped<ChangeListingStatusUseCase>();
 builder.Services.AddScoped<DeleteDraftListingUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Favorites.AddListingFavoriteUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Favorites.RemoveListingFavoriteUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Favorites.GetListingFavoriteStatusUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Favorites.ListListingFavoritesUseCase>();
 builder.Services.AddModeration(builder.Configuration);
 
 builder.Services.TryAddSingleton<IClock>(SystemClock.Instance);
@@ -309,6 +313,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketPropertyEndpoints();
     app.MapMarketListingEndpoints();
     app.MapMarketListingPhotoManagementEndpoints();
+    app.MapMarketFavoriteEndpoints();
     app.MapModerationEndpoints();
 }
 

@@ -1335,6 +1335,58 @@ public sealed class PublishListingEndpointTests
     }
 
     [Fact]
+    public async Task Favorites_can_be_saved_checked_listed_and_removed()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.Publish();
+        using var factory = new TestApiFactory(Guid.NewGuid(), listing);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsync($"/api/market/favorites/{listing.Id}", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsync($"/api/market/favorites/{listing.Id}", null)).StatusCode);
+        Assert.Single(factory.FavoriteStore.Items);
+
+        using (JsonDocument status = JsonDocument.Parse(await client.GetStringAsync($"/api/market/favorites/{listing.Id}")))
+            Assert.True(status.RootElement.GetProperty("isFavorite").GetBoolean());
+
+        HttpResponseMessage page = await client.GetAsync("/api/market/favorites?page=1&pageSize=10");
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        Assert.Equal("no-store", page.Headers.CacheControl?.ToString());
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/market/favorites/{listing.Id}")).StatusCode);
+        Assert.Empty(factory.FavoriteStore.Items);
+    }
+
+    [Fact]
+    public async Task Drafts_cannot_be_saved_and_bad_input_returns_400()
+    {
+        MarketListing draft = CreateReadyListing();
+        using var factory = new TestApiFactory(Guid.NewGuid(), draft);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage hidden = await client.PutAsync($"/api/market/favorites/{draft.Id}", null);
+        Assert.Equal(HttpStatusCode.NotFound, hidden.StatusCode);
+        await AssertProblemCodeAsync(hidden, "market.favorite.listing_not_found");
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsync("/api/market/favorites/not-a-guid", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/market/favorites?pageSize=0")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/market/favorites?page=abc")).StatusCode);
+        Assert.Empty(factory.FavoriteStore.Items);
+    }
+
+    [Fact]
+    public async Task Favorites_require_authentication()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/market/favorites")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PutAsync($"/api/market/favorites/{Guid.NewGuid()}", null)).StatusCode);
+    }
+
+    [Fact]
     public async Task Delete_without_access_token_returns_401()
     {
         using var factory = new TestApiFactory(userId: null);
@@ -1495,6 +1547,8 @@ public sealed class PublishListingEndpointTests
 
         public StubDraftListingDeletionStore DeletionStore { get; } = new();
 
+        public StubListingFavoriteStore FavoriteStore { get; } = new();
+
         public StubPropertyExistenceChecker PropertyChecker { get; }
 
         public StubPropertyListingAuthorizationChecker
@@ -1554,6 +1608,8 @@ public sealed class PublishListingEndpointTests
                     services.AddSingleton<IMarketTransactionRunner>(
                         new StubMarketTransactionRunner());
 
+                    services.RemoveAll<Diyarak.Market.Application.Favorites.IListingFavoriteStore>();
+                    services.AddSingleton<Diyarak.Market.Application.Favorites.IListingFavoriteStore>(FavoriteStore);
                     services.RemoveAll<IDraftListingDeletionStore>();
                     services.AddSingleton<IDraftListingDeletionStore>(DeletionStore);
                     services.RemoveAll<Diyarak.Market.Application.Photos.IListingPhotoStorage>();
@@ -1610,6 +1666,29 @@ public sealed class PublishListingEndpointTests
             ExternalIdentity identity,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(userId);
+    }
+
+    public sealed class StubListingFavoriteStore : Diyarak.Market.Application.Favorites.IListingFavoriteStore
+    {
+        public HashSet<(Guid UserId, Guid ListingId)> Items { get; } = [];
+
+        public Task<bool> AddAsync(Guid userId, Guid listingId, DateTimeOffset savedAt, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.Add((userId, listingId)));
+
+        public Task RemoveAsync(Guid userId, Guid listingId, CancellationToken cancellationToken = default)
+        {
+            Items.Remove((userId, listingId));
+            return Task.CompletedTask;
+        }
+
+        public Task<int> CountAsync(Guid userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.Count(item => item.UserId == userId));
+
+        public Task<bool> ContainsAsync(Guid userId, Guid listingId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.Contains((userId, listingId)));
+
+        public Task<IReadOnlyList<PublishedListingProjection>> ListPublishedAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<PublishedListingProjection>>([]);
     }
 
     public sealed class StubDraftListingDeletionStore : IDraftListingDeletionStore

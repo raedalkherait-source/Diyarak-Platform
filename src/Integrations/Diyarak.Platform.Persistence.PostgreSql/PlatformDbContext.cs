@@ -29,6 +29,9 @@ public sealed class PlatformDbContext(
     internal DbSet<MarketListingReportRecord> MarketListingReports =>
         Set<MarketListingReportRecord>();
 
+    internal DbSet<MarketListingFavoriteRecord> MarketListingFavorites =>
+        Set<MarketListingFavoriteRecord>();
+
     internal DbSet<MarketPropertyRecord> MarketProperties =>
         Set<MarketPropertyRecord>();
 
@@ -60,5 +63,8 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new MarketListingReportRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new MarketListingFavoriteRecordConfiguration());
     }
 }

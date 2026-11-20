@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContactButton } from "@/components/ContactButton";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { Gallery } from "@/components/Gallery";
 import { ReportListing } from "@/components/ReportListing";
 import { getListing } from "@/lib/api";
@@ -88,6 +89,7 @@ export default async function ListingPage({ params }: Props) {
               .filter(Boolean)
               .join(" — ")}
           </div>
+          <FavoriteButton listingId={listing.listingId} />
 
           <div className="mobile-only" style={{ marginBlockStart: 16 }}>
             <ContactPanel listing={listing} />

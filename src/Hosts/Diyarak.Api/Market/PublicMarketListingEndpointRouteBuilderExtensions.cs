@@ -771,7 +771,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             pageSize <= ListPublishedListingsUseCase.MaximumPageSize;
     }
 
-    private static PublicMarketListingResponse ToResponse(
+    internal static PublicMarketListingResponse ToResponse(
         PublishedListingProjection projection)
     {
         ArgumentNullException.ThrowIfNull(projection);
