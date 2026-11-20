@@ -10,6 +10,8 @@ public sealed class PhoneAuthenticationOptions
 
     public const string DevelopmentLogSender = "DevelopmentLog";
 
+    public const string HttpGatewaySender = "HttpGateway";
+
     public const int MinimumSigningKeyBytes = 32;
 
     public bool Enabled { get; init; }
@@ -24,7 +26,7 @@ public sealed class PhoneAuthenticationOptions
 
     public int AccessTokenLifetimeMinutes { get; init; } = 60;
 
-    /// <summary>The OTP delivery adapter. Only <see cref="DevelopmentLogSender"/> exists today.</summary>
+    /// <summary>The OTP delivery adapter: <see cref="HttpGatewaySender"/> or, in Development only, <see cref="DevelopmentLogSender"/>.</summary>
     public string OtpSender { get; init; } = string.Empty;
 
     internal byte[] SigningKeyBytes { get; private init; } = [];
@@ -86,13 +88,15 @@ public sealed class PhoneAuthenticationOptions
                 $"{SectionName}:AccessTokenLifetimeMinutes must be between 5 and 1440.");
         }
 
-        if (!string.Equals(options.OtpSender, DevelopmentLogSender, StringComparison.Ordinal))
+        if (!string.Equals(options.OtpSender, DevelopmentLogSender, StringComparison.Ordinal) &&
+            !string.Equals(options.OtpSender, HttpGatewaySender, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                $"{SectionName}:OtpSender '{options.OtpSender}' is not supported. Configure an SMS/WhatsApp adapter.");
+                $"{SectionName}:OtpSender must be '{HttpGatewaySender}' or, in Development, '{DevelopmentLogSender}'.");
         }
 
-        if (!environment.IsDevelopment())
+        if (string.Equals(options.OtpSender, DevelopmentLogSender, StringComparison.Ordinal) &&
+            !environment.IsDevelopment())
         {
             throw new InvalidOperationException(
                 $"{SectionName}:OtpSender '{DevelopmentLogSender}' writes codes to the log and is only allowed in Development.");

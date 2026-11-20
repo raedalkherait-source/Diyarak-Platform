@@ -75,7 +75,17 @@ public sealed class RequestPhoneVerificationUseCase
                 PhoneAuthenticationErrors.ConcurrentModification);
         }
 
-        await _sender.SendAsync(phone, code, cancellationToken);
+        try
+        {
+            await _sender.SendAsync(phone, code, cancellationToken);
+        }
+        catch (OtpDeliveryException)
+        {
+            // The stored challenge still counts towards the per-phone throttle, which also limits
+            // retries against a failing provider.
+            return Result.Failure<DateTimeOffset>(
+                PhoneAuthenticationErrors.DeliveryFailed);
+        }
 
         return Result.Success(challenge.ExpiresAt);
     }

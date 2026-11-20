@@ -5,6 +5,7 @@ const messages: Record<string, string> = {
   "identity.phone.too_many_requests": "طلبت رموزاً كثيرة. انتظر 15 دقيقة ثم حاول مجدداً.",
   "identity.phone.verification_failed": "الرمز غير صحيح أو منتهي الصلاحية. اطلب رمزاً جديداً.",
   "identity.phone.concurrent_modification": "حدث تعارض. حاول مرة أخرى.",
+  "identity.phone.delivery_failed": "تعذر إرسال رسالة الرمز حالياً. حاول بعد دقائق.",
   "market.property.invalid_create_request": "بعض بيانات العقار غير صالحة. راجع الحقول.",
   "market.listing.invalid_patch": "بعض بيانات الإعلان غير صالحة.",
   "market.listing.concurrent_modification": "تغيّر الإعلان في مكان آخر. حدّث الصفحة وحاول مجدداً.",
