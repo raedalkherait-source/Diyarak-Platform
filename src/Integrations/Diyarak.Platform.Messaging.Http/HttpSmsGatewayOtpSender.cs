@@ -100,6 +100,12 @@ public sealed class HttpSmsGatewayOtpSender : IOtpSender
                 request.Content?.Headers.TryAddWithoutValidation(name, value);
         }
 
+        if (!string.IsNullOrEmpty(_options.BasicAuthUsername))
+        {
+            string credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_options.BasicAuthUsername}:{_options.ApiKey}"));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+        }
+
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
         return request;
     }

@@ -206,6 +206,25 @@ Messaging__Sms__Http__Parameters__body={message}
 Messaging__Sms__Http__ApiKey=<secret>
 ```
 
+Form POST API with HTTP Basic authentication, for example Twilio. `BasicAuthUsername` is the API
+key SID (`SK...`) and `ApiKey` is that key's secret; `From` is a Twilio phone number (or use
+`Parameters__MessagingServiceSid=MG...` instead of `From`):
+
+```bash
+Authentication__Phone__OtpSender=HttpGateway
+Messaging__Sms__Http__Endpoint=https://api.twilio.com/2010-04-01/Accounts/<AccountSid>/Messages.json
+Messaging__Sms__Http__Method=POST
+Messaging__Sms__Http__Encoding=Form
+Messaging__Sms__Http__Parameters__To={phone}
+Messaging__Sms__Http__Parameters__From=<twilio-number>
+Messaging__Sms__Http__Parameters__Body={message}
+Messaging__Sms__Http__BasicAuthUsername=<SK...>
+Messaging__Sms__Http__ApiKey=<api-key-secret>
+```
+
+A Twilio trial account sends only to verified caller IDs and prefixes messages with a trial
+notice. Check Twilio's country guidelines for coverage of the numbers you need to reach.
+
 If the provider returns HTTP 200 for errors, set `Messaging__Sms__Http__SuccessBodyContains` to
 text that appears only in successful responses. Check the provider's documentation for parameter
 names and the number format it expects (`{phone}`, `{phoneDigits}` or `{phoneLocal}`).

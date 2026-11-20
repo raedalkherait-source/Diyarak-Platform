@@ -38,6 +38,12 @@ public sealed class HttpSmsGatewayOptions
     /// <summary>Provider credential substituted for <c>{apiKey}</c>. Supply it from a secret store.</summary>
     public string ApiKey { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Optional user name for HTTP Basic authentication (for example a Twilio API key SID). When
+    /// set, requests carry <c>Authorization: Basic base64(BasicAuthUsername:ApiKey)</c>.
+    /// </summary>
+    public string? BasicAuthUsername { get; init; }
+
     /// <summary>Message text; must contain <c>{code}</c>.</summary>
     public string MessageTemplate { get; init; } = DefaultMessageTemplate;
 
@@ -87,6 +93,18 @@ public sealed class HttpSmsGatewayOptions
         bool usesApiKey = Parameters.Values.Concat(Headers.Values).Any(value => value.Contains("{apiKey}", StringComparison.Ordinal));
         if (usesApiKey && string.IsNullOrWhiteSpace(ApiKey))
             throw new InvalidOperationException($"{SectionName}:ApiKey is referenced but not configured.");
+
+        if (!string.IsNullOrEmpty(BasicAuthUsername))
+        {
+            if (string.IsNullOrWhiteSpace(ApiKey))
+                throw new InvalidOperationException($"{SectionName}:ApiKey is required with BasicAuthUsername.");
+
+            if (BasicAuthUsername.Contains(':', StringComparison.Ordinal) || BasicAuthUsername.Any(char.IsControl))
+                throw new InvalidOperationException($"{SectionName}:BasicAuthUsername contains an invalid character.");
+
+            if (Headers.Keys.Any(name => string.Equals(name, "Authorization", StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException($"{SectionName}: use either BasicAuthUsername or an Authorization header, not both.");
+        }
 
         foreach ((string name, string value) in Headers)
         {
