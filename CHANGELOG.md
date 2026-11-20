@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Listing lifecycle after publication: edit price, headline, contact and photos; pause and resume;
+  close as sold, rented or withdrawn (ADR-0057).
 - Publisher dashboard in the portal: phone sign-in with an httpOnly session cookie, "my listings",
   a one-page listing form with Arabic validation, photo upload and deletion, and publishing
   (ADR-0056).
@@ -23,6 +25,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Public Listing filters for governorate, district, legal title type, finishing level, and floor.
 
 ### Changed
+- Published and Paused listings can be edited. Only Closed listings are read-only (supersedes the
+  Draft-only rule of ADR-0029).
+- Public listing ETags include photo identifiers.
 - Property street, house number, and postal code are now optional (ADR-0051).
 
 ### Security

@@ -9,13 +9,14 @@ const apiUrl = (process.env.DIYARAK_API_URL ?? "http://localhost:5080").replace(
 export interface ManagementListing {
   listingId: string;
   version: number;
-  status: "Draft" | "Published";
+  status: "Draft" | "Published" | "Paused" | "Closed";
   subject: { subjectId: string; subjectType: string };
   context: { publishingRole: string; transactionIntent: string } | null;
   headline: string | null;
   price: { isOnRequest: boolean; amount: number | null; currency: string | null } | null;
   availableFromDate: string | null;
   contact: { allowCalls: boolean; allowWhatsApp: boolean } | null;
+  closureReason: "Sold" | "Rented" | "Withdrawn" | null;
 }
 
 export interface ManagementPhoto {

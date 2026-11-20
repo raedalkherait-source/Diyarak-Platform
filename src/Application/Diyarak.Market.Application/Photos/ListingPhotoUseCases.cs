@@ -18,7 +18,7 @@ public sealed class UploadListingPhotoUseCase(
     {
         ArgumentNullException.ThrowIfNull(content);
 
-        Result<MarketListing> owned = await ListingPhotoAccess.LoadOwnedDraftAsync(
+        Result<MarketListing> owned = await ListingPhotoAccess.LoadOwnedEditableAsync(
             listings, listingId, actorUserId, cancellationToken);
 
         if (!owned.IsSuccess)
@@ -128,7 +128,7 @@ public sealed class DeleteListingPhotoUseCase(
         if (photoId == Guid.Empty)
             return Result.Failure(ListingPhotoErrors.InvalidIdentifier);
 
-        Result<MarketListing> owned = await ListingPhotoAccess.LoadOwnedDraftAsync(
+        Result<MarketListing> owned = await ListingPhotoAccess.LoadOwnedEditableAsync(
             listings, listingId, actorUserId, cancellationToken);
 
         if (!owned.IsSuccess)
@@ -178,7 +178,7 @@ public sealed class GetListingPhotoContentUseCase(
         bool visible = listing is not null &&
             (actorUserId is { } actor
                 ? listing.PublisherUserId == actor
-                : listing.Status == ListingStatus.Published);
+                : listing.IsPubliclyVisible);
 
         if (!visible)
             return Result.Failure<ListingPhotoContent>(ListingPhotoErrors.PhotoNotFound);
@@ -215,7 +215,7 @@ internal static class ListingPhotoAccess
             : Result.Success(listing);
     }
 
-    internal static async Task<Result<MarketListing>> LoadOwnedDraftAsync(
+    internal static async Task<Result<MarketListing>> LoadOwnedEditableAsync(
         IMarketListingRepository listings,
         Guid listingId,
         Guid actorUserId,
@@ -223,7 +223,7 @@ internal static class ListingPhotoAccess
     {
         Result<MarketListing> owned = await LoadOwnedAsync(listings, listingId, actorUserId, cancellationToken);
 
-        return owned.IsSuccess && owned.Value.Status != ListingStatus.Draft
+        return owned.IsSuccess && !owned.Value.IsEditable
             ? Result.Failure<MarketListing>(ListingPhotoErrors.ListingNotEditable)
             : owned;
     }

@@ -56,9 +56,13 @@ public sealed class ListingPhotoUseCaseTests
     }
 
     [Fact]
-    public async Task Upload_rejects_published_listing()
+    public async Task Upload_allows_published_listing_but_rejects_closed_listing()
     {
         MarketListing listing = AddListing(published: true);
+
+        Assert.True((await UploadAsync(listing.Id, Owner, Fixture("exif-gps.jpg"))).IsSuccess);
+
+        listing.Close(ListingClosureReason.Sold);
 
         Assert.Equal(
             ListingPhotoErrors.ListingNotEditable,

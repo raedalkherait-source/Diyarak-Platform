@@ -1090,10 +1090,11 @@ public sealed class PublishListingEndpointTests
     }
 
     [Fact]
-    public async Task Update_published_listing_returns_409()
+    public async Task Update_closed_listing_returns_409()
     {
         MarketListing listing = CreateReadyListing();
         listing.Publish();
+        listing.Close(ListingClosureReason.Sold);
         using var factory = new TestApiFactory(
             listing.PublisherUserId,
             listing);
@@ -1247,6 +1248,71 @@ public sealed class PublishListingEndpointTests
         };
 
         return await client.SendAsync(request);
+    }
+
+    [Fact]
+    public async Task Owner_can_pause_resume_and_close_published_listing()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.Publish();
+        using var factory = new TestApiFactory(listing.PublisherUserId, listing);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage paused = await client.PostAsync($"/api/market/listings/{listing.Id}/pause", null);
+        Assert.Equal(HttpStatusCode.OK, paused.StatusCode);
+        Assert.Equal(ListingStatus.Paused, listing.Status);
+        using (JsonDocument body = JsonDocument.Parse(await paused.Content.ReadAsStringAsync()))
+            Assert.Equal(listing.Version + 1, body.RootElement.GetProperty("version").GetInt64());
+
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync($"/api/market/listings/{listing.Id}/resume", null)).StatusCode);
+        Assert.Equal(ListingStatus.Published, listing.Status);
+
+        HttpResponseMessage closed = await client.PostAsync(
+            $"/api/market/listings/{listing.Id}/close",
+            new StringContent("""{"reason":"Sold"}""", System.Text.Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.OK, closed.StatusCode);
+        Assert.Equal(ListingStatus.Closed, listing.Status);
+        Assert.Equal(ListingClosureReason.Sold, listing.ClosureReason);
+
+        HttpResponseMessage again = await client.PostAsync($"/api/market/listings/{listing.Id}/pause", null);
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
+        await AssertProblemCodeAsync(again, ChangeListingStatusErrors.InvalidTransition.Code);
+    }
+
+    [Theory]
+    [InlineData("""{"reason":"Destroyed"}""")]
+    [InlineData("""{"reason":"sold"}""")]
+    [InlineData("""{}""")]
+    public async Task Close_requires_a_valid_reason(string body)
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.Publish();
+        using var factory = new TestApiFactory(listing.PublisherUserId, listing);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await client.PostAsync(
+            $"/api/market/listings/{listing.Id}/close",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ListingStatus.Published, listing.Status);
+    }
+
+    [Fact]
+    public async Task Status_change_by_non_owner_returns_concealed_404()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.Publish();
+        using var factory = new TestApiFactory(Guid.NewGuid(), listing);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await client.PostAsync($"/api/market/listings/{listing.Id}/pause", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(ListingStatus.Published, listing.Status);
     }
 
     private static async Task<HttpResponseMessage> SendPublishAsync(

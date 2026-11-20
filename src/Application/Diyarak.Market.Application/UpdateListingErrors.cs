@@ -32,7 +32,7 @@ public static class UpdateListingErrors
     public static Error CannotEdit { get; } =
         Error.Conflict(
             "market.listing.cannot_edit",
-            "Only a Draft Listing can be edited.");
+            "A Closed Listing cannot be edited.");
 
     public static Error ConcurrentModification { get; } =
         Error.Conflict(

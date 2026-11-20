@@ -8,10 +8,10 @@ namespace Diyarak.Api.Market;
 internal static class PublicMarketListingEntityTag
 {
     private const string DetailRepresentationRevision =
-        "public-market-listing-v2";
+        "public-market-listing-v3";
 
     private const string CollectionRepresentationRevision =
-        "public-market-listing-page-v2";
+        "public-market-listing-page-v3";
 
     internal static string Create(PublishedListingProjection projection)
     {
@@ -19,7 +19,7 @@ internal static class PublicMarketListingEntityTag
 
         string material = string.Create(
             CultureInfo.InvariantCulture,
-            $"{DetailRepresentationRevision}:{projection.Listing.Id:N}:{projection.Listing.Version}:{projection.Property.Version}");
+            $"{DetailRepresentationRevision}:{projection.Listing.Id:N}:{projection.Listing.Version}:{projection.Property.Version}:{PhotoFingerprint(projection)}");
 
         return CreateOpaqueTag(material);
     }
@@ -47,6 +47,8 @@ internal static class PublicMarketListingEntityTag
             material.Append(':');
             material.Append(
                 projection.Property.Version.ToString(CultureInfo.InvariantCulture));
+            material.Append(':');
+            material.Append(PhotoFingerprint(projection));
         }
 
         return CreateOpaqueTag(material.ToString());
@@ -99,6 +101,17 @@ internal static class PublicMarketListingEntityTag
 
         return false;
     }
+
+    /// <summary>
+    /// Photos can change without a Listing version change, so the ordered photo identifiers are
+    /// part of the validator.
+    /// </summary>
+    private static string PhotoFingerprint(PublishedListingProjection projection) =>
+        string.Join(
+            ',',
+            projection.Photos
+                .OrderBy(photo => photo.Position)
+                .Select(photo => photo.Id.ToString("N")));
 
     private static string CreateOpaqueTag(string material)
     {

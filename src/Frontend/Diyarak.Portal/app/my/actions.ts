@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { errorMessage } from "@/lib/errors";
-import { parseListingForm, type FormValues } from "@/lib/listingForm";
+import { parseListingEditForm, parseListingForm, type FormValues } from "@/lib/listingForm";
 import { managementFetch } from "@/lib/managementApi";
 import { clearSession } from "@/lib/session";
 import { isListingId } from "@/lib/contact";
@@ -73,6 +73,7 @@ export async function uploadPhoto(listingId: string, form: FormData): Promise<Ac
 
   if (!result.ok) return { ok: false, error: errorMessage(result.code, result.status) };
   revalidatePath(`/my/listings/${listingId}`);
+  revalidatePath(`/listings/${listingId}`);
   return { ok: true };
 }
 
@@ -80,6 +81,7 @@ export async function deletePhoto(listingId: string, photoId: string): Promise<v
   if (!isListingId(listingId) || !isListingId(photoId)) return;
   await managementFetch(`/api/market/listings/${listingId}/photos/${photoId}`, { method: "DELETE" });
   revalidatePath(`/my/listings/${listingId}`);
+  revalidatePath(`/listings/${listingId}`);
 }
 
 export async function publishListing(listingId: string, version: number, _state: ActionResult): Promise<ActionResult> {
@@ -99,4 +101,56 @@ export async function publishListing(listingId: string, version: number, _state:
 export async function logout(): Promise<void> {
   await clearSession();
   redirect("/");
+}
+
+export interface EditListingState {
+  ok?: boolean;
+  errors?: Record<string, string>;
+  formError?: string;
+  values?: FormValues;
+}
+
+export async function updateListing(
+  listingId: string,
+  version: number,
+  _state: EditListingState,
+  form: FormData,
+): Promise<EditListingState> {
+  if (!isListingId(listingId)) return { formError: errorMessage(null, 404) };
+
+  const parsed = parseListingEditForm(form);
+  if (!parsed.ok) return { errors: parsed.errors, values: parsed.values };
+
+  // contact: null clears the options when both boxes are unticked.
+  const result = await managementFetch(`/api/market/listings/${listingId}`, {
+    method: "PATCH",
+    json: { version, ...parsed.edit },
+  });
+
+  if (!result.ok) return { formError: errorMessage(result.code, result.status), values: parsed.values };
+
+  revalidatePath("/my");
+  revalidatePath(`/my/listings/${listingId}`);
+  revalidatePath(`/listings/${listingId}`);
+  redirect(`/my/listings/${listingId}?notice=updated`);
+}
+
+const statusActions = new Set(["pause", "resume", "close"]);
+const closureReasons = new Set(["Sold", "Rented", "Withdrawn"]);
+
+export async function changeListingStatus(listingId: string, form: FormData): Promise<void> {
+  const action = String(form.get("action") ?? "");
+  const reason = String(form.get("reason") ?? "");
+  if (!isListingId(listingId) || !statusActions.has(action)) return;
+  if (action === "close" && !closureReasons.has(reason)) return;
+
+  const result = await managementFetch(`/api/market/listings/${listingId}/${action}`, {
+    method: "POST",
+    json: action === "close" ? { reason } : {},
+  });
+
+  revalidatePath("/my");
+  revalidatePath(`/my/listings/${listingId}`);
+  revalidatePath(`/listings/${listingId}`);
+  redirect(`/my/listings/${listingId}?notice=${result.ok ? `status-${action}` : "status-failed"}`);
 }

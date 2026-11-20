@@ -12,7 +12,7 @@ export function PublishButton({ listingId, version, photoCount }: { listingId: s
   return (
     <form action={action} className="publish">
       {photoCount === 0 ? <p className="notice">ننصح بإضافة صورة واحدة على الأقل قبل النشر.</p> : null}
-      <p className="notice">بعد النشر لا يمكن تعديل الإعلان أو صوره.</p>
+      <p className="notice">يمكنك تعديل الإعلان وصوره بعد النشر، أو إيقافه مؤقتاً في أي وقت.</p>
       <button className="button" type="submit" disabled={pending}>
         {pending ? "جارٍ النشر…" : "نشر الإعلان"}
       </button>

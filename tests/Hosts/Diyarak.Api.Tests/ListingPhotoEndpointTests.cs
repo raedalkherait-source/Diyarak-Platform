@@ -103,7 +103,7 @@ public sealed class ListingPhotoEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task Non_owner_and_published_listing_cannot_upload()
+    public async Task Non_owner_and_closed_listing_cannot_upload()
     {
         using var factory = new TestApiFactory(_storageRoot);
         MarketListing draft = factory.AddListing(published: false);
@@ -114,6 +114,11 @@ public sealed class ListingPhotoEndpointTests : IDisposable
         Assert.Equal(HttpStatusCode.NotFound, concealed.StatusCode);
 
         using HttpClient owner = factory.CreateClientFor(Owner);
+        Assert.Equal(
+            HttpStatusCode.Created,
+            (await UploadAsync(owner, published.Id, Fixture("text-exif.png"), "image/png")).StatusCode);
+
+        published.Close(ListingClosureReason.Sold);
         HttpResponseMessage locked = await UploadAsync(owner, published.Id, Fixture("text-exif.png"), "image/png");
         Assert.Equal(HttpStatusCode.Conflict, locked.StatusCode);
         await AssertProblemCodeAsync(locked, ListingPhotoErrors.ListingNotEditable.Code);

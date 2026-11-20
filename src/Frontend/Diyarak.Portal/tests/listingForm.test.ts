@@ -79,3 +79,24 @@ describe("parseListingForm", () => {
     expect(notCommercial.ok && "commercialSubtype" in notCommercial.draft.property).toBe(false);
   });
 });
+
+describe("parseListingEditForm", () => {
+  it("maps offer, headline, price and cleared contact", async () => {
+    const { parseListingEditForm } = await import("@/lib/listingForm");
+    const result = parseListingEditForm(
+      form({ transactionIntent: "Sell", publishingRole: "Owner", headline: "سعر مخفّض للبيع", priceMode: "known", priceAmount: "99000", priceCurrency: "USD" }),
+    );
+    expect(result.ok && result.edit).toEqual({
+      context: { publishingRole: "Owner", transactionIntent: "Sell" },
+      headline: "سعر مخفّض للبيع",
+      price: { isOnRequest: false, amount: 99000, currency: "USD" },
+      contact: null,
+    });
+  });
+
+  it("rejects an invalid edit", async () => {
+    const { parseListingEditForm } = await import("@/lib/listingForm");
+    const result = parseListingEditForm(form({ transactionIntent: "Barter", publishingRole: "Owner", headline: "x", priceMode: "known", priceAmount: "" }));
+    expect(!result.ok && Object.keys(result.errors).sort()).toEqual(["headline", "priceAmount", "priceCurrency", "transactionIntent"]);
+  });
+});

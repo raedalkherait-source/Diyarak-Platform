@@ -116,6 +116,7 @@ builder.Services.AddScoped<GetPublishedListingUseCase>();
 builder.Services.AddScoped<ListPublishedListingsUseCase>();
 builder.Services.AddScoped<UpdateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
+builder.Services.AddScoped<ChangeListingStatusUseCase>();
 
 builder.Services.TryAddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton<IListingPhotoStorage>(

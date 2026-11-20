@@ -95,10 +95,11 @@ public sealed class UpdateListingUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_returns_conflict_when_listing_is_published()
+    public async Task ExecuteAsync_returns_conflict_when_listing_is_closed()
     {
         MarketListing listing = CreateReadyListing();
         listing.Publish();
+        listing.Close(ListingClosureReason.Withdrawn);
         var repository = new StubMarketListingRepository(listing);
         var useCase = new UpdateListingUseCase(
             repository,
@@ -112,6 +113,27 @@ public sealed class UpdateListingUseCaseTests
         Assert.True(result.IsFailure);
         Assert.Equal(UpdateListingErrors.CannotEdit, result.Error);
         Assert.Null(repository.SavedListing);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_updates_published_listing_and_keeps_it_published()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.Publish();
+        var repository = new StubMarketListingRepository(listing);
+        var useCase = new UpdateListingUseCase(
+            repository,
+            new StubMarketTransactionRunner());
+
+        Result<long> result = await useCase.ExecuteAsync(
+            listing.Id,
+            listing.PublisherUserId,
+            HeadlinePatch(listing.Version, "Price reduced"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Price reduced", listing.Headline!.Value);
+        Assert.Equal(ListingStatus.Published, listing.Status);
+        Assert.Same(listing, repository.SavedListing);
     }
 
     [Fact]

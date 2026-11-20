@@ -183,6 +183,10 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         .HasColumnType("date")
                         .HasColumnName("available_from_date");
 
+                    b.Property<int?>("ClosureReason")
+                        .HasColumnType("integer")
+                        .HasColumnName("closure_reason");
+
                     b.Property<bool?>("ContactAllowCalls")
                         .HasColumnType("boolean")
                         .HasColumnName("contact_allow_calls");
@@ -247,6 +251,8 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
 
                     b.ToTable("listings", "market", t =>
                         {
+                            t.HasCheckConstraint("ck_market_listings_closure_reason", "(status = 4) = (closure_reason IS NOT NULL)");
+
                             t.HasCheckConstraint("ck_market_listings_contact_options", "(contact_allow_calls IS NULL) = (contact_allow_whatsapp IS NULL) AND (contact_allow_calls IS NULL OR contact_allow_calls OR contact_allow_whatsapp)");
                         });
                 });

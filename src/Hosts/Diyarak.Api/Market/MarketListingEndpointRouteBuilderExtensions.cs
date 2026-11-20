@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Diyarak.Api.Authentication;
 using Diyarak.Market.Application;
+using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
@@ -44,7 +45,54 @@ public static class MarketListingEndpointRouteBuilderExtensions
                 PublishListingAsync)
             .RequireMappedUserManagement();
 
+        endpoints
+            .MapPost(
+                "/api/market/listings/{listingId}/pause",
+                (string listingId, IAuthenticatedActorAccessor actorAccessor, ChangeListingStatusUseCase useCase, HttpContext httpContext, CancellationToken cancellationToken) =>
+                    ChangeStatusAsync(listingId, ListingStatusChange.Pause, null, actorAccessor, useCase, httpContext, cancellationToken))
+            .RequireMappedUserManagement();
+
+        endpoints
+            .MapPost(
+                "/api/market/listings/{listingId}/resume",
+                (string listingId, IAuthenticatedActorAccessor actorAccessor, ChangeListingStatusUseCase useCase, HttpContext httpContext, CancellationToken cancellationToken) =>
+                    ChangeStatusAsync(listingId, ListingStatusChange.Resume, null, actorAccessor, useCase, httpContext, cancellationToken))
+            .RequireMappedUserManagement();
+
+        endpoints
+            .MapPost(
+                "/api/market/listings/{listingId}/close",
+                (string listingId, CloseMarketListingRequest? request, IAuthenticatedActorAccessor actorAccessor, ChangeListingStatusUseCase useCase, HttpContext httpContext, CancellationToken cancellationToken) =>
+                    Enum.TryParse(request?.Reason, ignoreCase: false, out ListingClosureReason reason) && Enum.IsDefined(reason)
+                        ? ChangeStatusAsync(listingId, ListingStatusChange.Close, reason, actorAccessor, useCase, httpContext, cancellationToken)
+                        : Task.FromResult(ToProblemDetails(ChangeListingStatusErrors.InvalidRequest, httpContext)))
+            .RequireMappedUserManagement();
+
         return endpoints;
+    }
+
+    internal static async Task<IResult> ChangeStatusAsync(
+        string listingId,
+        ListingStatusChange change,
+        ListingClosureReason? reason,
+        IAuthenticatedActorAccessor actorAccessor,
+        ChangeListingStatusUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(listingId, out Guid parsedListingId) || parsedListingId == Guid.Empty)
+            return ToProblemDetails(ChangeListingStatusErrors.InvalidRequest, httpContext);
+
+        Result<long> result = await useCase.ExecuteAsync(
+            parsedListingId,
+            GetRequiredActorUserId(actorAccessor),
+            change,
+            reason,
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Results.Ok(new UpdateMarketListingResponse(parsedListingId, result.Value))
+            : ToProblemDetails(result.Error, httpContext);
     }
 
     internal static async Task<IResult> CreateListingAsync(
@@ -286,7 +334,8 @@ public static class MarketListingEndpointRouteBuilderExtensions
             listing.AvailableFromDate?.Value,
             listing.Contact is { } contact
                 ? new MarketListingContactOptionsResponse(contact.AllowCalls, contact.AllowWhatsApp)
-                : null);
+                : null,
+            listing.ClosureReason?.ToString());
     }
 
     private static Guid GetRequiredActorUserId(
@@ -357,7 +406,11 @@ public static class MarketListingEndpointRouteBuilderExtensions
         string? Headline,
         MarketListingPriceResponse? Price,
         DateOnly? AvailableFromDate,
-        MarketListingContactOptionsResponse? Contact);
+        MarketListingContactOptionsResponse? Contact,
+        string? ClosureReason);
+
+    internal sealed record CloseMarketListingRequest(
+        string? Reason);
 
     internal sealed record MarketListingContactOptionsResponse(
         bool AllowCalls,
