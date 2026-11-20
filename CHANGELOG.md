@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Arabic right-to-left public portal (`src/Frontend/Diyarak.Portal`, Next.js): home, search
+  with Syrian filters, listing detail with photo gallery; server-rendered (ADR-0054).
 - Listing photos (JPEG/PNG/WebP, up to 30 × 10 MB) with metadata stripping that removes EXIF
   GPS location, owner-only management, and immutable cacheable public photo URLs (ADR-0053).
 - Phone-number sign-in with one-time codes and platform-issued access tokens:
