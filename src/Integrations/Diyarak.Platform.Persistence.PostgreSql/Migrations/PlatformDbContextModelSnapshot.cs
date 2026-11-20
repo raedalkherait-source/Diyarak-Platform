@@ -199,6 +199,10 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         .HasColumnType("text")
                         .HasColumnName("headline");
 
+                    b.Property<string>("ModerationNote")
+                        .HasColumnType("text")
+                        .HasColumnName("moderation_note");
+
                     b.Property<decimal?>("PriceAmount")
                         .HasColumnType("numeric")
                         .HasColumnName("price_amount");
@@ -254,6 +258,60 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                             t.HasCheckConstraint("ck_market_listings_closure_reason", "(status = 4) = (closure_reason IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_market_listings_contact_options", "(contact_allow_calls IS NULL) = (contact_allow_whatsapp IS NULL) AND (contact_allow_calls IS NULL OR contact_allow_calls OR contact_allow_whatsapp)");
+
+                            t.HasCheckConstraint("ck_market_listings_moderation_note", "(status = 5) = (moderation_note IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingReportRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text")
+                        .HasColumnName("comment");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("integer")
+                        .HasColumnName("reason");
+
+                    b.Property<int?>("Resolution")
+                        .HasColumnType("integer")
+                        .HasColumnName("resolution");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<Guid?>("ResolvedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("resolved_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_listing_reports");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_market_listing_reports_open_created_at")
+                        .HasFilter("resolution IS NULL");
+
+                    b.HasIndex("ListingId", "CreatedAt")
+                        .HasDatabaseName("ix_market_listing_reports_listing_id_created_at");
+
+                    b.ToTable("listing_reports", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_listing_reports_comment_length", "comment IS NULL OR char_length(comment) <= 500");
+
+                            t.HasCheckConstraint("ck_market_listing_reports_resolution", "(resolution IS NULL) = (resolved_at IS NULL) AND (resolution IS NULL) = (resolved_by_user_id IS NULL)");
                         });
                 });
 

@@ -24,6 +24,9 @@ internal static class ClientRateLimitingServiceCollectionExtensions
 
     internal const int DefaultContactWindowSeconds = 900;
 
+    /// <summary>Per-client policy for anonymous listing reports.</summary>
+    internal const string ReportPolicy = "report";
+
     /// <summary>
     /// Registers a global fixed-window limiter partitioned per client IP address so that a
     /// single client cannot exhaust capacity for everyone else. Health probes are exempt.
@@ -125,6 +128,18 @@ internal static class ClientRateLimitingServiceCollectionExtensions
                     {
                         PermitLimit = contactPermitLimit,
                         Window = contactWindow,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
+
+            options.AddPolicy(
+                ReportPolicy,
+                httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = section.GetValue<int?>("Report:PermitLimit") ?? 10,
+                        Window = TimeSpan.FromSeconds(section.GetValue<int?>("Report:WindowSeconds") ?? 3600),
                         QueueLimit = 0,
                         AutoReplenishment = true,
                     }));

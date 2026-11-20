@@ -1,4 +1,5 @@
 using Diyarak.Market.Application;
+using Diyarak.Market.Application.Moderation;
 using Diyarak.Market.Application.Photos;
 using Diyarak.Platform.Identity;
 using Diyarak.Platform.Identity.Application;
@@ -75,6 +76,12 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<
             IListingPhotoRepository,
             PostgreSqlListingPhotoRepository>();
+
+        services.AddScoped<PostgreSqlListingReportRepository>();
+        services.AddScoped<IListingReportRepository>(
+            provider => provider.GetRequiredService<PostgreSqlListingReportRepository>());
+        services.AddScoped<IListingModerationQuery>(
+            provider => provider.GetRequiredService<PostgreSqlListingReportRepository>());
 
         services.AddScoped<
             IMarketTransactionRunner,

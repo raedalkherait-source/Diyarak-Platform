@@ -66,6 +66,11 @@ public sealed class Listing : AggregateRoot<Guid>
 
     public ListingClosureReason? ClosureReason { get; private set; }
 
+    public const int MaximumModerationNoteLength = 500;
+
+    /// <summary>Why a moderator suspended the listing; shown to the publisher.</summary>
+    public string? ModerationNote { get; private set; }
+
     /// <summary>Publication data and photos can change in every status except <see cref="ListingStatus.Closed"/>.</summary>
     public bool IsEditable => Status != ListingStatus.Closed;
 
@@ -165,7 +170,35 @@ public sealed class Listing : AggregateRoot<Guid>
         Status = ListingStatus.Published;
     }
 
-    /// <summary>Ends a Published or Paused listing permanently.</summary>
+    /// <summary>Hides a Published or Paused listing by moderator decision.</summary>
+    public void Suspend(string note)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(note);
+
+        string trimmed = note.Trim();
+        if (trimmed.Length > MaximumModerationNoteLength)
+            throw new ArgumentException("Moderation note is too long.", nameof(note));
+
+        if (Status is not (ListingStatus.Published or ListingStatus.Paused))
+            throw new InvalidOperationException(
+                "Only a Published or Paused listing can be suspended.");
+
+        Status = ListingStatus.Suspended;
+        ModerationNote = trimmed;
+    }
+
+    /// <summary>Lifts a moderator suspension and makes the listing public again.</summary>
+    public void Reinstate()
+    {
+        if (Status != ListingStatus.Suspended)
+            throw new InvalidOperationException(
+                "Only a Suspended listing can be reinstated.");
+
+        Status = ListingStatus.Published;
+        ModerationNote = null;
+    }
+
+    /// <summary>Ends a Published, Paused or Suspended listing permanently.</summary>
     public void Close(ListingClosureReason reason)
     {
         if (!Enum.IsDefined(reason))
@@ -176,12 +209,13 @@ public sealed class Listing : AggregateRoot<Guid>
                 "Unsupported closure reason.");
         }
 
-        if (Status is not (ListingStatus.Published or ListingStatus.Paused))
+        if (Status is not (ListingStatus.Published or ListingStatus.Paused or ListingStatus.Suspended))
             throw new InvalidOperationException(
-                "Only a Published or Paused listing can be closed.");
+                "Only a Published, Paused or Suspended listing can be closed.");
 
         Status = ListingStatus.Closed;
         ClosureReason = reason;
+        ModerationNote = null;
     }
 
     private void EnsureEditable()

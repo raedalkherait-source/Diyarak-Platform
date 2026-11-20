@@ -39,6 +39,7 @@ internal static class MarketListingRecordMapper
             ClosureReason = listing.ClosureReason is { } closureReason
                 ? (int)closureReason
                 : null,
+            ModerationNote = listing.ModerationNote,
             ContactAllowCalls = listing.Contact?.AllowCalls,
             ContactAllowWhatsApp = listing.Contact?.AllowWhatsApp,
         };
@@ -90,11 +91,25 @@ internal static class MarketListingRecordMapper
                 "Persisted Listing status is unsupported.");
 
         // Replay the lifecycle so the aggregate enforces the same invariants on rehydration.
-        if (status is ListingStatus.Published or ListingStatus.Paused or ListingStatus.Closed)
+        if (status is ListingStatus.Published or ListingStatus.Paused or ListingStatus.Closed or ListingStatus.Suspended)
             listing.Publish();
 
         if (status == ListingStatus.Paused)
             listing.Pause();
+
+        if (status == ListingStatus.Suspended)
+        {
+            if (string.IsNullOrWhiteSpace(record.ModerationNote))
+                throw new InvalidOperationException(
+                    "A persisted Suspended Listing must contain a moderation note.");
+
+            listing.Suspend(record.ModerationNote);
+        }
+        else if (record.ModerationNote is not null)
+        {
+            throw new InvalidOperationException(
+                "Only a persisted Suspended Listing may contain a moderation note.");
+        }
 
         if (status == ListingStatus.Closed)
         {

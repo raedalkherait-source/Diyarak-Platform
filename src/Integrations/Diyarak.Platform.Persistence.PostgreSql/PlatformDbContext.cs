@@ -23,6 +23,9 @@ public sealed class PlatformDbContext(
     internal DbSet<MarketListingPhotoRecord> MarketListingPhotos =>
         Set<MarketListingPhotoRecord>();
 
+    internal DbSet<MarketListingReportRecord> MarketListingReports =>
+        Set<MarketListingReportRecord>();
+
     internal DbSet<MarketPropertyRecord> MarketProperties =>
         Set<MarketPropertyRecord>();
 
@@ -48,5 +51,8 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new MarketListingPhotoRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new MarketListingReportRecordConfiguration());
     }
 }
