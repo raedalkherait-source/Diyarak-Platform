@@ -68,7 +68,41 @@ public static class MarketListingEndpointRouteBuilderExtensions
                         : Task.FromResult(ToProblemDetails(ChangeListingStatusErrors.InvalidRequest, httpContext)))
             .RequireMappedUserManagement();
 
+        endpoints
+            .MapDelete(
+                "/api/market/listings/{listingId}",
+                DeleteDraftListingAsync)
+            .RequireMappedUserManagement();
+
         return endpoints;
+    }
+
+    /// <summary>Deletes a draft. The expected version is passed as <c>?version=</c>.</summary>
+    internal static async Task<IResult> DeleteDraftListingAsync(
+        string listingId,
+        string? version,
+        IAuthenticatedActorAccessor actorAccessor,
+        DeleteDraftListingUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(listingId, out Guid parsedListingId) ||
+            parsedListingId == Guid.Empty ||
+            !long.TryParse(version, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out long expectedVersion) ||
+            expectedVersion <= 0)
+        {
+            return ToProblemDetails(DeleteDraftListingErrors.InvalidRequest, httpContext);
+        }
+
+        Result result = await useCase.ExecuteAsync(
+            parsedListingId,
+            GetRequiredActorUserId(actorAccessor),
+            expectedVersion,
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : ToProblemDetails(result.Error, httpContext);
     }
 
     internal static async Task<IResult> ChangeStatusAsync(

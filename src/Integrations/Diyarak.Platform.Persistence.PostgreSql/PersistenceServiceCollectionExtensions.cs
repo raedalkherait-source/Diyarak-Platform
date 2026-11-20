@@ -88,6 +88,10 @@ public static class PersistenceServiceCollectionExtensions
             provider => provider.GetRequiredService<PostgreSqlListingReportRepository>());
 
         services.AddScoped<
+            IDraftListingDeletionStore,
+            PostgreSqlDraftListingDeletionStore>();
+
+        services.AddScoped<
             IMarketTransactionRunner,
             PostgreSqlMarketTransactionRunner>();
 

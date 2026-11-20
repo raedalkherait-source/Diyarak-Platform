@@ -191,6 +191,17 @@ export async function updateProperty(
   redirect(`/my/listings/${listingId}?notice=property-updated`);
 }
 
+/** Permanently deletes a draft listing (with its photos and, if unused, its property). */
+export async function deleteDraft(listingId: string, version: number): Promise<void> {
+  if (!isListingId(listingId) || !Number.isSafeInteger(version) || version <= 0) return;
+
+  const result = await managementFetch(`/api/market/listings/${listingId}?version=${version}`, { method: "DELETE" });
+
+  revalidatePath("/my");
+  if (result.ok) redirect("/my?notice=deleted");
+  redirect(`/my/listings/${listingId}?notice=delete-failed`);
+}
+
 const statusActions = new Set(["pause", "resume", "close"]);
 const closureReasons = new Set(["Sold", "Rented", "Withdrawn"]);
 

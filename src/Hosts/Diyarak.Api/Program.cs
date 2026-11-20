@@ -118,6 +118,7 @@ builder.Services.AddScoped<ListPublishedListingsUseCase>();
 builder.Services.AddScoped<UpdateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
 builder.Services.AddScoped<ChangeListingStatusUseCase>();
+builder.Services.AddScoped<DeleteDraftListingUseCase>();
 builder.Services.AddModeration(builder.Configuration);
 
 builder.Services.TryAddSingleton<IClock>(SystemClock.Instance);

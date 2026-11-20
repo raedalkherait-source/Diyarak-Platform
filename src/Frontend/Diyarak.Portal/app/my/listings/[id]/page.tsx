@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { changeListingStatus, deletePhoto } from "@/app/my/actions";
+import { changeListingStatus, deleteDraft, deletePhoto } from "@/app/my/actions";
 import { EditListingForm } from "@/components/EditListingForm";
 import { EditPropertyForm } from "@/components/EditPropertyForm";
 import { PhotoUploader } from "@/components/PhotoUploader";
@@ -25,6 +25,7 @@ const notices: Record<string, [string, "success" | "form-error"]> = {
   "status-pause": ["تم إيقاف الإعلان مؤقتاً. لن يظهر للزوار حتى تعيد تفعيله.", "success"],
   "status-resume": ["عاد الإعلان للظهور للزوار.", "success"],
   "status-close": ["تم إنهاء الإعلان. شكراً لاستخدامك ديارك.", "success"],
+  "delete-failed": ["تعذر حذف المسودة. ربما تغيّرت أو نُشرت؛ حدّث الصفحة وحاول مجدداً.", "form-error"],
   "status-failed": ["تعذر تغيير حالة الإعلان. حدّث الصفحة وحاول مجدداً.", "form-error"],
 };
 
@@ -159,6 +160,13 @@ export default async function ManageListingPage({ params, searchParams }: Props)
         <section className="panel">
           <h2>النشر</h2>
           <PublishButton listingId={id} version={value.version} photoCount={items.length} />
+          <details className="close-listing">
+            <summary>حذف المسودة…</summary>
+            <p className="notice">ستُحذف المسودة وصورها وتفاصيل العقار نهائياً، ولا يمكن التراجع عن ذلك.</p>
+            <form action={deleteDraft.bind(null, id, value.version)}>
+              <button className="button secondary danger" type="submit">حذف المسودة نهائياً</button>
+            </form>
+          </details>
         </section>
       ) : null}
     </div>

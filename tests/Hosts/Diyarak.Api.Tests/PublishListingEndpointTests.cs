@@ -1280,6 +1280,71 @@ public sealed class PublishListingEndpointTests
         await AssertProblemCodeAsync(again, ChangeListingStatusErrors.InvalidTransition.Code);
     }
 
+    [Fact]
+    public async Task Owner_can_delete_draft_with_matching_version()
+    {
+        MarketListing draft = CreateReadyListing();
+        using var factory = new TestApiFactory(draft.PublisherUserId, draft);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await client.DeleteAsync($"/api/market/listings/{draft.Id}?version={draft.Version}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(draft.Id, factory.DeletionStore.DeletedListingId);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("?version=0")]
+    [InlineData("?version=abc")]
+    public async Task Delete_requires_a_positive_version(string query)
+    {
+        MarketListing draft = CreateReadyListing();
+        using var factory = new TestApiFactory(draft.PublisherUserId, draft);
+        using HttpClient client = factory.CreateClient();
+        AddBearerToken(client, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage response = await client.DeleteAsync($"/api/market/listings/{draft.Id}{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Null(factory.DeletionStore.DeletedListingId);
+    }
+
+    [Fact]
+    public async Task Delete_of_published_listing_returns_409_and_non_owner_gets_404()
+    {
+        MarketListing listing = CreateReadyListing();
+        listing.Publish();
+        using var owner = new TestApiFactory(listing.PublisherUserId, listing);
+        using HttpClient ownerClient = owner.CreateClient();
+        AddBearerToken(ownerClient, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage published = await ownerClient.DeleteAsync($"/api/market/listings/{listing.Id}?version={listing.Version}");
+        Assert.Equal(HttpStatusCode.Conflict, published.StatusCode);
+        await AssertProblemCodeAsync(published, DeleteDraftListingErrors.NotDraft.Code);
+
+        MarketListing draft = CreateReadyListing();
+        using var stranger = new TestApiFactory(Guid.NewGuid(), draft);
+        using HttpClient strangerClient = stranger.CreateClient();
+        AddBearerToken(strangerClient, CreateToken(subject: "mapped-owner"));
+
+        HttpResponseMessage foreign = await strangerClient.DeleteAsync($"/api/market/listings/{draft.Id}?version={draft.Version}");
+        Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
+        Assert.Null(stranger.DeletionStore.DeletedListingId);
+    }
+
+    [Fact]
+    public async Task Delete_without_access_token_returns_401()
+    {
+        using var factory = new TestApiFactory(userId: null);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.DeleteAsync($"/api/market/listings/{Guid.NewGuid()}?version=1");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     [Theory]
     [InlineData("""{"reason":"Destroyed"}""")]
     [InlineData("""{"reason":"sold"}""")]
@@ -1428,6 +1493,8 @@ public sealed class PublishListingEndpointTests
 
         public StubMarketListingRepository ListingRepository { get; }
 
+        public StubDraftListingDeletionStore DeletionStore { get; } = new();
+
         public StubPropertyExistenceChecker PropertyChecker { get; }
 
         public StubPropertyListingAuthorizationChecker
@@ -1487,6 +1554,11 @@ public sealed class PublishListingEndpointTests
                     services.AddSingleton<IMarketTransactionRunner>(
                         new StubMarketTransactionRunner());
 
+                    services.RemoveAll<IDraftListingDeletionStore>();
+                    services.AddSingleton<IDraftListingDeletionStore>(DeletionStore);
+                    services.RemoveAll<Diyarak.Market.Application.Photos.IListingPhotoStorage>();
+                    services.AddSingleton<Diyarak.Market.Application.Photos.IListingPhotoStorage>(new NoOpPhotoStorage());
+
                     services.PostConfigure<JwtBearerOptions>(
                         JwtBearerDefaults.AuthenticationScheme,
                         options =>
@@ -1538,6 +1610,35 @@ public sealed class PublishListingEndpointTests
             ExternalIdentity identity,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(userId);
+    }
+
+    public sealed class StubDraftListingDeletionStore : IDraftListingDeletionStore
+    {
+        public Guid? DeletedListingId { get; private set; }
+
+        public Task<bool> TryDeleteListingAsync(Guid listingId, long expectedVersion, CancellationToken cancellationToken = default)
+        {
+            DeletedListingId = listingId;
+            return Task.FromResult(true);
+        }
+
+        public Task<IReadOnlyList<string>> DeletePhotosAsync(Guid listingId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<string>>([]);
+
+        public Task DeletePropertyIfUnreferencedAsync(Guid propertyId, Guid ownerUserId, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+
+    private sealed class NoOpPhotoStorage : Diyarak.Market.Application.Photos.IListingPhotoStorage
+    {
+        public Task SaveAsync(string key, ReadOnlyMemory<byte> content, string contentType, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<Stream?> OpenReadAsync(string key, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Stream?>(null);
+
+        public Task DeleteAsync(string key, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
     }
 
     public sealed class StubMarketListingRepository(

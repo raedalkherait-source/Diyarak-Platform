@@ -8,7 +8,10 @@ import { closureReasonLabels, listingStatusLabels } from "@/lib/status";
 
 export const metadata: Metadata = { title: "إعلاناتي", robots: { index: false } };
 
-export default async function MyListingsPage() {
+type Props = { searchParams: Promise<{ notice?: string }> };
+
+export default async function MyListingsPage({ searchParams }: Props) {
+  const { notice } = await searchParams;
   const result = await managementFetch<{ items: ManagementListing[]; hasMore: boolean }>("/api/market/listings?pageSize=100");
   const listings = result.ok ? result.value.items : [];
 
@@ -26,6 +29,8 @@ export default async function MyListingsPage() {
           </form>
         </div>
       </div>
+
+      {notice === "deleted" ? <p className="success" role="status">تم حذف المسودة.</p> : null}
 
       {!result.ok ? (
         <div className="empty">تعذر تحميل إعلاناتك. حاول مجدداً.</div>
