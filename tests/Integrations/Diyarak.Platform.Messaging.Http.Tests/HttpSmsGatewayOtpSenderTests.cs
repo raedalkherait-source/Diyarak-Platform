@@ -86,6 +86,52 @@ public sealed class HttpSmsGatewayOtpSenderTests
     }
 
     [Fact]
+    public async Task Basic_auth_gateway_shaped_like_twilio_sends_form_and_credentials()
+    {
+        var handler = new RecordingHandler(HttpStatusCode.Created);
+        var options = new HttpSmsGatewayOptions
+        {
+            Endpoint = new Uri("https://api.twilio.test/2010-04-01/Accounts/AC123/Messages.json"),
+            Encoding = HttpSmsGatewayEncoding.Form,
+            BasicAuthUsername = "SK123",
+            ApiKey = "secret-xyz",
+            Parameters = new() { ["To"] = "{phone}", ["From"] = "+15005550006", ["Body"] = "{message}" },
+        };
+        options.Validate(allowInsecureHttp: false);
+
+        await Send(handler, options);
+
+        HttpRequestMessage request = handler.Requests.Single();
+        Assert.Equal(HttpMethod.Post, request.Method);
+        Assert.Equal("Basic", request.Headers.Authorization!.Scheme);
+        Assert.Equal(
+            "SK123:secret-xyz",
+            System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(request.Headers.Authorization.Parameter!)));
+        var form = System.Web.HttpUtility.ParseQueryString(handler.Bodies.Single());
+        Assert.Equal("+963912345678", form["To"]);
+        Assert.Equal("+15005550006", form["From"]);
+        Assert.Contains("123456", form["Body"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Basic_auth_requires_secret_and_excludes_authorization_header()
+    {
+        static HttpSmsGatewayOptions With(string? key, Dictionary<string, string>? headers = null, string user = "SK1") => new()
+        {
+            Endpoint = new Uri("https://x.test"),
+            BasicAuthUsername = user,
+            ApiKey = key ?? string.Empty,
+            Parameters = new() { ["to"] = "{phone}", ["text"] = "{message}" },
+            Headers = headers ?? [],
+        };
+
+        Assert.Throws<InvalidOperationException>(() => With(null).Validate(false));
+        Assert.Throws<InvalidOperationException>(() => With("s", new() { ["Authorization"] = "Bearer x" }).Validate(false));
+        Assert.Throws<InvalidOperationException>(() => With("s", user: "a:b").Validate(false));
+        With("s").Validate(false);
+    }
+
+    [Fact]
     public async Task Substituted_values_are_not_expanded_again()
     {
         var handler = new RecordingHandler();

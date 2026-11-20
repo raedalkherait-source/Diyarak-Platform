@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `Messaging:Sms:Http:BasicAuthUsername` for SMS providers that use HTTP Basic authentication,
+  such as Twilio API keys; a Twilio example in the development runbook and `api.env.example`.
 - Long-lived sessions: rotating 30-day refresh tokens with reuse detection, refresh, logout and
   logout-all endpoints, and automatic renewal in the portal middleware (ADR-0062).
 - Search-engine visibility: `robots.txt`, `sitemap.xml`, schema.org `RealEstateListing` data,
