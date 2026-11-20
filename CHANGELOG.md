@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Configurable HTTP SMS gateway (`Authentication:Phone:OtpSender = HttpGateway`,
+  `Messaging:Sms:Http`) for production one-time codes; delivery failures return `503`
+  (ADR-0059).
 - Listing reports by visitors, a moderation queue, and moderator suspend, reinstate and dismiss
   actions; `/admin` in the portal; moderators configured by verified phone number (ADR-0058).
 - Listing lifecycle after publication: edit price, headline, contact and photos; pause and resume;

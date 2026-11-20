@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Diyarak.Platform.Messaging.Http</AssemblyName>
+    <RootNamespace>Diyarak.Platform.Messaging.Http</RootNamespace>
+    <Description>Configurable HTTP SMS gateway adapter for Diyarak one-time codes.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\Diyarak.Platform.Identity.Application\Diyarak.Platform.Identity.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Diyarak.Platform.Messaging.Http.Tests" />
+  </ItemGroup>
+
+</Project>

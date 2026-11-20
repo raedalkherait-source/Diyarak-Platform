@@ -68,6 +68,17 @@ public sealed class PhoneAuthenticationUseCaseTests
     }
 
     [Fact]
+    public async Task Request_reports_delivery_failure_and_still_counts_towards_throttle()
+    {
+        _sender.Fail = true;
+
+        Result<DateTimeOffset> result = await CreateRequest().ExecuteAsync(Phone);
+
+        Assert.Equal(PhoneAuthenticationErrors.DeliveryFailed, result.Error);
+        Assert.Single(_store.Challenges);
+    }
+
+    [Fact]
     public async Task Verify_with_correct_code_creates_account_mapping_and_token()
     {
         string code = await RequestCodeAsync();

@@ -2,6 +2,27 @@ using Diyarak.Platform.Domain.Primitives;
 
 namespace Diyarak.Platform.Identity.Application;
 
+/// <summary>
+/// Thrown by an <see cref="IOtpSender"/> when the code could not be delivered. The message must
+/// never contain the code, the phone number or provider credentials.
+/// </summary>
+public sealed class OtpDeliveryException : Exception
+{
+    public OtpDeliveryException(string message)
+        : base(message)
+    {
+    }
+
+    public OtpDeliveryException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+
+    public OtpDeliveryException()
+    {
+    }
+}
+
 /// <summary>Delivers a one-time code to a phone number (SMS, WhatsApp, ...).</summary>
 public interface IOtpSender
 {

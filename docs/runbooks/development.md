@@ -174,3 +174,38 @@ export Moderation__ModeratorPhoneNumbers__0=+963912345678
 ```
 
 Sign in to the portal with that number, then open `/admin`.
+
+## SMS gateway
+
+Production phone sign-in uses the configurable HTTP gateway (ADR-0059). Two common shapes, as
+environment variables (keep `ApiKey` in your secret store):
+
+Query-string GET API with the key in a parameter:
+
+```bash
+Authentication__Phone__OtpSender=HttpGateway
+Messaging__Sms__Http__Endpoint=https://sms-provider.example/api/send
+Messaging__Sms__Http__Method=GET
+Messaging__Sms__Http__Encoding=Query
+Messaging__Sms__Http__Parameters__to={phoneLocal}
+Messaging__Sms__Http__Parameters__text={message}
+Messaging__Sms__Http__Parameters__key={apiKey}
+Messaging__Sms__Http__ApiKey=<secret>
+```
+
+JSON POST API with a bearer token:
+
+```bash
+Authentication__Phone__OtpSender=HttpGateway
+Messaging__Sms__Http__Endpoint=https://api.sms-provider.example/v1/messages
+Messaging__Sms__Http__Method=POST
+Messaging__Sms__Http__Encoding=Json
+Messaging__Sms__Http__Headers__Authorization=Bearer {apiKey}
+Messaging__Sms__Http__Parameters__recipient={phone}
+Messaging__Sms__Http__Parameters__body={message}
+Messaging__Sms__Http__ApiKey=<secret>
+```
+
+If the provider returns HTTP 200 for errors, set `Messaging__Sms__Http__SuccessBodyContains` to
+text that appears only in successful responses. Check the provider's documentation for parameter
+names and the number format it expects (`{phone}`, `{phoneDigits}` or `{phoneLocal}`).

@@ -1,5 +1,6 @@
 using Diyarak.Platform.BuildingBlocks;
 using Diyarak.Platform.Identity.Application;
+using Diyarak.Platform.Messaging.Http;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -38,7 +39,20 @@ internal static class PhoneAuthenticationServiceCollectionExtensions
         services.AddSingleton(settings);
         services.TryAddSingleton<IClock>(Diyarak.Platform.BuildingBlocks.SystemClock.Instance);
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
-        services.AddSingleton<IOtpSender, DevelopmentLogOtpSender>();
+        if (settings.OtpSender == PhoneAuthenticationOptions.HttpGatewaySender)
+        {
+            HttpSmsGatewayOptions gateway =
+                configuration.GetSection(HttpSmsGatewayOptions.SectionName).Get<HttpSmsGatewayOptions>()
+                ?? new HttpSmsGatewayOptions();
+            gateway.Validate(allowInsecureHttp: environment.IsDevelopment());
+
+            services.AddSingleton(gateway);
+            services.AddHttpClient<IOtpSender, HttpSmsGatewayOtpSender>();
+        }
+        else
+        {
+            services.AddSingleton<IOtpSender, DevelopmentLogOtpSender>();
+        }
         services.AddScoped<RequestPhoneVerificationUseCase>();
         services.AddScoped<VerifyPhoneUseCase>();
 

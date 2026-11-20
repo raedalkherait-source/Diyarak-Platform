@@ -223,6 +223,59 @@ public sealed class PhoneAuthenticationEndpointTests
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Delivery_failure_returns_503_with_stable_code()
+    {
+        using var factory = new TestApiFactory();
+        factory.Sender.Fail = true;
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/phone/request", new { phoneNumber = Phone });
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        await AssertProblemCodeAsync(response, PhoneAuthenticationErrors.DeliveryFailed.Code);
+    }
+
+    [Fact]
+    public void Http_gateway_sender_is_allowed_in_production_and_registered()
+    {
+        using var factory = new TestApiFactory(
+            environment: "Production",
+            otpSender: "HttpGateway",
+            extraSettings: GatewaySettings("https://sms.example.test/send"),
+            replaceSender: false);
+
+        using HttpClient client = factory.CreateClient();
+
+        Assert.IsType<Diyarak.Platform.Messaging.Http.HttpSmsGatewayOtpSender>(
+            factory.Services.CreateScope().ServiceProvider.GetRequiredService<IOtpSender>());
+    }
+
+    [Theory]
+    [InlineData("http://sms.example.test/send")]
+    [InlineData("not a url")]
+    public void Http_gateway_with_unsafe_endpoint_fails_at_startup_in_production(string endpoint)
+    {
+        using var factory = new TestApiFactory(
+            environment: "Production",
+            otpSender: "HttpGateway",
+            extraSettings: GatewaySettings(endpoint),
+            replaceSender: false);
+
+        Assert.ThrowsAny<Exception>(() => factory.CreateClient());
+    }
+
+    private static Dictionary<string, string?> GatewaySettings(string endpoint) => new()
+    {
+        ["Messaging:Sms:Http:Endpoint"] = endpoint,
+        ["Messaging:Sms:Http:Method"] = "GET",
+        ["Messaging:Sms:Http:Encoding"] = "Query",
+        ["Messaging:Sms:Http:ApiKey"] = "test-key",
+        ["Messaging:Sms:Http:Parameters:to"] = "{phoneLocal}",
+        ["Messaging:Sms:Http:Parameters:text"] = "{message}",
+        ["Messaging:Sms:Http:Parameters:key"] = "{apiKey}",
+    };
+
     [Theory]
     [InlineData("Production", "DevelopmentLog", null)]
     [InlineData("Development", "Twilio", null)]
@@ -278,7 +331,9 @@ public sealed class PhoneAuthenticationEndpointTests
         string environment = "Development",
         string otpSender = "DevelopmentLog",
         string? signingKey = null,
-        int otpPermitLimit = 100)
+        int otpPermitLimit = 100,
+        Dictionary<string, string?>? extraSettings = null,
+        bool replaceSender = true)
         : WebApplicationFactory<Program>
     {
         public CapturingOtpSender Sender { get; } = new();
@@ -310,6 +365,9 @@ public sealed class PhoneAuthenticationEndpointTests
                             ["RateLimiting:Otp:PermitLimit"] =
                                 otpPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture),
                         });
+
+                    if (extraSettings is not null)
+                        configuration.AddInMemoryCollection(extraSettings);
                 });
 
             return base.CreateHost(builder);
@@ -320,8 +378,11 @@ public sealed class PhoneAuthenticationEndpointTests
             builder.ConfigureServices(
                 services =>
                 {
-                    services.RemoveAll<IOtpSender>();
-                    services.AddSingleton<IOtpSender>(Sender);
+                    if (replaceSender)
+                    {
+                        services.RemoveAll<IOtpSender>();
+                        services.AddSingleton<IOtpSender>(Sender);
+                    }
 
                     services.RemoveAll<IPhoneVerificationChallengeRepository>();
                     services.RemoveAll<IPhoneAccountRepository>();
@@ -354,8 +415,13 @@ public sealed class PhoneAuthenticationEndpointTests
     {
         public List<(PhoneNumber Phone, string Code)> Sent { get; } = [];
 
+        public bool Fail { get; set; }
+
         public Task SendAsync(PhoneNumber phoneNumber, string code, CancellationToken cancellationToken = default)
         {
+            if (Fail)
+                throw new OtpDeliveryException("gateway down");
+
             lock (Sent)
                 Sent.Add((phoneNumber, code));
 

@@ -90,6 +90,7 @@ internal static class PhoneAuthenticationEndpointRouteBuilderExtensions
                 {
                     ErrorType.Validation => StatusCodes.Status400BadRequest,
                     ErrorType.Conflict => StatusCodes.Status409Conflict,
+                    ErrorType.Failure => StatusCodes.Status503ServiceUnavailable,
                     _ => throw new InvalidOperationException(
                         $"Unsupported phone authentication error type '{error.Type}'."),
                 };

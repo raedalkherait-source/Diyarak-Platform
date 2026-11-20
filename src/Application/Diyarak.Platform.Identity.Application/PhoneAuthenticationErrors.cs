@@ -28,4 +28,9 @@ public static class PhoneAuthenticationErrors
         Error.Conflict(
             "identity.phone.concurrent_modification",
             "The verification could not be completed because of a concurrent request. Try again.");
+
+    public static Error DeliveryFailed { get; } =
+        Error.Failure(
+            "identity.phone.delivery_failed",
+            "The verification code could not be sent right now. Try again in a few minutes.");
 }

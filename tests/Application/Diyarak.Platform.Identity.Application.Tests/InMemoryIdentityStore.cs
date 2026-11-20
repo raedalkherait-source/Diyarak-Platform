@@ -13,8 +13,13 @@ internal sealed class CapturingOtpSender : IOtpSender
 {
     public List<(PhoneNumber Phone, string Code)> Sent { get; } = [];
 
+    public bool Fail { get; set; }
+
     public Task SendAsync(PhoneNumber phoneNumber, string code, CancellationToken cancellationToken = default)
     {
+        if (Fail)
+            throw new OtpDeliveryException("gateway down");
+
         Sent.Add((phoneNumber, code));
         return Task.CompletedTask;
     }
