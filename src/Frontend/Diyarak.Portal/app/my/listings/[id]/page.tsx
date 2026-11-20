@@ -3,10 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { changeListingStatus, deletePhoto } from "@/app/my/actions";
 import { EditListingForm } from "@/components/EditListingForm";
+import { EditPropertyForm } from "@/components/EditPropertyForm";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { PublishButton } from "@/components/PublishButton";
 import { isListingId } from "@/lib/contact";
 import { formatPrice } from "@/lib/format";
+import { propertyFormValues, type ManagementProperty } from "@/lib/listingForm";
 import { label, publishingRoleLabels, transactionIntentLabels } from "@/lib/labels";
 import { managementFetch, type ManagementListing, type ManagementPhoto } from "@/lib/managementApi";
 import { closureReasonLabels, listingStatusLabels } from "@/lib/status";
@@ -19,6 +21,7 @@ const notices: Record<string, [string, "success" | "form-error"]> = {
   created: ["تم حفظ الإعلان كمسودة. أضف الصور ثم انشره.", "success"],
   "contact-unverified": ["تم حفظ الإعلان، لكن لم نتمكن من تفعيل التواصل لأن حسابك بلا رقم موثّق.", "form-error"],
   updated: ["تم حفظ التعديلات.", "success"],
+  "property-updated": ["تم حفظ تفاصيل العقار.", "success"],
   "status-pause": ["تم إيقاف الإعلان مؤقتاً. لن يظهر للزوار حتى تعيد تفعيله.", "success"],
   "status-resume": ["عاد الإعلان للظهور للزوار.", "success"],
   "status-close": ["تم إنهاء الإعلان. شكراً لاستخدامك ديارك.", "success"],
@@ -37,6 +40,11 @@ export default async function ManageListingPage({ params, searchParams }: Props)
   const items = photos.ok ? photos.value.items : [];
   const value = listing.value;
   const editable = value.status !== "Closed";
+
+  const property =
+    editable && value.subject.subjectType === "market.property"
+      ? await managementFetch<ManagementProperty>(`/api/market/properties/${value.subject.subjectId}`)
+      : null;
   const status = changeListingStatus.bind(null, id);
   const shownNotice = notice ? notices[notice] : undefined;
 
@@ -108,6 +116,19 @@ export default async function ManageListingPage({ params, searchParams }: Props)
         <section className="panel">
           <h2>تعديل الإعلان</h2>
           <EditListingForm listing={value} />
+        </section>
+      ) : null}
+
+      {property?.ok ? (
+        <section className="panel">
+          <h2>تفاصيل العقار</h2>
+          <EditPropertyForm
+            listingId={id}
+            propertyId={property.value.propertyId}
+            version={property.value.version}
+            category={property.value.category}
+            initialValues={propertyFormValues(property.value)}
+          />
         </section>
       ) : null}
 
