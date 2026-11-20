@@ -11,11 +11,14 @@ public sealed record UpdateListingPatch(
     bool UpdatePrice,
     ListingPrice? Price,
     bool UpdateAvailableFromDate,
-    ListingAvailableFromDate? AvailableFromDate)
+    ListingAvailableFromDate? AvailableFromDate,
+    bool UpdateContact = false,
+    ListingContactOptions? Contact = null)
 {
     public bool HasChanges =>
         UpdateContext ||
         UpdateHeadline ||
         UpdatePrice ||
-        UpdateAvailableFromDate;
+        UpdateAvailableFromDate ||
+        UpdateContact;
 }

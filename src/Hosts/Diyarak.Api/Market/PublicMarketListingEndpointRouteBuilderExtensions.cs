@@ -801,7 +801,10 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             listing.AvailableFromDate?.Value,
             [.. projection.Photos
                 .OrderBy(photo => photo.Position)
-                .Select(MarketListingPhotoEndpointRouteBuilderExtensions.ToPublicResponse)]);
+                .Select(MarketListingPhotoEndpointRouteBuilderExtensions.ToPublicResponse)],
+            listing.Contact is { } contact
+                ? new PublicMarketListingContactOptionsResponse(contact.AllowCalls, contact.AllowWhatsApp)
+                : null);
     }
 
     private static PublicMarketListingPropertyResponse ToPropertyResponse(
@@ -916,7 +919,13 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         PublicMarketListingPriceResponse Price,
         PublicMarketListingPropertyResponse Property,
         DateOnly? AvailableFromDate,
-        MarketListingPhotoEndpointRouteBuilderExtensions.PublicListingPhotoResponse[] Photos);
+        MarketListingPhotoEndpointRouteBuilderExtensions.PublicListingPhotoResponse[] Photos,
+        PublicMarketListingContactOptionsResponse? Contact);
+
+    /// <summary>Which channels exist; the number itself is only returned by the contact route.</summary>
+    internal sealed record PublicMarketListingContactOptionsResponse(
+        bool AllowCalls,
+        bool AllowWhatsApp);
 
     internal sealed record PublicMarketListingContextResponse(
         string PublishingRole,

@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Contact the publisher by phone call or WhatsApp using the publisher's verified number, revealed
+  on demand with its own rate limit; portal contact button with a pre-filled WhatsApp message
+  (ADR-0055).
+- `ReverseProxy:KnownProxies` to trust `X-Forwarded-For` from known proxies only (ADR-0055).
 - Arabic right-to-left public portal (`src/Frontend/Diyarak.Portal`, Next.js): home, search
   with Syrian filters, listing detail with photo gallery; server-rendered (ADR-0054).
 - Listing photos (JPEG/PNG/WebP, up to 30 × 10 MB) with metadata stripping that removes EXIF

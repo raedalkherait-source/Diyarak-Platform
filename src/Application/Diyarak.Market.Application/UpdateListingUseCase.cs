@@ -8,16 +8,19 @@ public sealed class UpdateListingUseCase
 {
     private readonly IMarketListingRepository _listingRepository;
     private readonly IMarketTransactionRunner _transactionRunner;
+    private readonly IPublisherPhoneLookup? _publisherPhoneLookup;
 
     public UpdateListingUseCase(
         IMarketListingRepository listingRepository,
-        IMarketTransactionRunner transactionRunner)
+        IMarketTransactionRunner transactionRunner,
+        IPublisherPhoneLookup? publisherPhoneLookup = null)
     {
         ArgumentNullException.ThrowIfNull(listingRepository);
         ArgumentNullException.ThrowIfNull(transactionRunner);
 
         _listingRepository = listingRepository;
         _transactionRunner = transactionRunner;
+        _publisherPhoneLookup = publisherPhoneLookup;
     }
 
     public async Task<Result<long>> ExecuteAsync(
@@ -80,6 +83,28 @@ public sealed class UpdateListingUseCase
 
                 if (patch.UpdatePrice)
                     listing.SetPrice(patch.Price!);
+
+                if (patch.UpdateContact && patch.Contact is not null)
+                {
+                    // Contact is only offered through the publisher's verified phone number.
+                    bool hasVerifiedPhone =
+                        _publisherPhoneLookup is not null &&
+                        await _publisherPhoneLookup.FindVerifiedPhoneAsync(
+                            listing.PublisherUserId,
+                            transactionalCancellationToken) is not null;
+
+                    if (!hasVerifiedPhone)
+                    {
+                        return Result.Failure<long>(
+                            UpdateListingErrors.ContactPhoneNotVerified);
+                    }
+
+                    listing.SetContact(patch.Contact);
+                }
+                else if (patch.UpdateContact)
+                {
+                    listing.ClearContact();
+                }
 
                 if (patch.UpdateAvailableFromDate)
                 {

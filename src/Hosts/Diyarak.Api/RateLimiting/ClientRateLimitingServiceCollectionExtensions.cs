@@ -17,6 +17,13 @@ internal static class ClientRateLimitingServiceCollectionExtensions
 
     internal const int DefaultOtpWindowSeconds = 900;
 
+    /// <summary>Per-client policy for revealing publisher phone numbers, limiting scraping.</summary>
+    internal const string ContactPolicy = "contact";
+
+    internal const int DefaultContactPermitLimit = 30;
+
+    internal const int DefaultContactWindowSeconds = 900;
+
     /// <summary>
     /// Registers a global fixed-window limiter partitioned per client IP address so that a
     /// single client cannot exhaust capacity for everyone else. Health probes are exempt.
@@ -66,6 +73,19 @@ internal static class ClientRateLimitingServiceCollectionExtensions
 
         var otpWindow = TimeSpan.FromSeconds(otpWindowSeconds);
 
+        int contactPermitLimit =
+            section.GetValue<int?>("Contact:PermitLimit") ?? DefaultContactPermitLimit;
+        int contactWindowSeconds =
+            section.GetValue<int?>("Contact:WindowSeconds") ?? DefaultContactWindowSeconds;
+
+        if (contactPermitLimit <= 0 || contactWindowSeconds <= 0)
+        {
+            throw new InvalidOperationException(
+                $"'{SectionName}:Contact' limits must be positive.");
+        }
+
+        var contactWindow = TimeSpan.FromSeconds(contactWindowSeconds);
+
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode =
@@ -93,6 +113,18 @@ internal static class ClientRateLimitingServiceCollectionExtensions
                     {
                         PermitLimit = otpPermitLimit,
                         Window = otpWindow,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
+
+            options.AddPolicy(
+                ContactPolicy,
+                httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = contactPermitLimit,
+                        Window = contactWindow,
                         QueueLimit = 0,
                         AutoReplenishment = true,
                     }));

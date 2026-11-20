@@ -550,6 +550,7 @@ public sealed class GetPublishedListingEndpointTests
                 "property",
                 "availableFromDate",
                 "photos",
+                "contact",
             ],
             listing.EnumerateObject().Select(property => property.Name).ToArray());
 

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ContactButton } from "@/components/ContactButton";
 import { Gallery } from "@/components/Gallery";
 import { getListing } from "@/lib/api";
+import type { PublicListing } from "@/lib/types";
 import { formatArea, formatFloor, formatLocation, formatNumber, formatPrice, photoSrc } from "@/lib/format";
 import {
   categoryLabels,
@@ -82,6 +84,10 @@ export default async function ListingPage({ params }: Props) {
               .join(" — ")}
           </div>
 
+          <div className="mobile-only" style={{ marginBlockStart: 16 }}>
+            <ContactPanel listing={listing} />
+          </div>
+
           <section className="panel" style={{ marginBlockStart: 20 }}>
             <h2>تفاصيل العقار</h2>
             <dl className="facts-table">
@@ -106,15 +112,25 @@ export default async function ListingPage({ params }: Props) {
           ) : null}
         </div>
 
-        <aside>
-          <div className="panel">
-            <div className="notice">{label(transactionIntentLabels, listing.context.transactionIntent)}</div>
-            <div className="price" style={{ fontSize: "1.7rem" }}>{formatPrice(listing.price)}</div>
-            <p className="notice">المعلن: {label(publishingRoleLabels, listing.context.publishingRole)}</p>
-            <p className="notice">التواصل المباشر مع المعلن سيتوفر قريباً.</p>
-          </div>
+        <aside className="desktop-only">
+          <ContactPanel listing={listing} />
         </aside>
       </div>
+    </div>
+  );
+}
+
+function ContactPanel({ listing }: { listing: PublicListing }) {
+  return (
+    <div className="panel">
+      <div className="notice">{label(transactionIntentLabels, listing.context.transactionIntent)}</div>
+      <div className="price" style={{ fontSize: "1.7rem" }}>{formatPrice(listing.price)}</div>
+      <p className="notice">المعلن: {label(publishingRoleLabels, listing.context.publishingRole)}</p>
+      {listing.contact ? (
+        <ContactButton listingId={listing.listingId} headline={listing.headline} />
+      ) : (
+        <p className="notice">لم يحدد المعلن طريقة تواصل بعد.</p>
+      )}
     </div>
   );
 }

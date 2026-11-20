@@ -36,6 +36,8 @@ internal static class MarketListingRecordMapper
             PriceCurrency = knownPrice?.Currency.Code,
             AvailableFromDate =
                 listing.AvailableFromDate?.Value,
+            ContactAllowCalls = listing.Contact?.AllowCalls,
+            ContactAllowWhatsApp = listing.Contact?.AllowWhatsApp,
         };
     }
 
@@ -64,6 +66,18 @@ internal static class MarketListingRecordMapper
             listing.SetAvailableFromDate(
                 new ListingAvailableFromDate(
                     availableFromDate));
+
+        if (record.ContactAllowCalls is not null || record.ContactAllowWhatsApp is not null)
+        {
+            if (record.ContactAllowCalls is null || record.ContactAllowWhatsApp is null)
+                throw new InvalidOperationException(
+                    "Persisted Listing contact options must contain both channels.");
+
+            listing.SetContact(
+                new ListingContactOptions(
+                    record.ContactAllowCalls.Value,
+                    record.ContactAllowWhatsApp.Value));
+        }
 
         var status =
             (ListingStatus)record.Status;

@@ -38,4 +38,9 @@ public static class UpdateListingErrors
         Error.Conflict(
             "market.listing.concurrent_modification",
             "The Listing changed after the supplied version was read.");
+
+    public static Error ContactPhoneNotVerified { get; } =
+        Error.Conflict(
+            "market.listing.contact_phone_not_verified",
+            "Contact options require the publisher to have a verified phone number. Sign in with your phone number first.");
 }
