@@ -847,6 +847,44 @@ public sealed class ListPublishedListingsUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_rejects_page_beyond_result_window_without_querying()
+    {
+        var query = new StubPublishedListingQuery([]);
+        var useCase = new ListPublishedListingsUseCase(query);
+
+        Result<PublishedListingPage> result =
+            await useCase.ExecuteAsync(
+                page: (ListPublishedListingsUseCase.MaximumResultWindow / 100) + 1,
+                pageSize: 100);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(
+            ListPublishedListingsErrors.InvalidPagination,
+            result.Error);
+        Assert.Equal(0, query.CallCount);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_reports_no_more_pages_at_result_window_edge()
+    {
+        var query = new StubPublishedListingQuery(
+            [CreatePublishedListing(), CreatePublishedListing()]);
+        var useCase = new ListPublishedListingsUseCase(query);
+
+        Result<PublishedListingPage> result =
+            await useCase.ExecuteAsync(
+                page: ListPublishedListingsUseCase.MaximumResultWindow,
+                pageSize: 1);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(
+            ListPublishedListingsUseCase.MaximumResultWindow - 1,
+            query.LastSkip);
+        Assert.Single(result.Value.Items);
+        Assert.False(result.Value.HasMore);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_fails_closed_when_query_returns_draft_listing()
     {
         var draft = new MarketListing(

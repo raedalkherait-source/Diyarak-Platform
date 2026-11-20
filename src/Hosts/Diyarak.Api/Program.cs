@@ -1,16 +1,14 @@
-using System.Threading.RateLimiting;
 using Diyarak.Api.Authentication;
 using Diyarak.Api.Market;
+using Diyarak.Api.RateLimiting;
 using Diyarak.Market.Application;
 using Diyarak.Platform.Persistence.PostgreSql;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 
-const string ApiRateLimitPolicy = "api";
 const string CorsPolicy = "frontend";
 const string CorrelationHeader = "X-Correlation-ID";
 
@@ -78,22 +76,8 @@ builder.Services
        failureStatus: HealthStatus.Unhealthy,
        tags: ["ready"]);
 
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode =
-        StatusCodes.Status429TooManyRequests;
-
-    options.AddFixedWindowLimiter(
-        ApiRateLimitPolicy,
-        limiterOptions =>
-        {
-            limiterOptions.PermitLimit = 100;
-            limiterOptions.Window = TimeSpan.FromMinutes(1);
-            limiterOptions.QueueLimit = 0;
-            limiterOptions.QueueProcessingOrder =
-                QueueProcessingOrder.OldestFirst;
-        });
-});
+builder.Services.AddClientRateLimiting(
+    builder.Configuration);
 
 builder.Services.AddRequestTimeouts(options =>
 {
@@ -268,16 +252,12 @@ app.MapHealthChecks("/health");
 
 app.MapGet(
         "/",
-        (IHostEnvironment environment) =>
+        () =>
             Results.Ok(new
             {
                 service = "Diyarak.Api",
-                version = "1.0.0",
                 status = "Running",
-                environment =
-                    environment.EnvironmentName
-            }))
-    .RequireRateLimiting(ApiRateLimitPolicy);
+            }));
 
 app.MapPublicMarketListingEndpoints();
 

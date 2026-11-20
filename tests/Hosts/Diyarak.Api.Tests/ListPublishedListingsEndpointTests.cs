@@ -83,6 +83,24 @@ public sealed class ListPublishedListingsEndpointTests
     }
 
     [Fact]
+    public async Task Page_beyond_result_window_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?page=2147483647&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidPagination.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+
+    [Fact]
     public async Task Public_collection_parses_transaction_intent_filter()
     {
         using var factory = new TestApiFactory(
@@ -1156,7 +1174,7 @@ public sealed class ListPublishedListingsEndpointTests
     }
 
     [Fact]
-    public async Task Public_collection_maximum_page_omits_unaddressable_next_link()
+    public async Task Public_collection_result_window_edge_omits_unaddressable_next_link()
     {
         using var factory = new TestApiFactory(
             [
@@ -1168,11 +1186,11 @@ public sealed class ListPublishedListingsEndpointTests
 
         HttpResponseMessage response = await SendGetAsync(
             client,
-            query: "?page=2147483647&pageSize=1");
+            query: "?page=10000&pageSize=1");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(
-            "</api/market/public/listings?page=2147483646&pageSize=1>; rel=\"prev\"",
+            "</api/market/public/listings?page=9999&pageSize=1>; rel=\"prev\"",
             GetLinkHeader(response));
     }
 
