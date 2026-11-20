@@ -114,3 +114,27 @@ also works from another directory. Cleanup stays within the repository.
 The first failing command stops verification with a nonzero exit code; the
 final success message appears only after all steps pass. Frontend tests require
 no npm install. The verifier does not start services or run live readiness checks.
+
+## Phone sign-in in Development
+
+Phone sign-in (ADR-0052) is disabled by default. To try it locally, store the settings as user
+secrets so the signing key never lands in source control:
+
+```bash
+cd src/Hosts/Diyarak.Api
+dotnet user-secrets set "Authentication:Phone:Enabled" "true"
+dotnet user-secrets set "Authentication:Phone:Issuer" "https://localhost/diyarak"
+dotnet user-secrets set "Authentication:Phone:Audience" "diyarak-api"
+dotnet user-secrets set "Authentication:Phone:OtpSender" "DevelopmentLog"
+dotnet user-secrets set "Authentication:Phone:SigningKey" "$(openssl rand -base64 32)"
+```
+
+Apply migrations, start the API, then:
+
+1. `POST /api/auth/phone/request` with `{ "phoneNumber": "+963912345678" }`.
+2. Read the code from the API log line starting with `DEVELOPMENT ONLY: verification code`.
+3. `POST /api/auth/phone/verify` with `{ "phoneNumber": "+963912345678", "code": "<code>" }`.
+4. Send the returned `accessToken` as `Authorization: Bearer <token>` to the management routes.
+
+The `DevelopmentLog` sender is refused outside the Development environment. Production needs a
+real SMS/WhatsApp `IOtpSender` adapter.

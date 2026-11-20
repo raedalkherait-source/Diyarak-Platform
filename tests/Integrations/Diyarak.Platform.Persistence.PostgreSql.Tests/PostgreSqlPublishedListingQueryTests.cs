@@ -386,6 +386,120 @@ public sealed class PostgreSqlPublishedListingQueryTests
             StringComparison.Ordinal);
     }
     [Fact]
+    public async Task ListPageAsync_filters_by_syrian_market_details_before_applying_page_window()
+    {
+        await using PlatformDbContext context = CreateContext();
+
+        Guid matchingId =
+            Guid.Parse("30000000-0000-0000-0000-000000000001");
+        Guid otherGovernorateId =
+            Guid.Parse("30000000-0000-0000-0000-000000000002");
+        Guid otherTitleId =
+            Guid.Parse("30000000-0000-0000-0000-000000000003");
+        Guid highFloorId =
+            Guid.Parse("30000000-0000-0000-0000-000000000004");
+
+        static MarketProperty CreateProperty(
+            Guid id,
+            SyrianGovernorate governorate,
+            LegalTitleType legalTitleType,
+            int floorNumber) =>
+            new(
+                id,
+                PropertyCategory.Apartment,
+                new PropertyAddress(
+                    street: null,
+                    houseNumber: null,
+                    postalCode: null,
+                    city: "City",
+                    governorate: governorate,
+                    district: "District"),
+                legalTitleType: legalTitleType,
+                finishingLevel: FinishingLevel.SuperDeluxe,
+                floorNumber: floorNumber,
+                buildingFloorCount: 12);
+
+        MarketProperty[] properties =
+        [
+            CreateProperty(otherGovernorateId, SyrianGovernorate.Aleppo, LegalTitleType.GreenTitleDeed, 2),
+            CreateProperty(otherTitleId, SyrianGovernorate.Damascus, LegalTitleType.CourtRuling, 2),
+            CreateProperty(highFloorId, SyrianGovernorate.Damascus, LegalTitleType.GreenTitleDeed, 9),
+            CreateProperty(matchingId, SyrianGovernorate.Damascus, LegalTitleType.GreenTitleDeed, 2),
+        ];
+
+        context.MarketProperties.AddRange(
+            properties.Select(MarketPropertyRecordMapper.FromDomain));
+
+        MarketListing[] listings =
+        [
+            CreateListing(Guid.Parse("00000000-0000-0000-0000-000000000001"), published: true, subjectId: otherGovernorateId),
+            CreateListing(Guid.Parse("00000000-0000-0000-0000-000000000002"), published: true, subjectId: otherTitleId),
+            CreateListing(Guid.Parse("00000000-0000-0000-0000-000000000003"), published: true, subjectId: highFloorId),
+            CreateListing(Guid.Parse("00000000-0000-0000-0000-000000000004"), published: true, subjectId: matchingId),
+        ];
+
+        AddListingsWithDefaultProperties(
+            context,
+            [.. listings.Select(MarketListingRecordMapper.FromDomain)]);
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var query = new PostgreSqlPublishedListingQuery(context);
+        var criteria = new PublishedListingSearchCriteria(
+            Property: new PublishedPropertySearchCriteria(
+                Location: new PublishedPropertyLocationSearchCriteria(
+                    City: null,
+                    PostalCode: null,
+                    Governorates: [SyrianGovernorate.Damascus]),
+                LegalTitleTypes: [LegalTitleType.GreenTitleDeed],
+                FinishingLevels: [FinishingLevel.SuperDeluxe],
+                FloorNumber: new PublishedIntegerRange(Minimum: 0, Maximum: 5)));
+
+        MarketListing[] result =
+            (await query.ListPageAsync(
+                skip: 0,
+                take: 1,
+                criteria: criteria)).Select(static projection => projection.Listing).ToArray();
+
+        MarketListing item = Assert.Single(result);
+        Assert.Equal(listings[3].Id, item.Id);
+    }
+
+    [Fact]
+    public void BuildQuery_district_filter_translates_to_escaped_postgresql_ilike()
+    {
+        var options =
+            new DbContextOptionsBuilder<PlatformDbContext>()
+                .UseNpgsql(
+                    "Host=localhost;Database=diyarak_query_translation_test")
+                .Options;
+
+        using var context = new PlatformDbContext(options);
+        var query = new PostgreSqlPublishedListingQuery(context);
+
+        var criteria = new PublishedListingSearchCriteria(
+            Property: new PublishedPropertySearchCriteria(
+                Location: new PublishedPropertyLocationSearchCriteria(
+                    City: null,
+                    PostalCode: null,
+                    District: @"me%_zzeh")));
+
+        string sql =
+            query.BuildQuery(criteria)
+                .ToQueryString();
+
+        Assert.Contains(
+            @"@districtPattern='me\%\_zzeh'",
+            sql,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "ILIKE",
+            sql,
+            StringComparison.OrdinalIgnoreCase);
+    }
+    [Fact]
     public void BuildQuery_postal_code_filter_translates_to_exact_postgresql_ilike()
     {
         var options =

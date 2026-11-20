@@ -256,7 +256,9 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
                     ? new MarketGeoCoordinateResponse(
                         location.Latitude,
                         location.Longitude)
-                    : null),
+                    : null,
+                property.Address.Governorate?.ToString(),
+                property.Address.District),
             ToAreaResponse(property.LivingArea),
             ToAreaResponse(property.UsableArea),
             property.TotalRooms,
@@ -271,7 +273,11 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
             property.CommercialSubtype?.ToString(),
             ToAreaResponse(property.SalesArea),
             ToAreaResponse(property.TotalArea),
-            property.ParkingSpaceCount);
+            property.ParkingSpaceCount,
+            property.LegalTitleType?.ToString(),
+            property.FinishingLevel?.ToString(),
+            property.FloorNumber,
+            property.BuildingFloorCount);
     }
 
     private static MarketAreaResponse? ToAreaResponse(
@@ -351,14 +357,20 @@ public static class MarketPropertyEndpointRouteBuilderExtensions
         string? CommercialSubtype,
         MarketAreaResponse? SalesArea,
         MarketAreaResponse? TotalArea,
-        int? ParkingSpaceCount);
+        int? ParkingSpaceCount,
+        string? LegalTitleType,
+        string? FinishingLevel,
+        int? FloorNumber,
+        int? BuildingFloorCount);
 
     internal sealed record MarketPropertyAddressResponse(
-        string Street,
-        string HouseNumber,
-        string PostalCode,
+        string? Street,
+        string? HouseNumber,
+        string? PostalCode,
         string City,
-        MarketGeoCoordinateResponse? Location);
+        MarketGeoCoordinateResponse? Location,
+        string? Governorate,
+        string? District);
 
     internal sealed record MarketGeoCoordinateResponse(
         double Latitude,

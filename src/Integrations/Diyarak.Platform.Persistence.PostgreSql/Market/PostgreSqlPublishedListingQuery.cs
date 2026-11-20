@@ -176,10 +176,115 @@ internal sealed class PostgreSqlPublishedListingQuery
                         _context.MarketProperties.Any(
                             property =>
                                 property.Id == listing.SubjectId &&
+                                property.PostalCode != null &&
                                 EF.Functions.ILike(
                                     property.PostalCode,
                                     postalCodePattern,
                                     @"\")));
+        }
+
+        if (criteria?.Property?.Location?.Governorates is
+            { Count: > 0 } governorates)
+        {
+            int[] governorateValues =
+                governorates
+                    .Select(governorate => (int)governorate)
+                    .ToArray();
+
+            query =
+                query.Where(
+                    listing =>
+                        listing.SubjectType ==
+                        MarketListingSubjectTypes.Property &&
+                        _context.MarketProperties.Any(
+                            property =>
+                                property.Id == listing.SubjectId &&
+                                property.Governorate.HasValue &&
+                                governorateValues.Contains(
+                                    property.Governorate.Value)));
+        }
+
+        if (criteria?.Property?.Location is
+            { District: not null } districtLocation)
+        {
+            string districtPattern =
+                EscapeLikePattern(districtLocation.District);
+
+            query =
+                query.Where(
+                    listing =>
+                        listing.SubjectType ==
+                        MarketListingSubjectTypes.Property &&
+                        _context.MarketProperties.Any(
+                            property =>
+                                property.Id == listing.SubjectId &&
+                                property.District != null &&
+                                EF.Functions.ILike(
+                                    property.District,
+                                    districtPattern,
+                                    @"\")));
+        }
+
+        if (criteria?.Property?.LegalTitleTypes is
+            { Count: > 0 } legalTitleTypes)
+        {
+            int[] legalTitleValues =
+                legalTitleTypes
+                    .Select(title => (int)title)
+                    .ToArray();
+
+            query =
+                query.Where(
+                    listing =>
+                        listing.SubjectType ==
+                        MarketListingSubjectTypes.Property &&
+                        _context.MarketProperties.Any(
+                            property =>
+                                property.Id == listing.SubjectId &&
+                                property.LegalTitleType.HasValue &&
+                                legalTitleValues.Contains(
+                                    property.LegalTitleType.Value)));
+        }
+
+        if (criteria?.Property?.FinishingLevels is
+            { Count: > 0 } finishingLevels)
+        {
+            int[] finishingValues =
+                finishingLevels
+                    .Select(level => (int)level)
+                    .ToArray();
+
+            query =
+                query.Where(
+                    listing =>
+                        listing.SubjectType ==
+                        MarketListingSubjectTypes.Property &&
+                        _context.MarketProperties.Any(
+                            property =>
+                                property.Id == listing.SubjectId &&
+                                property.FinishingLevel.HasValue &&
+                                finishingValues.Contains(
+                                    property.FinishingLevel.Value)));
+        }
+
+        if (criteria?.Property?.FloorNumber is { } floorRange)
+        {
+            int? minimumFloor = floorRange.Minimum;
+            int? maximumFloor = floorRange.Maximum;
+
+            query =
+                query.Where(
+                    listing =>
+                        listing.SubjectType ==
+                        MarketListingSubjectTypes.Property &&
+                        _context.MarketProperties.Any(
+                            property =>
+                                property.Id == listing.SubjectId &&
+                                property.FloorNumber.HasValue &&
+                                (!minimumFloor.HasValue ||
+                                 property.FloorNumber.Value >= minimumFloor.Value) &&
+                                (!maximumFloor.HasValue ||
+                                 property.FloorNumber.Value <= maximumFloor.Value)));
         }
         if (criteria?.Property?.LivingArea is
             { Unit: not null } livingArea)

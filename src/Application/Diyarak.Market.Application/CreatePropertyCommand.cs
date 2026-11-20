@@ -18,4 +18,8 @@ public sealed record CreatePropertyCommand(
     CommercialPropertySubtype? CommercialSubtype = null,
     Area? SalesArea = null,
     Area? TotalArea = null,
-    int? ParkingSpaceCount = null);
+    int? ParkingSpaceCount = null,
+    LegalTitleType? LegalTitleType = null,
+    FinishingLevel? FinishingLevel = null,
+    int? FloorNumber = null,
+    int? BuildingFloorCount = null);

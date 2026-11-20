@@ -7,6 +7,10 @@ public sealed class Property : AggregateRoot<Guid>
 {
     public const long InitialVersion = 1;
 
+    public const int MinimumFloorNumber = -5;
+
+    public const int MaximumFloorNumber = 200;
+
     public Property(
         Guid id,
         PropertyCategory category,
@@ -24,7 +28,11 @@ public sealed class Property : AggregateRoot<Guid>
         Area? salesArea = null,
         Area? totalArea = null,
         int? parkingSpaceCount = null,
-        Guid? ownerUserId = null)
+        Guid? ownerUserId = null,
+        LegalTitleType? legalTitleType = null,
+        FinishingLevel? finishingLevel = null,
+        int? floorNumber = null,
+        int? buildingFloorCount = null)
         : this(
             id,
             category,
@@ -43,7 +51,11 @@ public sealed class Property : AggregateRoot<Guid>
             totalArea,
             parkingSpaceCount,
             ownerUserId,
-            InitialVersion)
+            InitialVersion,
+            legalTitleType,
+            finishingLevel,
+            floorNumber,
+            buildingFloorCount)
     {
     }
 
@@ -65,7 +77,11 @@ public sealed class Property : AggregateRoot<Guid>
         Area? totalArea,
         int? parkingSpaceCount,
         Guid? ownerUserId,
-        long version)
+        long version,
+        LegalTitleType? legalTitleType,
+        FinishingLevel? finishingLevel,
+        int? floorNumber,
+        int? buildingFloorCount)
         : base(id)
     {
         if (ownerUserId == Guid.Empty)
@@ -95,7 +111,11 @@ public sealed class Property : AggregateRoot<Guid>
             commercialSubtype,
             salesArea,
             totalArea,
-            parkingSpaceCount);
+            parkingSpaceCount,
+            legalTitleType,
+            finishingLevel,
+            floorNumber,
+            buildingFloorCount);
     }
 
     public Guid? OwnerUserId { get; }
@@ -132,6 +152,16 @@ public sealed class Property : AggregateRoot<Guid>
 
     public int? ParkingSpaceCount { get; private set; }
 
+    public LegalTitleType? LegalTitleType { get; private set; }
+
+    public FinishingLevel? FinishingLevel { get; private set; }
+
+    /// <summary>Floor of the unit; <c>0</c> is the ground floor and negative values are basements.</summary>
+    public int? FloorNumber { get; private set; }
+
+    /// <summary>Number of above-ground floors in the building.</summary>
+    public int? BuildingFloorCount { get; private set; }
+
     public static Property Restore(
         Guid id,
         PropertyCategory category,
@@ -150,7 +180,11 @@ public sealed class Property : AggregateRoot<Guid>
         Area? totalArea,
         int? parkingSpaceCount,
         Guid? ownerUserId,
-        long version) =>
+        long version,
+        LegalTitleType? legalTitleType = null,
+        FinishingLevel? finishingLevel = null,
+        int? floorNumber = null,
+        int? buildingFloorCount = null) =>
         new(
             id,
             category,
@@ -169,7 +203,11 @@ public sealed class Property : AggregateRoot<Guid>
             totalArea,
             parkingSpaceCount,
             ownerUserId,
-            version);
+            version,
+            legalTitleType,
+            finishingLevel,
+            floorNumber,
+            buildingFloorCount);
 
     public void ReplaceDetails(
         PropertyCategory category,
@@ -186,7 +224,11 @@ public sealed class Property : AggregateRoot<Guid>
         CommercialPropertySubtype? commercialSubtype = null,
         Area? salesArea = null,
         Area? totalArea = null,
-        int? parkingSpaceCount = null)
+        int? parkingSpaceCount = null,
+        LegalTitleType? legalTitleType = null,
+        FinishingLevel? finishingLevel = null,
+        int? floorNumber = null,
+        int? buildingFloorCount = null)
     {
         if (!Enum.IsDefined(category))
         {
@@ -240,6 +282,37 @@ public sealed class Property : AggregateRoot<Guid>
                 nameof(commercialSubtype));
         }
 
+        if (legalTitleType is { } title && !Enum.IsDefined(title))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(legalTitleType),
+                legalTitleType,
+                "Unsupported legal title type.");
+        }
+
+        if (finishingLevel is { } finishing && !Enum.IsDefined(finishing))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(finishingLevel),
+                finishingLevel,
+                "Unsupported finishing level.");
+        }
+
+        if (floorNumber is < MinimumFloorNumber or > MaximumFloorNumber)
+            throw new ArgumentOutOfRangeException(nameof(floorNumber));
+
+        if (buildingFloorCount is < 1 or > MaximumFloorNumber)
+            throw new ArgumentOutOfRangeException(nameof(buildingFloorCount));
+
+        if (floorNumber is { } floor &&
+            buildingFloorCount is { } floorCount &&
+            floor > floorCount)
+        {
+            throw new ArgumentException(
+                "Floor number cannot exceed the building floor count.",
+                nameof(floorNumber));
+        }
+
         HashSet<PropertyFeature> featureSet = features is null
             ? []
             : [.. features];
@@ -270,5 +343,9 @@ public sealed class Property : AggregateRoot<Guid>
         SalesArea = salesArea;
         TotalArea = totalArea;
         ParkingSpaceCount = parkingSpaceCount;
+        LegalTitleType = legalTitleType;
+        FinishingLevel = finishingLevel;
+        FloorNumber = floorNumber;
+        BuildingFloorCount = buildingFloorCount;
     }
 }

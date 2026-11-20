@@ -9,6 +9,12 @@ public sealed class ListPublishedListingsUseCase
     public const int DefaultPageSize = 20;
     public const int MaximumPageSize = 100;
 
+    /// <summary>
+    /// Maximum number of rows reachable through offset pagination. Deeper pages are rejected
+    /// so anonymous clients cannot force arbitrarily expensive OFFSET scans.
+    /// </summary>
+    public const int MaximumResultWindow = 10_000;
+
     private readonly IPublishedListingQuery _publishedListingQuery;
 
     public ListPublishedListingsUseCase(
@@ -86,6 +92,20 @@ public sealed class ListPublishedListingsUseCase
             return Result.Failure<PublishedListingPage>(
                 ListPublishedListingsErrors.InvalidSearchCriteria);
         }
+        if (criteria?.Property?.FloorNumber is { } floorNumber &&
+            floorNumber.Minimum > floorNumber.Maximum)
+        {
+            return Result.Failure<PublishedListingPage>(
+                ListPublishedListingsErrors.InvalidSearchCriteria);
+        }
+
+        if (criteria?.Property?.Location is { District: not null } districtLocation &&
+            string.IsNullOrWhiteSpace(districtLocation.District))
+        {
+            return Result.Failure<PublishedListingPage>(
+                ListPublishedListingsErrors.InvalidSearchCriteria);
+        }
+
         if (criteria?.Property?.ConstructionYear is { } constructionYear &&
             ((constructionYear.Minimum is { } minimumConstructionYear &&
               minimumConstructionYear < 1) ||
@@ -152,7 +172,7 @@ public sealed class ListPublishedListingsUseCase
                 ListPublishedListingsErrors.InvalidSearchCriteria);
         }
         long skip = ((long)page - 1) * pageSize;
-        if (skip > int.MaxValue)
+        if (skip >= MaximumResultWindow)
         {
             return Result.Failure<PublishedListingPage>(
                 ListPublishedListingsErrors.InvalidPagination);
@@ -173,7 +193,9 @@ public sealed class ListPublishedListingsUseCase
                 "The published Listing query returned a non-published Listing.");
         }
 
-        bool hasMore = candidates.Count > pageSize;
+        bool hasMore =
+            candidates.Count > pageSize &&
+            skip + pageSize < MaximumResultWindow;
         PublishedListingProjection[] items = candidates
             .Take(pageSize)
             .ToArray();

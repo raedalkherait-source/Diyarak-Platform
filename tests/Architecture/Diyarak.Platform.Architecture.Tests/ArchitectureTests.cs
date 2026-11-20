@@ -105,7 +105,10 @@ public sealed class ArchitectureTests
     [Fact]
     public void Application_direct_core_dependencies_are_explicitly_approved()
     {
-        string[] approvedCoreDependencies = [];
+        string[] approvedCoreDependencies =
+        [
+            "Diyarak.Platform.Identity.Application.csproj->Diyarak.Platform.Identity.csproj",
+        ];
 
         foreach (string project in Directory.EnumerateFiles(Path.Combine(Root, "src", "Application"), "*.csproj", SearchOption.AllDirectories))
             foreach (string reference in ReadProjectReferences(project))

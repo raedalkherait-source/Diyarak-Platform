@@ -10,13 +10,17 @@ internal sealed class MarketPropertyRecord
 
     public int Category { get; set; }
 
-    public string Street { get; set; } = string.Empty;
-
-    public string HouseNumber { get; set; } = string.Empty;
-
-    public string PostalCode { get; set; } = string.Empty;
+    public int? Governorate { get; set; }
 
     public string City { get; set; } = string.Empty;
+
+    public string? District { get; set; }
+
+    public string? Street { get; set; }
+
+    public string? HouseNumber { get; set; }
+
+    public string? PostalCode { get; set; }
 
     public double? Latitude { get; set; }
 
@@ -55,4 +59,12 @@ internal sealed class MarketPropertyRecord
     public int? TotalAreaUnit { get; set; }
 
     public int? ParkingSpaceCount { get; set; }
+
+    public int? LegalTitleType { get; set; }
+
+    public int? FinishingLevel { get; set; }
+
+    public int? FloorNumber { get; set; }
+
+    public int? BuildingFloorCount { get; set; }
 }

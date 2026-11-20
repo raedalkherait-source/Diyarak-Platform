@@ -9,6 +9,41 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Tests;
 public sealed class MarketPropertyRecordMapperTests
 {
     [Fact]
+    public void Round_trip_preserves_syrian_market_details()
+    {
+        var original = new MarketProperty(
+            Guid.NewGuid(),
+            PropertyCategory.Apartment,
+            new PropertyAddress(
+                street: null,
+                houseNumber: null,
+                postalCode: null,
+                city: "Damascus",
+                location: new GeoCoordinate(33.5138d, 36.2765d),
+                governorate: SyrianGovernorate.Damascus,
+                district: "Mezzeh"),
+            features: [PropertyFeature.SolarPowerSystem, PropertyFeature.GeneratorSubscription],
+            ownerUserId: Guid.NewGuid(),
+            legalTitleType: LegalTitleType.GreenTitleDeed,
+            finishingLevel: FinishingLevel.SuperDeluxe,
+            floorNumber: -1,
+            buildingFloorCount: 6);
+
+        var record = MarketPropertyRecordMapper.FromDomain(original);
+        var restored = MarketPropertyRecordMapper.ToDomain(record);
+
+        Assert.Null(record.Street);
+        Assert.Null(record.PostalCode);
+        Assert.Equal((int)SyrianGovernorate.Damascus, record.Governorate);
+        Assert.Equal(original.Address, restored.Address);
+        Assert.Equal(LegalTitleType.GreenTitleDeed, restored.LegalTitleType);
+        Assert.Equal(FinishingLevel.SuperDeluxe, restored.FinishingLevel);
+        Assert.Equal(-1, restored.FloorNumber);
+        Assert.Equal(6, restored.BuildingFloorCount);
+        Assert.Equal(original.Features.Order(), restored.Features.Order());
+    }
+
+    [Fact]
     public void Round_trip_preserves_complete_market_property_state()
     {
         Guid ownerUserId = Guid.NewGuid();

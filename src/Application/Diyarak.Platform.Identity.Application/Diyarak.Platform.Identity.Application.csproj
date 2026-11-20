@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Diyarak.Platform.Identity\Diyarak.Platform.Identity.csproj" />
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.Domain.Primitives\Diyarak.Platform.Domain.Primitives.csproj" />
+    <ProjectReference Include="..\..\Foundation\Diyarak.Platform.BuildingBlocks\Diyarak.Platform.BuildingBlocks.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <AssemblyName>Diyarak.Platform.Identity.Application</AssemblyName>
+    <RootNamespace>Diyarak.Platform.Identity.Application</RootNamespace>
+    <Description>Application orchestration for Diyarak platform identity use cases.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Diyarak.Platform.Identity.Application.Tests" />
+  </ItemGroup>
+</Project>

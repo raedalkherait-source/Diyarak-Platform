@@ -582,6 +582,10 @@ public sealed class GetPublishedListingEndpointTests
                 "constructionYear",
                 "commercialSubtype",
                 "parkingSpaceCount",
+                "legalTitleType",
+                "finishingLevel",
+                "floorNumber",
+                "buildingFloorCount",
             ],
             property.EnumerateObject().Select(item => item.Name).ToArray());
 
@@ -589,6 +593,8 @@ public sealed class GetPublishedListingEndpointTests
             [
                 "city",
                 "postalCode",
+                "governorate",
+                "district",
             ],
             property.GetProperty("location").EnumerateObject().Select(item => item.Name).ToArray());
 

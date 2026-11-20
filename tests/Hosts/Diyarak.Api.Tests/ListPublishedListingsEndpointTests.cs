@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Diyarak.Market.Application;
 using Diyarak.Market.Listing;
+using Diyarak.Market.Property;
 using Diyarak.Platform.Listing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -83,6 +84,24 @@ public sealed class ListPublishedListingsEndpointTests
     }
 
     [Fact]
+    public async Task Page_beyond_result_window_returns_400_without_querying()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?page=2147483647&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertProblemCodeAsync(
+            response,
+            ListPublishedListingsErrors.InvalidPagination.Code);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+
+    [Fact]
     public async Task Public_collection_parses_transaction_intent_filter()
     {
         using var factory = new TestApiFactory(
@@ -107,6 +126,60 @@ public sealed class ListPublishedListingsEndpointTests
 
         Assert.Equal(TransactionIntent.Rent, intent);
     }
+    [Fact]
+    public async Task Public_collection_parses_syrian_market_filters()
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?governorate=Damascus&governorate=RifDimashq" +
+            "&district=Mezzeh&legalTitleType=GreenTitleDeed&finishingLevel=Deluxe" +
+            "&finishingLevel=SuperDeluxe&floorMin=-1&floorMax=4");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        PublishedListingSearchCriteria criteria =
+            Assert.IsType<PublishedListingSearchCriteria>(
+                factory.Query.LastCriteria);
+        PublishedPropertySearchCriteria property =
+            Assert.IsType<PublishedPropertySearchCriteria>(criteria.Property);
+        PublishedPropertyLocationSearchCriteria location =
+            Assert.IsType<PublishedPropertyLocationSearchCriteria>(property.Location);
+
+        Assert.Equal(
+            [SyrianGovernorate.Damascus, SyrianGovernorate.RifDimashq],
+            location.Governorates!);
+        Assert.Equal("Mezzeh", location.District);
+        Assert.Equal([LegalTitleType.GreenTitleDeed], property.LegalTitleTypes!);
+        Assert.Equal(
+            [FinishingLevel.Deluxe, FinishingLevel.SuperDeluxe],
+            property.FinishingLevels!);
+        Assert.Equal(new PublishedIntegerRange(-1, 4), property.FloorNumber);
+    }
+
+    [Theory]
+    [InlineData("governorate=Bavaria")]
+    [InlineData("district=%20")]
+    [InlineData("legalTitleType=Freehold")]
+    [InlineData("floorMin=5&floorMax=2")]
+    [InlineData("floorMin=abc")]
+    public async Task Public_collection_rejects_invalid_syrian_market_filters(string queryString)
+    {
+        using var factory = new TestApiFactory(
+            [],
+            authenticationEnabled: false);
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/api/market/public/listings?" + queryString);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, factory.Query.CallCount);
+    }
+
     [Fact]
     public async Task Public_collection_parses_repeated_transaction_intent_filters()
     {
@@ -1156,7 +1229,7 @@ public sealed class ListPublishedListingsEndpointTests
     }
 
     [Fact]
-    public async Task Public_collection_maximum_page_omits_unaddressable_next_link()
+    public async Task Public_collection_result_window_edge_omits_unaddressable_next_link()
     {
         using var factory = new TestApiFactory(
             [
@@ -1168,11 +1241,11 @@ public sealed class ListPublishedListingsEndpointTests
 
         HttpResponseMessage response = await SendGetAsync(
             client,
-            query: "?page=2147483647&pageSize=1");
+            query: "?page=10000&pageSize=1");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(
-            "</api/market/public/listings?page=2147483646&pageSize=1>; rel=\"prev\"",
+            "</api/market/public/listings?page=9999&pageSize=1>; rel=\"prev\"",
             GetLinkHeader(response));
     }
 
@@ -1663,6 +1736,10 @@ public sealed class ListPublishedListingsEndpointTests
                 "constructionYear",
                 "commercialSubtype",
                 "parkingSpaceCount",
+                "legalTitleType",
+                "finishingLevel",
+                "floorNumber",
+                "buildingFloorCount",
             ],
             property.EnumerateObject().Select(item => item.Name).ToArray());
 
@@ -1670,6 +1747,8 @@ public sealed class ListPublishedListingsEndpointTests
             [
                 "city",
                 "postalCode",
+                "governorate",
+                "district",
             ],
             property.GetProperty("location").EnumerateObject().Select(item => item.Name).ToArray());
 

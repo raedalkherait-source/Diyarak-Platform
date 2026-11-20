@@ -65,6 +65,12 @@ public sealed class PlatformDbContextModelTests
             "OwnerUserId",
             "ParkingSpaceCount",
             "Version",
+            "Governorate",
+            "District",
+            "LegalTitleType",
+            "FinishingLevel",
+            "FloorNumber",
+            "BuildingFloorCount",
         ];
 
         string[] actualProperties =
@@ -94,6 +100,13 @@ public sealed class PlatformDbContextModelTests
         Assert.Equal(
             "owner_user_id",
             ownerProperty.GetColumnName());
+
+        foreach (string optionalAddressPart in new[] { "Street", "HouseNumber", "PostalCode", "District", "Governorate" })
+        {
+            Assert.True(entityType.FindProperty(optionalAddressPart)!.IsNullable);
+        }
+
+        Assert.False(entityType.FindProperty("City")!.IsNullable);
 
         var ownerConstraint = Assert.Single(
             entityType.GetCheckConstraints(),
