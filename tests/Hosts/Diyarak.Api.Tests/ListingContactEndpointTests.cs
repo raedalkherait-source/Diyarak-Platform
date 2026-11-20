@@ -106,6 +106,21 @@ public sealed class ListingContactEndpointTests
     }
 
     [Theory]
+    [InlineData("172.28.0.0/24", true)]
+    [InlineData("10.0.0.0/8", true)]
+    [InlineData("not-a-network", false)]
+    [InlineData("0.0.0.0/0", false)]
+    public void Trusted_network_configuration_is_validated(string network, bool valid)
+    {
+        using var factory = new TestApiFactory(knownNetwork: network);
+
+        if (valid)
+            factory.CreateClient().Dispose();
+        else
+            Assert.ThrowsAny<InvalidOperationException>(() => factory.CreateClient());
+    }
+
+    [Theory]
     [InlineData("""{ "version": 1, "contact": { "allowCalls": true, "allowWhatsApp": false } }""", true, true, false)]
     [InlineData("""{ "version": 1, "contact": null }""", true, null, null)]
     public void Update_parser_accepts_contact_options(string json, bool expectedUpdate, bool? calls, bool? whatsApp)
@@ -130,7 +145,7 @@ public sealed class ListingContactEndpointTests
         Assert.False(MarketListingUpdateRequestParser.TryParse(document.RootElement, out _));
     }
 
-    private sealed class TestApiFactory(int contactPermitLimit = 30, string? knownProxy = null)
+    private sealed class TestApiFactory(int contactPermitLimit = 30, string? knownProxy = null, string? knownNetwork = null)
         : WebApplicationFactory<Program>
     {
         private readonly ListingContactInMemoryRepository _listings = new();
@@ -168,6 +183,9 @@ public sealed class ListingContactEndpointTests
 
             if (knownProxy is not null)
                 settings["ReverseProxy:KnownProxies:0"] = knownProxy;
+
+            if (knownNetwork is not null)
+                settings["ReverseProxy:KnownNetworks:0"] = knownNetwork;
 
             builder.ConfigureHostConfiguration(configuration => configuration.AddInMemoryCollection(settings));
             return base.CreateHost(builder);

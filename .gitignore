@@ -54,3 +54,7 @@ TestResults/
 
 # Local media storage
 App_Data/
+
+# Deployment secrets
+deploy/.env
+deploy/api.env

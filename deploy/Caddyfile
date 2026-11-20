@@ -1,0 +1,25 @@
+# Caddy obtains and renews TLS certificates automatically (Let's Encrypt) for both domains.
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	request_body {
+		max_size 12MB
+	}
+}
+
+{$PORTAL_DOMAIN} {
+	import common
+	reverse_proxy portal:3000
+}
+
+{$API_DOMAIN} {
+	import common
+	reverse_proxy api:8080
+}

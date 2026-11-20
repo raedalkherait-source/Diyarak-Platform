@@ -1,0 +1,116 @@
+# Production stack: Caddy (TLS) -> portal (Next.js) -> API (.NET) -> PostgreSQL, plus migrations
+# and backups. Run from the repository root:
+#   docker compose -f deploy/compose.production.yaml --env-file deploy/.env up -d --build
+name: diyarak
+
+x-restart: &restart
+  restart: unless-stopped
+
+networks:
+  internal:
+    ipam:
+      config:
+        # Fixed subnet so the API can trust forwarded client addresses from this network only.
+        - subnet: 172.28.0.0/24
+
+volumes:
+  postgres-data:
+  media:
+  backups:
+  caddy-data:
+  caddy-config:
+
+services:
+  postgres:
+    <<: *restart
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: diyarak
+      POSTGRES_USER: diyarak
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U diyarak -d diyarak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  migrations:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+      target: migrations
+    command: ["--connection", "Host=postgres;Database=diyarak;Username=diyarak;Password=${POSTGRES_PASSWORD}"]
+    environment:
+      ConnectionStrings__Postgres: Host=postgres;Database=diyarak;Username=diyarak;Password=${POSTGRES_PASSWORD}
+    networks: [internal]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *restart
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+      target: api
+    env_file: [api.env]
+    environment:
+      ConnectionStrings__Postgres: Host=postgres;Database=diyarak;Username=diyarak;Password=${POSTGRES_PASSWORD}
+      ReverseProxy__KnownNetworks__0: 172.28.0.0/24
+    volumes: [media:/var/lib/diyarak/media]
+    networks: [internal]
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
+  portal:
+    <<: *restart
+    build:
+      context: ../src/Frontend/Diyarak.Portal
+      dockerfile: ../../../deploy/Dockerfile.portal
+    environment:
+      DIYARAK_API_URL: http://api:8080
+      PORTAL_PUBLIC_URL: https://${PORTAL_DOMAIN:?set PORTAL_DOMAIN in deploy/.env}
+    networks: [internal]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  caddy:
+    <<: *restart
+    image: caddy:2-alpine
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      PORTAL_DOMAIN: ${PORTAL_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in deploy/.env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [internal]
+    depends_on:
+      portal:
+        condition: service_healthy
+
+  backup:
+    <<: *restart
+    image: postgres:17-alpine
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: diyarak
+      PGUSER: diyarak
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./backup/backup.sh:/backup.sh:ro
+      - backups:/backups
+      - media:/media:ro
+    networks: [internal]
+    depends_on:
+      postgres:
+        condition: service_healthy
