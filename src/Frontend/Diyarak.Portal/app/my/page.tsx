@@ -4,6 +4,7 @@ import { logout } from "./actions";
 import { formatPrice } from "@/lib/format";
 import { label, transactionIntentLabels } from "@/lib/labels";
 import { managementFetch, type ManagementListing } from "@/lib/managementApi";
+import { closureReasonLabels, listingStatusLabels } from "@/lib/status";
 
 export const metadata: Metadata = { title: "إعلاناتي", robots: { index: false } };
 
@@ -36,7 +37,7 @@ export default async function MyListingsPage() {
             <li key={listing.listingId} className="panel my-item">
               <div>
                 <span className={`status status-${listing.status.toLowerCase()}`}>
-                  {listing.status === "Published" ? "منشور" : "مسودة"}
+                  {listing.closureReason ? label(closureReasonLabels, listing.closureReason) : label(listingStatusLabels, listing.status)}
                 </span>
                 <h2>
                   <Link href={`/my/listings/${listing.listingId}`}>{listing.headline ?? "إعلان بدون عنوان"}</Link>
@@ -49,7 +50,7 @@ export default async function MyListingsPage() {
               </div>
               <div className="toolbar">
                 <Link className="button secondary" href={`/my/listings/${listing.listingId}`}>
-                  {listing.status === "Draft" ? "تعديل ونشر" : "عرض"}
+                  {listing.status === "Draft" ? "تعديل ونشر" : listing.status === "Closed" ? "عرض" : "إدارة"}
                 </Link>
                 {listing.status === "Published" ? (
                   <Link className="button secondary" href={`/listings/${listing.listingId}`}>الصفحة العامة</Link>

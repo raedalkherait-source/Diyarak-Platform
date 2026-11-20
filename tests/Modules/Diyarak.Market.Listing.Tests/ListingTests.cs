@@ -187,7 +187,7 @@ public sealed class ListingTests
         Assert.Throws<InvalidOperationException>(() => listing.Publish());
     }
     [Fact]
-    public void Published_listing_rejects_core_publication_data_changes()
+    public void Closed_listing_rejects_core_publication_data_changes()
     {
         var subjectReference = new ListingSubjectReference(
             Guid.NewGuid(),
@@ -200,11 +200,17 @@ public sealed class ListingTests
         listing.SetPrice(ListingPrice.OnRequest());
         listing.Publish();
 
+        // Published listings stay editable (ADR-0057).
+        listing.SetHeadline(new ListingHeadline("Updated headline"));
+        Assert.Equal("Updated headline", listing.Headline!.Value);
+
+        listing.Close(ListingClosureReason.Sold);
+
         Assert.Throws<InvalidOperationException>(
             () => listing.SetContext(
                 new ListingContext(PublishingRole.Tenant, TransactionIntent.Rent)));
         Assert.Throws<InvalidOperationException>(
-            () => listing.SetHeadline(new ListingHeadline("Updated headline")));
+            () => listing.SetHeadline(new ListingHeadline("Another headline")));
         Assert.Throws<InvalidOperationException>(
             () => listing.SetPrice(ListingPrice.OnRequest()));
         Assert.Throws<InvalidOperationException>(

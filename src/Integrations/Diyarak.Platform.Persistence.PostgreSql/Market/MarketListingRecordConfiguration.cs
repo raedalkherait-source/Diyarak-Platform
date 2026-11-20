@@ -12,10 +12,16 @@ internal sealed class MarketListingRecordConfiguration
         builder.ToTable(
             "listings",
             "market",
-            tableBuilder => tableBuilder.HasCheckConstraint(
-                "ck_market_listings_contact_options",
-                "(contact_allow_calls IS NULL) = (contact_allow_whatsapp IS NULL) AND " +
-                "(contact_allow_calls IS NULL OR contact_allow_calls OR contact_allow_whatsapp)"));
+            tableBuilder =>
+            {
+                tableBuilder.HasCheckConstraint(
+                    "ck_market_listings_contact_options",
+                    "(contact_allow_calls IS NULL) = (contact_allow_whatsapp IS NULL) AND " +
+                    "(contact_allow_calls IS NULL OR contact_allow_calls OR contact_allow_whatsapp)");
+                tableBuilder.HasCheckConstraint(
+                    "ck_market_listings_closure_reason",
+                    "(status = 4) = (closure_reason IS NOT NULL)");
+            });
 
         builder.HasKey(record => record.Id);
 
@@ -100,5 +106,9 @@ internal sealed class MarketListingRecordConfiguration
         builder.Property(record => record.ContactAllowWhatsApp)
             .HasColumnName("contact_allow_whatsapp")
             .HasColumnType("boolean");
+
+        builder.Property(record => record.ClosureReason)
+            .HasColumnName("closure_reason")
+            .HasColumnType("integer");
     }
 }

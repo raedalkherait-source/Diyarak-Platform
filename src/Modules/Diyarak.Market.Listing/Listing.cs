@@ -64,6 +64,13 @@ public sealed class Listing : AggregateRoot<Guid>
 
     public ListingContactOptions? Contact { get; private set; }
 
+    public ListingClosureReason? ClosureReason { get; private set; }
+
+    /// <summary>Publication data and photos can change in every status except <see cref="ListingStatus.Closed"/>.</summary>
+    public bool IsEditable => Status != ListingStatus.Closed;
+
+    public bool IsPubliclyVisible => Status == ListingStatus.Published;
+
     public static Listing Restore(
         Guid id,
         Guid publisherUserId,
@@ -74,7 +81,7 @@ public sealed class Listing : AggregateRoot<Guid>
     public void SetContext(ListingContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        EnsureDraftForEditing();
+        EnsureEditable();
 
         Context = context;
     }
@@ -82,7 +89,7 @@ public sealed class Listing : AggregateRoot<Guid>
     public void SetHeadline(ListingHeadline headline)
     {
         ArgumentNullException.ThrowIfNull(headline);
-        EnsureDraftForEditing();
+        EnsureEditable();
 
         Headline = headline;
     }
@@ -90,7 +97,7 @@ public sealed class Listing : AggregateRoot<Guid>
     public void SetPrice(ListingPrice price)
     {
         ArgumentNullException.ThrowIfNull(price);
-        EnsureDraftForEditing();
+        EnsureEditable();
 
         Price = price;
     }
@@ -98,14 +105,14 @@ public sealed class Listing : AggregateRoot<Guid>
     public void SetAvailableFromDate(ListingAvailableFromDate availableFromDate)
     {
         ArgumentNullException.ThrowIfNull(availableFromDate);
-        EnsureDraftForEditing();
+        EnsureEditable();
 
         AvailableFromDate = availableFromDate;
     }
 
     public void ClearAvailableFromDate()
     {
-        EnsureDraftForEditing();
+        EnsureEditable();
 
         AvailableFromDate = null;
     }
@@ -113,14 +120,14 @@ public sealed class Listing : AggregateRoot<Guid>
     public void SetContact(ListingContactOptions contact)
     {
         ArgumentNullException.ThrowIfNull(contact);
-        EnsureDraftForEditing();
+        EnsureEditable();
 
         Contact = contact;
     }
 
     public void ClearContact()
     {
-        EnsureDraftForEditing();
+        EnsureEditable();
 
         Contact = null;
     }
@@ -138,10 +145,51 @@ public sealed class Listing : AggregateRoot<Guid>
         Status = ListingStatus.Published;
     }
 
-    private void EnsureDraftForEditing()
+    /// <summary>Hides a Published listing temporarily.</summary>
+    public void Pause()
     {
-        if (Status != ListingStatus.Draft)
+        if (Status != ListingStatus.Published)
             throw new InvalidOperationException(
-                "Only a Draft listing can be edited.");
+                "Only a Published listing can be paused.");
+
+        Status = ListingStatus.Paused;
+    }
+
+    /// <summary>Makes a Paused listing public again.</summary>
+    public void Resume()
+    {
+        if (Status != ListingStatus.Paused)
+            throw new InvalidOperationException(
+                "Only a Paused listing can be resumed.");
+
+        Status = ListingStatus.Published;
+    }
+
+    /// <summary>Ends a Published or Paused listing permanently.</summary>
+    public void Close(ListingClosureReason reason)
+    {
+        if (!Enum.IsDefined(reason))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(reason),
+                reason,
+                "Unsupported closure reason.");
+        }
+
+        if (Status is not (ListingStatus.Published or ListingStatus.Paused))
+            throw new InvalidOperationException(
+                "Only a Published or Paused listing can be closed.");
+
+        Status = ListingStatus.Closed;
+        ClosureReason = reason;
+    }
+
+    private void EnsureEditable()
+    {
+        // Setters never clear required publication data, so editing a Published or Paused
+        // listing cannot make it unready for publication.
+        if (!IsEditable)
+            throw new InvalidOperationException(
+                "A Closed listing cannot be edited.");
     }
 }

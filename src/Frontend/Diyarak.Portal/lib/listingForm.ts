@@ -142,3 +142,49 @@ export function parseListingForm(form: FormData): ParseResult {
     },
   };
 }
+
+export interface ListingEdit {
+  context: { publishingRole: string; transactionIntent: string };
+  headline: string;
+  price: ListingDraft["listing"]["price"];
+  contact: { allowCalls: boolean; allowWhatsApp: boolean } | null;
+}
+
+export type EditParseResult =
+  | { ok: true; edit: ListingEdit; values: FormValues }
+  | { ok: false; errors: Record<string, string>; values: FormValues };
+
+/** Validates the edit form for an existing listing (offer, headline, price, contact). */
+export function parseListingEditForm(form: FormData): EditParseResult {
+  const values = readValues(form);
+  const v = (name: string) => values[name] as string;
+  const errors: Record<string, string> = {};
+
+  if (!oneOf(v("transactionIntent"), transactionIntentLabels)) errors.transactionIntent = "اختر نوع العرض.";
+  if (!oneOf(v("publishingRole"), publishingRoleLabels)) errors.publishingRole = "اختر صفة المعلن.";
+  if (v("headline").length < 5 || v("headline").length > 120) errors.headline = "العنوان بين 5 و 120 حرفاً.";
+
+  let price: ListingEdit["price"] = { isOnRequest: true };
+  if (v("priceMode") !== "onRequest") {
+    const amount = decimal(v("priceAmount"), 1, 1e13);
+    if (amount === null || amount === "invalid") errors.priceAmount = "أدخل السعر بالأرقام.";
+    if (!["USD", "SYP"].includes(v("priceCurrency"))) errors.priceCurrency = "اختر العملة.";
+    if (typeof amount === "number") price = { isOnRequest: false, amount, currency: v("priceCurrency") };
+  }
+
+  const allowCalls = v("allowCalls") === "on";
+  const allowWhatsApp = v("allowWhatsApp") === "on";
+
+  if (Object.keys(errors).length > 0) return { ok: false, errors, values };
+
+  return {
+    ok: true,
+    values,
+    edit: {
+      context: { publishingRole: v("publishingRole"), transactionIntent: v("transactionIntent") },
+      headline: v("headline"),
+      price,
+      contact: allowCalls || allowWhatsApp ? { allowCalls, allowWhatsApp } : null,
+    },
+  };
+}

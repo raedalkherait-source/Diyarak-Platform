@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { deletePhoto } from "@/app/my/actions";
+import { changeListingStatus, deletePhoto } from "@/app/my/actions";
+import { EditListingForm } from "@/components/EditListingForm";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { PublishButton } from "@/components/PublishButton";
 import { isListingId } from "@/lib/contact";
 import { formatPrice } from "@/lib/format";
 import { label, publishingRoleLabels, transactionIntentLabels } from "@/lib/labels";
 import { managementFetch, type ManagementListing, type ManagementPhoto } from "@/lib/managementApi";
+import { closureReasonLabels, listingStatusLabels } from "@/lib/status";
 
 export const metadata: Metadata = { title: "إدارة الإعلان", robots: { index: false } };
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ notice?: string }> };
 
-const notices: Record<string, string> = {
-  created: "تم حفظ الإعلان كمسودة. أضف الصور ثم انشره.",
-  "contact-unverified": "تم حفظ الإعلان، لكن لم نتمكن من تفعيل التواصل لأن حسابك بلا رقم موثّق.",
+const notices: Record<string, [string, "success" | "form-error"]> = {
+  created: ["تم حفظ الإعلان كمسودة. أضف الصور ثم انشره.", "success"],
+  "contact-unverified": ["تم حفظ الإعلان، لكن لم نتمكن من تفعيل التواصل لأن حسابك بلا رقم موثّق.", "form-error"],
+  updated: ["تم حفظ التعديلات.", "success"],
+  "status-pause": ["تم إيقاف الإعلان مؤقتاً. لن يظهر للزوار حتى تعيد تفعيله.", "success"],
+  "status-resume": ["عاد الإعلان للظهور للزوار.", "success"],
+  "status-close": ["تم إنهاء الإعلان. شكراً لاستخدامك ديارك.", "success"],
+  "status-failed": ["تعذر تغيير حالة الإعلان. حدّث الصفحة وحاول مجدداً.", "form-error"],
 };
 
 export default async function ManageListingPage({ params, searchParams }: Props) {
@@ -29,15 +36,19 @@ export default async function ManageListingPage({ params, searchParams }: Props)
   const photos = await managementFetch<{ items: ManagementPhoto[] }>(`/api/market/listings/${id}/photos`);
   const items = photos.ok ? photos.value.items : [];
   const value = listing.value;
-  const isDraft = value.status === "Draft";
+  const editable = value.status !== "Closed";
+  const status = changeListingStatus.bind(null, id);
+  const shownNotice = notice ? notices[notice] : undefined;
 
   return (
     <div className="container section narrow">
       <Link href="/my" className="notice">→ إعلاناتي</Link>
-      {notice && notices[notice] ? <p className="success" role="status">{notices[notice]}</p> : null}
+      {shownNotice ? <p className={shownNotice[1]} role="status">{shownNotice[0]}</p> : null}
 
       <div className="panel">
-        <span className={`status status-${value.status.toLowerCase()}`}>{isDraft ? "مسودة" : "منشور"}</span>
+        <span className={`status status-${value.status.toLowerCase()}`}>
+          {value.closureReason ? label(closureReasonLabels, value.closureReason) : label(listingStatusLabels, value.status)}
+        </span>
         <h1>{value.headline ?? "إعلان بدون عنوان"}</h1>
         <p className="notice">
           {[
@@ -48,14 +59,45 @@ export default async function ManageListingPage({ params, searchParams }: Props)
             .filter(Boolean)
             .join(" · ")}
         </p>
-        <p className="notice">
-          التواصل:{" "}
-          {value.contact
-            ? [value.contact.allowCalls ? "اتصال" : "", value.contact.allowWhatsApp ? "واتساب" : ""].filter(Boolean).join(" و")
-            : "غير مفعّل"}
-        </p>
-        {!isDraft ? <Link className="button secondary" href={`/listings/${id}`}>عرض الصفحة العامة</Link> : null}
+        {value.status === "Published" ? <Link className="button secondary" href={`/listings/${id}`}>عرض الصفحة العامة</Link> : null}
       </div>
+
+      {value.status === "Published" || value.status === "Paused" ? (
+        <section className="panel">
+          <h2>حالة الإعلان</h2>
+          <div className="toolbar">
+            {value.status === "Published" ? (
+              <form action={status}>
+                <input type="hidden" name="action" value="pause" />
+                <button className="button secondary" type="submit">إيقاف مؤقت</button>
+              </form>
+            ) : (
+              <form action={status}>
+                <input type="hidden" name="action" value="resume" />
+                <button className="button" type="submit">إعادة التفعيل</button>
+              </form>
+            )}
+          </div>
+          <details className="close-listing">
+            <summary>إنهاء الإعلان نهائياً…</summary>
+            <p className="notice">لن يظهر الإعلان للزوار ولن تتمكن من تعديله بعد الإنهاء.</p>
+            <form action={status} className="toolbar">
+              <input type="hidden" name="action" value="close" />
+              <button className="button" type="submit" name="reason" value={value.context?.transactionIntent === "Sell" ? "Sold" : "Rented"}>
+                {value.context?.transactionIntent === "Sell" ? "تم البيع" : "تم التأجير"}
+              </button>
+              <button className="button secondary" type="submit" name="reason" value="Withdrawn">سحب الإعلان</button>
+            </form>
+          </details>
+        </section>
+      ) : null}
+
+      {editable && value.status !== "Draft" ? (
+        <section className="panel">
+          <h2>تعديل الإعلان</h2>
+          <EditListingForm listing={value} />
+        </section>
+      ) : null}
 
       <section className="panel">
         <h2>الصور ({items.length})</h2>
@@ -66,7 +108,7 @@ export default async function ManageListingPage({ params, searchParams }: Props)
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/my/photo/${id}/${photo.photoId}`} alt={`صورة ${photo.position + 1}`} />
                 {photo.position === 0 ? <span className="badge">الغلاف</span> : null}
-                {isDraft ? (
+                {editable ? (
                   <form action={deletePhoto.bind(null, id, photo.photoId)}>
                     <button className="photo-delete" type="submit" aria-label={`حذف الصورة ${photo.position + 1}`}>×</button>
                   </form>
@@ -77,10 +119,10 @@ export default async function ManageListingPage({ params, searchParams }: Props)
         ) : (
           <p className="notice">لا توجد صور بعد.</p>
         )}
-        {isDraft ? <PhotoUploader listingId={id} remaining={30 - items.length} /> : null}
+        {editable ? <PhotoUploader listingId={id} remaining={30 - items.length} /> : null}
       </section>
 
-      {isDraft ? (
+      {value.status === "Draft" ? (
         <section className="panel">
           <h2>النشر</h2>
           <PublishButton listingId={id} version={value.version} photoCount={items.length} />

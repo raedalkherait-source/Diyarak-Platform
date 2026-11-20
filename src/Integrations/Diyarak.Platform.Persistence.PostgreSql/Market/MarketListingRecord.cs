@@ -28,6 +28,8 @@ internal sealed class MarketListingRecord
 
     public DateOnly? AvailableFromDate { get; set; }
 
+    public int? ClosureReason { get; set; }
+
     public bool? ContactAllowCalls { get; set; }
 
     public bool? ContactAllowWhatsApp { get; set; }

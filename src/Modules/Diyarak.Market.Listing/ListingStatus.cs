@@ -4,4 +4,10 @@ public enum ListingStatus
 {
     Draft = 1,
     Published = 2,
+
+    /// <summary>Temporarily hidden by the publisher; can be resumed.</summary>
+    Paused = 3,
+
+    /// <summary>Permanently ended (sold, rented or withdrawn); read-only.</summary>
+    Closed = 4,
 }

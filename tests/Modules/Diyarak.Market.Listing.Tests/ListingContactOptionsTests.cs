@@ -25,7 +25,7 @@ public sealed class ListingContactOptionsTests
     }
 
     [Fact]
-    public void Contact_can_be_set_and_cleared_only_while_draft()
+    public void Contact_can_be_changed_until_listing_is_closed()
     {
         Listing listing = CreateReadyListing();
 
@@ -35,8 +35,9 @@ public sealed class ListingContactOptionsTests
         listing.ClearContact();
         Assert.Null(listing.Contact);
 
-        listing.SetContact(new ListingContactOptions(false, true));
         listing.Publish();
+        listing.SetContact(new ListingContactOptions(false, true));
+        listing.Close(ListingClosureReason.Rented);
 
         Assert.Throws<InvalidOperationException>(() => listing.SetContact(new ListingContactOptions(true, false)));
         Assert.Throws<InvalidOperationException>(() => listing.ClearContact());

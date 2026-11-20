@@ -1,4 +1,3 @@
-using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
 
@@ -69,7 +68,7 @@ public sealed class UpdateListingUseCase
                         UpdateListingErrors.ConcurrentModification);
                 }
 
-                if (listing.Status != ListingStatus.Draft)
+                if (!listing.IsEditable)
                 {
                     return Result.Failure<long>(
                         UpdateListingErrors.CannotEdit);

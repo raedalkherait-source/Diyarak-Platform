@@ -36,6 +36,9 @@ internal static class MarketListingRecordMapper
             PriceCurrency = knownPrice?.Currency.Code,
             AvailableFromDate =
                 listing.AvailableFromDate?.Value,
+            ClosureReason = listing.ClosureReason is { } closureReason
+                ? (int)closureReason
+                : null,
             ContactAllowCalls = listing.Contact?.AllowCalls,
             ContactAllowWhatsApp = listing.Contact?.AllowWhatsApp,
         };
@@ -86,8 +89,26 @@ internal static class MarketListingRecordMapper
             throw new InvalidOperationException(
                 "Persisted Listing status is unsupported.");
 
-        if (status == ListingStatus.Published)
+        // Replay the lifecycle so the aggregate enforces the same invariants on rehydration.
+        if (status is ListingStatus.Published or ListingStatus.Paused or ListingStatus.Closed)
             listing.Publish();
+
+        if (status == ListingStatus.Paused)
+            listing.Pause();
+
+        if (status == ListingStatus.Closed)
+        {
+            if (record.ClosureReason is not { } closureReason)
+                throw new InvalidOperationException(
+                    "A persisted Closed Listing must contain a closure reason.");
+
+            listing.Close((ListingClosureReason)closureReason);
+        }
+        else if (record.ClosureReason is not null)
+        {
+            throw new InvalidOperationException(
+                "Only a persisted Closed Listing may contain a closure reason.");
+        }
 
         return listing;
     }

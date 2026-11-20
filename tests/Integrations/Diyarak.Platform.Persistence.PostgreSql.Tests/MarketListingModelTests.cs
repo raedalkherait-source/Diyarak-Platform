@@ -27,6 +27,7 @@ public sealed class MarketListingModelTests
         string[] expectedProperties =
         [
             "AvailableFromDate",
+            "ClosureReason",
             "ContactAllowCalls",
             "ContactAllowWhatsApp",
             "Headline",

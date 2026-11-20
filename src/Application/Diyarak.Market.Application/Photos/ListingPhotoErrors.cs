@@ -23,7 +23,7 @@ public static class ListingPhotoErrors
     public static Error ListingNotEditable { get; } =
         Error.Conflict(
             "market.listing_photo.listing_not_editable",
-            "Photos can only be changed while the Listing is a Draft.");
+            "Photos of a Closed Listing cannot be changed.");
 
     public static Error LimitReached { get; } =
         Error.Conflict(
