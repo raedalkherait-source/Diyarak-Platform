@@ -138,3 +138,16 @@ Apply migrations, start the API, then:
 
 The `DevelopmentLog` sender is refused outside the Development environment. Production needs a
 real SMS/WhatsApp `IOtpSender` adapter.
+
+## Listing photo storage
+
+Listing photos (ADR-0053) are stored on the local file system under
+`<API content root>/App_Data/media` unless `Media:FileSystem:RootPath` is set. The directory is
+git-ignored. Upload a photo for a Draft Listing you own with the raw image as the request body:
+
+```bash
+curl -X POST "http://localhost:5000/api/market/listings/<listingId>/photos" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: image/jpeg" \
+  --data-binary @photo.jpg
+```
