@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Publisher dashboard in the portal: phone sign-in with an httpOnly session cookie, "my listings",
+  a one-page listing form with Arabic validation, photo upload and deletion, and publishing
+  (ADR-0056).
 - Contact the publisher by phone call or WhatsApp using the publisher's verified number, revealed
   on demand with its own rate limit; portal contact button with a pre-filled WhatsApp message
   (ADR-0055).
