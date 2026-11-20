@@ -255,6 +255,19 @@ img { max-width: 100%; display: block; }
 .upload-label { display: inline-block; position: relative; overflow: hidden; }
 .upload-label input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .publish { display: grid; gap: 8px; }
+.status-suspended { background: #fef3f2; color: #b42318; }
+.report { margin-block-start: 16px; }
+.report summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+.report-form { display: grid; gap: 10px; margin-block-start: 10px; max-width: 420px; }
+.report-form textarea, .field textarea { font: inherit; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); color: var(--text); }
+.moderation-item { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; }
+.moderation-item h3 { margin: 6px 0 2px; }
+.report-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
+.report-list li { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+.report-list p { margin: 4px 0 0; overflow-wrap: anywhere; }
+.moderation-actions { display: grid; gap: 10px; align-content: start; }
+.suspend-form { display: grid; gap: 8px; }
+@media (max-width: 700px) { .moderation-item { grid-template-columns: 1fr; } }
 
 @media (max-width: 900px) {
   .mobile-only { display: block; }

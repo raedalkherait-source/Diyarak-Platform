@@ -163,3 +163,14 @@ export ReverseProxy__KnownProxies__1=::1
 ```
 
 Only list addresses of proxies you operate. Forwarded headers from any other address are ignored.
+
+## Moderators
+
+Moderation (ADR-0058) is available to users whose verified phone number is listed in
+configuration:
+
+```bash
+export Moderation__ModeratorPhoneNumbers__0=+963912345678
+```
+
+Sign in to the portal with that number, then open `/admin`.

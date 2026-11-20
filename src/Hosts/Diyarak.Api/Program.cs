@@ -1,6 +1,7 @@
 using Diyarak.Api.Authentication;
 using Diyarak.Api.Authentication.Phone;
 using Diyarak.Api.Market;
+using Diyarak.Api.Moderation;
 using Diyarak.Api.RateLimiting;
 using Diyarak.Market.Application;
 using Diyarak.Market.Application.Photos;
@@ -117,6 +118,7 @@ builder.Services.AddScoped<ListPublishedListingsUseCase>();
 builder.Services.AddScoped<UpdateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
 builder.Services.AddScoped<ChangeListingStatusUseCase>();
+builder.Services.AddModeration(builder.Configuration);
 
 builder.Services.TryAddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton<IListingPhotoStorage>(
@@ -292,6 +294,7 @@ app.MapGet(
 app.MapPublicMarketListingEndpoints();
 app.MapPublicMarketListingPhotoEndpoints();
 app.MapPublicListingContactEndpoints();
+app.MapPublicListingReportEndpoints();
 
 if (phoneAuthentication.Enabled)
 {
@@ -305,6 +308,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketPropertyEndpoints();
     app.MapMarketListingEndpoints();
     app.MapMarketListingPhotoManagementEndpoints();
+    app.MapModerationEndpoints();
 }
 
 app.Run();

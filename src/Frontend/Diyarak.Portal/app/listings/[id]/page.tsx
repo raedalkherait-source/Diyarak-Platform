@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContactButton } from "@/components/ContactButton";
 import { Gallery } from "@/components/Gallery";
+import { ReportListing } from "@/components/ReportListing";
 import { getListing } from "@/lib/api";
 import type { PublicListing } from "@/lib/types";
 import { formatArea, formatFloor, formatLocation, formatNumber, formatPrice, photoSrc } from "@/lib/format";
@@ -99,6 +100,8 @@ export default async function ListingPage({ params }: Props) {
               ))}
             </dl>
           </section>
+
+          <ReportListing listingId={listing.listingId} />
 
           {property.features.length > 0 ? (
             <section className="panel">

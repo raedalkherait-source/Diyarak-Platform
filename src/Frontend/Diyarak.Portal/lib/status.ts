@@ -3,6 +3,7 @@ export const listingStatusLabels: Record<string, string> = {
   Published: "منشور",
   Paused: "متوقف مؤقتاً",
   Closed: "منتهي",
+  Suspended: "موقوف من الإدارة",
 };
 
 export const closureReasonLabels: Record<string, string> = {

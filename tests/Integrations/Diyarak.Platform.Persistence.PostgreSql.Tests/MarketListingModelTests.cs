@@ -28,6 +28,7 @@ public sealed class MarketListingModelTests
         [
             "AvailableFromDate",
             "ClosureReason",
+            "ModerationNote",
             "ContactAllowCalls",
             "ContactAllowWhatsApp",
             "Headline",

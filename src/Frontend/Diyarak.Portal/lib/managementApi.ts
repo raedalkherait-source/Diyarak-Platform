@@ -9,7 +9,7 @@ const apiUrl = (process.env.DIYARAK_API_URL ?? "http://localhost:5080").replace(
 export interface ManagementListing {
   listingId: string;
   version: number;
-  status: "Draft" | "Published" | "Paused" | "Closed";
+  status: "Draft" | "Published" | "Paused" | "Closed" | "Suspended";
   subject: { subjectId: string; subjectType: string };
   context: { publishingRole: string; transactionIntent: string } | null;
   headline: string | null;
@@ -17,6 +17,7 @@ export interface ManagementListing {
   availableFromDate: string | null;
   contact: { allowCalls: boolean; allowWhatsApp: boolean } | null;
   closureReason: "Sold" | "Rented" | "Withdrawn" | null;
+  moderationNote: string | null;
 }
 
 export interface ManagementPhoto {
@@ -38,7 +39,7 @@ async function forwardedHeaders(): Promise<Record<string, string>> {
 /** Calls an authenticated management route. Missing or expired sessions redirect to login. */
 export async function managementFetch<T>(
   path: string,
-  init: { method?: string; json?: unknown; body?: BodyInit; contentType?: string } = {},
+  init: { method?: string; json?: unknown; body?: BodyInit; contentType?: string; allowForbidden?: boolean } = {},
 ): Promise<ApiResult<T>> {
   const token = await getSessionToken();
   if (!token) redirect("/login");
@@ -64,6 +65,7 @@ export async function managementFetch<T>(
     cache: "no-store",
   });
 
+  if (response.status === 403 && init.allowForbidden) return { ok: false, status: 403, code: null };
   if (response.status === 401 || response.status === 403) redirect("/login?expired=1");
 
   if (!response.ok) {

@@ -21,6 +21,9 @@ internal sealed class MarketListingRecordConfiguration
                 tableBuilder.HasCheckConstraint(
                     "ck_market_listings_closure_reason",
                     "(status = 4) = (closure_reason IS NOT NULL)");
+                tableBuilder.HasCheckConstraint(
+                    "ck_market_listings_moderation_note",
+                    "(status = 5) = (moderation_note IS NOT NULL)");
             });
 
         builder.HasKey(record => record.Id);
@@ -110,5 +113,9 @@ internal sealed class MarketListingRecordConfiguration
         builder.Property(record => record.ClosureReason)
             .HasColumnName("closure_reason")
             .HasColumnType("integer");
+
+        builder.Property(record => record.ModerationNote)
+            .HasColumnName("moderation_note")
+            .HasColumnType("text");
     }
 }

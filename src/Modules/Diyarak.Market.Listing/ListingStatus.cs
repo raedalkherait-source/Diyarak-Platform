@@ -10,4 +10,7 @@ public enum ListingStatus
 
     /// <summary>Permanently ended (sold, rented or withdrawn); read-only.</summary>
     Closed = 4,
+
+    /// <summary>Hidden by a moderator; the publisher may edit or withdraw it but not resume it.</summary>
+    Suspended = 5,
 }

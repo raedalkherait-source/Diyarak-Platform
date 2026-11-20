@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Listing reports by visitors, a moderation queue, and moderator suspend, reinstate and dismiss
+  actions; `/admin` in the portal; moderators configured by verified phone number (ADR-0058).
 - Listing lifecycle after publication: edit price, headline, contact and photos; pause and resume;
   close as sold, rented or withdrawn (ADR-0057).
 - Publisher dashboard in the portal: phone sign-in with an httpOnly session cookie, "my listings",

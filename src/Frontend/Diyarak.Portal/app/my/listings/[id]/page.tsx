@@ -62,6 +62,18 @@ export default async function ManageListingPage({ params, searchParams }: Props)
         {value.status === "Published" ? <Link className="button secondary" href={`/listings/${id}`}>عرض الصفحة العامة</Link> : null}
       </div>
 
+      {value.status === "Suspended" ? (
+        <section className="panel">
+          <h2>أوقفت الإدارة هذا الإعلان</h2>
+          <p className="form-error">{value.moderationNote}</p>
+          <p className="notice">يمكنك تعديل الإعلان لتصحيح المشكلة ثم التواصل مع فريق ديارك، أو سحبه.</p>
+          <form action={status} className="toolbar">
+            <input type="hidden" name="action" value="close" />
+            <button className="button secondary" type="submit" name="reason" value="Withdrawn">سحب الإعلان</button>
+          </form>
+        </section>
+      ) : null}
+
       {value.status === "Published" || value.status === "Paused" ? (
         <section className="panel">
           <h2>حالة الإعلان</h2>

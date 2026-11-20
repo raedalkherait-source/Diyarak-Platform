@@ -12,13 +12,16 @@ import {
   publishingRoleLabels,
   transactionIntentLabels,
 } from "@/lib/labels";
+import { reportReasonLabels } from "@/lib/moderation";
+import { closureReasonLabels, listingStatusLabels } from "@/lib/status";
 
 const srcRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 /** Reads member names of a C# enum so labels cannot drift from the backend contract. */
 function csharpEnumMembers(relativePath: string): string[] {
   const source = readFileSync(srcRoot + relativePath, "utf8");
-  const body = source.slice(source.indexOf("{", source.indexOf("enum ")) + 1, source.lastIndexOf("}"));
+  const start = source.indexOf("{", source.indexOf("enum ")) + 1;
+  const body = source.slice(start, source.indexOf("}", start));
   return body
     .replace(/\/\/\/.*$/gm, "")
     .split(",")
@@ -35,6 +38,9 @@ const cases: Array<[string, Record<string, string>, string]> = [
   ["finishing levels", finishingLevelLabels, "Modules/Diyarak.Market.Property/FinishingLevel.cs"],
   ["transaction intents", transactionIntentLabels, "Modules/Diyarak.Market.Listing/TransactionIntent.cs"],
   ["publishing roles", publishingRoleLabels, "Modules/Diyarak.Market.Listing/PublishingRole.cs"],
+  ["listing statuses", listingStatusLabels, "Modules/Diyarak.Market.Listing/ListingStatus.cs"],
+  ["closure reasons", closureReasonLabels, "Modules/Diyarak.Market.Listing/ListingClosureReason.cs"],
+  ["report reasons", reportReasonLabels, "Modules/Diyarak.Market.Listing/ListingReport.cs"],
 ];
 
 describe("Arabic labels", () => {

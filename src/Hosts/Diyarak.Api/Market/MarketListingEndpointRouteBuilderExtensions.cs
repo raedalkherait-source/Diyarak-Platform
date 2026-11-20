@@ -335,7 +335,8 @@ public static class MarketListingEndpointRouteBuilderExtensions
             listing.Contact is { } contact
                 ? new MarketListingContactOptionsResponse(contact.AllowCalls, contact.AllowWhatsApp)
                 : null,
-            listing.ClosureReason?.ToString());
+            listing.ClosureReason?.ToString(),
+            listing.ModerationNote);
     }
 
     private static Guid GetRequiredActorUserId(
@@ -407,7 +408,8 @@ public static class MarketListingEndpointRouteBuilderExtensions
         MarketListingPriceResponse? Price,
         DateOnly? AvailableFromDate,
         MarketListingContactOptionsResponse? Contact,
-        string? ClosureReason);
+        string? ClosureReason,
+        string? ModerationNote);
 
     internal sealed record CloseMarketListingRequest(
         string? Reason);

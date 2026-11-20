@@ -30,6 +30,8 @@ internal sealed class MarketListingRecord
 
     public int? ClosureReason { get; set; }
 
+    public string? ModerationNote { get; set; }
+
     public bool? ContactAllowCalls { get; set; }
 
     public bool? ContactAllowWhatsApp { get; set; }
