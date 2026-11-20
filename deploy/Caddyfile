@@ -19,6 +19,11 @@
 	reverse_proxy portal:3000
 }
 
+# www is an alias: redirect permanently to the main domain.
+www.{$PORTAL_DOMAIN} {
+	redir https://{$PORTAL_DOMAIN}{uri} permanent
+}
+
 {$API_DOMAIN} {
 	import common
 	reverse_proxy api:8080
