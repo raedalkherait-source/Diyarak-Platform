@@ -171,6 +171,30 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingFavoriteRecord", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.HasKey("UserId", "ListingId")
+                        .HasName("pk_market_listing_favorites");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_market_listing_favorites_user_id_created_at");
+
+                    b.ToTable("listing_favorites", "market");
+                });
+
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingPhotoRecord", b =>
                 {
                     b.Property<Guid>("Id")

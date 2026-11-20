@@ -88,6 +88,10 @@ public static class PersistenceServiceCollectionExtensions
             provider => provider.GetRequiredService<PostgreSqlListingReportRepository>());
 
         services.AddScoped<
+            Diyarak.Market.Application.Favorites.IListingFavoriteStore,
+            PostgreSqlListingFavoriteStore>();
+
+        services.AddScoped<
             IDraftListingDeletionStore,
             PostgreSqlDraftListingDeletionStore>();
 
