@@ -43,7 +43,7 @@ public sealed class PropertyAddressTests
     }
 
     [Fact]
-    public void Constructor_rejects_blank_required_components()
+    public void Constructor_rejects_blank_supplied_components()
     {
         Assert.Throws<ArgumentException>(
             () => new PropertyAddress("", "12A", "12345", "Example City"));
@@ -56,5 +56,43 @@ public sealed class PropertyAddressTests
 
         Assert.Throws<ArgumentException>(
             () => new PropertyAddress("Example Street", "12A", "12345", " "));
+    }
+
+    [Fact]
+    public void Constructor_accepts_syrian_address_without_street_or_postal_code()
+    {
+        var address = new PropertyAddress(
+            street: null,
+            houseNumber: null,
+            postalCode: null,
+            city: "دمشق",
+            governorate: SyrianGovernorate.Damascus,
+            district: "المزة");
+
+        Assert.Equal(SyrianGovernorate.Damascus, address.Governorate);
+        Assert.Equal("دمشق", address.City);
+        Assert.Equal("المزة", address.District);
+        Assert.Null(address.Street);
+        Assert.Null(address.HouseNumber);
+        Assert.Null(address.PostalCode);
+    }
+
+    [Fact]
+    public void Constructor_rejects_blank_district_and_undefined_governorate()
+    {
+        Assert.Throws<ArgumentException>(
+            () => new PropertyAddress(null, null, null, "Aleppo", district: " "));
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new PropertyAddress(null, null, null, "Aleppo", governorate: (SyrianGovernorate)99));
+    }
+
+    [Fact]
+    public void Addresses_with_different_district_are_not_equal()
+    {
+        var first = new PropertyAddress(null, null, null, "Damascus", district: "Mezzeh");
+        var second = new PropertyAddress(null, null, null, "Damascus", district: "Malki");
+
+        Assert.NotEqual(first, second);
     }
 }

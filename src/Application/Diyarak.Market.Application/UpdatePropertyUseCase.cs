@@ -70,7 +70,11 @@ public sealed class UpdatePropertyUseCase
                 replacement.CommercialSubtype,
                 replacement.SalesArea,
                 replacement.TotalArea,
-                replacement.ParkingSpaceCount);
+                replacement.ParkingSpaceCount,
+                replacement.LegalTitleType,
+                replacement.FinishingLevel,
+                replacement.FloorNumber,
+                replacement.BuildingFloorCount);
         }
         catch (ArgumentException)
         {

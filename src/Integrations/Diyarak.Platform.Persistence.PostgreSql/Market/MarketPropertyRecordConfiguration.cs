@@ -50,18 +50,23 @@ internal sealed class MarketPropertyRecordConfiguration
 
         builder.Property(record => record.Street)
             .HasColumnName("street")
-            .HasColumnType("text")
-            .IsRequired();
+            .HasColumnType("text");
 
         builder.Property(record => record.HouseNumber)
             .HasColumnName("house_number")
-            .HasColumnType("text")
-            .IsRequired();
+            .HasColumnType("text");
 
         builder.Property(record => record.PostalCode)
             .HasColumnName("postal_code")
-            .HasColumnType("text")
-            .IsRequired();
+            .HasColumnType("text");
+
+        builder.Property(record => record.Governorate)
+            .HasColumnName("governorate")
+            .HasColumnType("integer");
+
+        builder.Property(record => record.District)
+            .HasColumnName("district")
+            .HasColumnType("text");
 
         builder.Property(record => record.City)
             .HasColumnName("city")
@@ -143,6 +148,22 @@ internal sealed class MarketPropertyRecordConfiguration
 
         builder.Property(record => record.ParkingSpaceCount)
             .HasColumnName("parking_space_count")
+            .HasColumnType("integer");
+
+        builder.Property(record => record.LegalTitleType)
+            .HasColumnName("legal_title_type")
+            .HasColumnType("integer");
+
+        builder.Property(record => record.FinishingLevel)
+            .HasColumnName("finishing_level")
+            .HasColumnType("integer");
+
+        builder.Property(record => record.FloorNumber)
+            .HasColumnName("floor_number")
+            .HasColumnType("integer");
+
+        builder.Property(record => record.BuildingFloorCount)
+            .HasColumnName("building_floor_count")
             .HasColumnType("integer");
     }
 }

@@ -23,11 +23,16 @@ public sealed record PublishedPropertySearchCriteria(
     IReadOnlyCollection<FurnishingQuality>? FurnishingQualities = null,
     IReadOnlyCollection<PropertyFeature>? RequiredFeatures = null,
     PublishedIntegerRange? ConstructionYear = null,
-    PublishedIntegerRange? ParkingSpaceCount = null);
+    PublishedIntegerRange? ParkingSpaceCount = null,
+    IReadOnlyCollection<LegalTitleType>? LegalTitleTypes = null,
+    IReadOnlyCollection<FinishingLevel>? FinishingLevels = null,
+    PublishedIntegerRange? FloorNumber = null);
 
 public sealed record PublishedPropertyLocationSearchCriteria(
     string? City,
-    string? PostalCode);
+    string? PostalCode,
+    IReadOnlyCollection<SyrianGovernorate>? Governorates = null,
+    string? District = null);
 
 public sealed record PublishedAreaSearchCriteria(
     decimal? Minimum,

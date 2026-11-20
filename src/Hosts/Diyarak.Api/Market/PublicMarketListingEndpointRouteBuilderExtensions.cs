@@ -212,6 +212,28 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             postalCode = postalCodeValues[0]!.Trim();
         }
 
+        if (!TryParseRepeatedEnumValues(
+                query,
+                "governorate",
+                out IReadOnlyCollection<Diyarak.Market.Property.SyrianGovernorate>?
+                    governorates))
+        {
+            return Fail(out criteria);
+        }
+
+        string? district = null;
+
+        if (query.TryGetValue("district", out var districtValues))
+        {
+            if (districtValues.Count != 1 ||
+                string.IsNullOrWhiteSpace(districtValues[0]))
+            {
+                return Fail(out criteria);
+            }
+
+            district = districtValues[0]!.Trim();
+        }
+
         decimal? priceMinimum = null;
         decimal? priceMaximum = null;
         Diyarak.Platform.Domain.Primitives.Currency? priceCurrency = null;
@@ -511,11 +533,52 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         {
             return Fail(out criteria);
         }
+        if (!TryParseRepeatedEnumValues(
+                query,
+                "legalTitleType",
+                out IReadOnlyCollection<Diyarak.Market.Property.LegalTitleType>?
+                    legalTitleTypes))
+        {
+            return Fail(out criteria);
+        }
+        if (!TryParseRepeatedEnumValues(
+                query,
+                "finishingLevel",
+                out IReadOnlyCollection<Diyarak.Market.Property.FinishingLevel>?
+                    finishingLevels))
+        {
+            return Fail(out criteria);
+        }
+        if (!TryParseOptionalInteger(
+                query,
+                "floorMin",
+                out int? floorMinimum,
+                out bool hasFloorMinimum) ||
+            !TryParseOptionalInteger(
+                query,
+                "floorMax",
+                out int? floorMaximum,
+                out bool hasFloorMaximum))
+        {
+            return Fail(out criteria);
+        }
+
+        PublishedIntegerRange? floorNumber =
+            hasFloorMinimum || hasFloorMaximum
+                ? new PublishedIntegerRange(
+                    Minimum: floorMinimum,
+                    Maximum: floorMaximum)
+                : null;
         if (transactionIntents is null &&
             categories is null &&
             commercialSubtypes is null &&
             city is null &&
             postalCode is null &&
+            governorates is null &&
+            district is null &&
+            legalTitleTypes is null &&
+            finishingLevels is null &&
+            floorNumber is null &&
             price is null &&
             livingArea is null &&
             rooms is null &&
@@ -530,11 +593,15 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
 
         PublishedPropertyLocationSearchCriteria? location =
             city is null &&
-            postalCode is null
+            postalCode is null &&
+            governorates is null &&
+            district is null
                 ? null
                 : new PublishedPropertyLocationSearchCriteria(
                     City: city,
-                    PostalCode: postalCode);
+                    PostalCode: postalCode,
+                    Governorates: governorates,
+                    District: district);
 
         PublishedPropertySearchCriteria? property =
             categories is null &&
@@ -545,7 +612,10 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             furnishingQualities is null &&
             requiredFeatures is null &&
             constructionYear is null &&
-            parkingSpaceCount is null
+            parkingSpaceCount is null &&
+            legalTitleTypes is null &&
+            finishingLevels is null &&
+            floorNumber is null
                 ? null
                 : new PublishedPropertySearchCriteria(
                     Categories: categories,
@@ -556,7 +626,10 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                     FurnishingQualities: furnishingQualities,
                     RequiredFeatures: requiredFeatures,
                     ConstructionYear: constructionYear,
-                    ParkingSpaceCount: parkingSpaceCount);
+                    ParkingSpaceCount: parkingSpaceCount,
+                    LegalTitleTypes: legalTitleTypes,
+                    FinishingLevels: finishingLevels,
+                    FloorNumber: floorNumber);
 
         criteria =
             new PublishedListingSearchCriteria(
@@ -744,7 +817,9 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             property.Category.ToString(),
             new PublicMarketListingPropertyLocationResponse(
                 property.Address.City,
-                property.Address.PostalCode),
+                property.Address.PostalCode,
+                property.Address.Governorate?.ToString(),
+                property.Address.District),
             livingArea,
             property.TotalRooms,
             property.BedroomCount,
@@ -755,7 +830,11 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 .ToArray(),
             property.ConstructionYear,
             property.CommercialSubtype?.ToString(),
-            property.ParkingSpaceCount);
+            property.ParkingSpaceCount,
+            property.LegalTitleType?.ToString(),
+            property.FinishingLevel?.ToString(),
+            property.FloorNumber,
+            property.BuildingFloorCount);
     }
 
     private static IResult ToProblemDetails(
@@ -855,11 +934,17 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         string[] Features,
         int? ConstructionYear,
         string? CommercialSubtype,
-        int? ParkingSpaceCount);
+        int? ParkingSpaceCount,
+        string? LegalTitleType,
+        string? FinishingLevel,
+        int? FloorNumber,
+        int? BuildingFloorCount);
 
     internal sealed record PublicMarketListingPropertyLocationResponse(
         string City,
-        string PostalCode);
+        string? PostalCode,
+        string? Governorate,
+        string? District);
 
     internal sealed record PublicMarketListingAreaResponse(
         decimal Value,

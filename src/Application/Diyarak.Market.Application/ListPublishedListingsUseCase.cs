@@ -92,6 +92,20 @@ public sealed class ListPublishedListingsUseCase
             return Result.Failure<PublishedListingPage>(
                 ListPublishedListingsErrors.InvalidSearchCriteria);
         }
+        if (criteria?.Property?.FloorNumber is { } floorNumber &&
+            floorNumber.Minimum > floorNumber.Maximum)
+        {
+            return Result.Failure<PublishedListingPage>(
+                ListPublishedListingsErrors.InvalidSearchCriteria);
+        }
+
+        if (criteria?.Property?.Location is { District: not null } districtLocation &&
+            string.IsNullOrWhiteSpace(districtLocation.District))
+        {
+            return Result.Failure<PublishedListingPage>(
+                ListPublishedListingsErrors.InvalidSearchCriteria);
+        }
+
         if (criteria?.Property?.ConstructionYear is { } constructionYear &&
             ((constructionYear.Minimum is { } minimumConstructionYear &&
               minimumConstructionYear < 1) ||

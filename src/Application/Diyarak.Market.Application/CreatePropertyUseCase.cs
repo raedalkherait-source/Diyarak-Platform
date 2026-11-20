@@ -52,7 +52,11 @@ public sealed class CreatePropertyUseCase
                 command.SalesArea,
                 command.TotalArea,
                 command.ParkingSpaceCount,
-                actorUserId);
+                actorUserId,
+                command.LegalTitleType,
+                command.FinishingLevel,
+                command.FloorNumber,
+                command.BuildingFloorCount);
         }
         catch (ArgumentException)
         {

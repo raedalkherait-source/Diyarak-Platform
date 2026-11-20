@@ -17,6 +17,10 @@ internal static class MarketPropertyRecordMapper
             OwnerUserId = property.OwnerUserId,
             Version = property.Version,
             Category = (int)property.Category,
+            Governorate = property.Address.Governorate is { } governorate
+                ? (int)governorate
+                : null,
+            District = property.Address.District,
             Street = property.Address.Street,
             HouseNumber = property.Address.HouseNumber,
             PostalCode = property.Address.PostalCode,
@@ -56,6 +60,14 @@ internal static class MarketPropertyRecordMapper
                 ? (int)totalArea.Unit
                 : null,
             ParkingSpaceCount = property.ParkingSpaceCount,
+            LegalTitleType = property.LegalTitleType is { } legalTitleType
+                ? (int)legalTitleType
+                : null,
+            FinishingLevel = property.FinishingLevel is { } finishingLevel
+                ? (int)finishingLevel
+                : null,
+            FloorNumber = property.FloorNumber,
+            BuildingFloorCount = property.BuildingFloorCount,
         };
     }
 
@@ -75,7 +87,11 @@ internal static class MarketPropertyRecordMapper
                 record.HouseNumber,
                 record.PostalCode,
                 record.City,
-                location),
+                location,
+                record.Governorate is { } governorate
+                    ? (SyrianGovernorate)governorate
+                    : null,
+                record.District),
             livingArea: CreateArea(
                 record.LivingAreaValue,
                 record.LivingAreaUnit,
@@ -109,7 +125,15 @@ internal static class MarketPropertyRecordMapper
                 "total area"),
             parkingSpaceCount: record.ParkingSpaceCount,
             ownerUserId: record.OwnerUserId,
-            version: record.Version);
+            version: record.Version,
+            legalTitleType: record.LegalTitleType is { } legalTitleType
+                ? (LegalTitleType)legalTitleType
+                : null,
+            finishingLevel: record.FinishingLevel is { } finishingLevel
+                ? (FinishingLevel)finishingLevel
+                : null,
+            floorNumber: record.FloorNumber,
+            buildingFloorCount: record.BuildingFloorCount);
     }
 
     private static GeoCoordinate? CreateLocation(

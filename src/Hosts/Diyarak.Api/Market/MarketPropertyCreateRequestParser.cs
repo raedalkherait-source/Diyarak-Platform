@@ -2,6 +2,7 @@ using System.Text.Json;
 using Diyarak.Market.Application;
 using Diyarak.Market.Property;
 using Diyarak.Platform.Domain.Primitives;
+using MarketProperty = Diyarak.Market.Property.Property;
 
 namespace Diyarak.Api.Market;
 
@@ -79,7 +80,25 @@ internal static class MarketPropertyCreateRequestParser
                 request,
                 "parkingSpaceCount",
                 out int? parkingSpaceCount,
-                minimum: 0))
+                minimum: 0) ||
+            !TryParseOptionalEnum(
+                request,
+                "legalTitleType",
+                out LegalTitleType? legalTitleType) ||
+            !TryParseOptionalEnum(
+                request,
+                "finishingLevel",
+                out FinishingLevel? finishingLevel) ||
+            !TryParseOptionalInt32(
+                request,
+                "floorNumber",
+                out int? floorNumber,
+                minimum: MarketProperty.MinimumFloorNumber) ||
+            !TryParseOptionalInt32(
+                request,
+                "buildingFloorCount",
+                out int? buildingFloorCount,
+                minimum: 1))
         {
             return false;
         }
@@ -99,7 +118,11 @@ internal static class MarketPropertyCreateRequestParser
             commercialSubtype,
             salesArea,
             totalArea,
-            parkingSpaceCount);
+            parkingSpaceCount,
+            legalTitleType,
+            finishingLevel,
+            floorNumber,
+            buildingFloorCount);
 
         return true;
     }
@@ -111,15 +134,15 @@ internal static class MarketPropertyCreateRequestParser
         address = null;
 
         if (element.ValueKind != JsonValueKind.Object ||
-            !TryGetRequiredString(
+            !TryGetOptionalString(
                 element,
                 "street",
                 out string? street) ||
-            !TryGetRequiredString(
+            !TryGetOptionalString(
                 element,
                 "houseNumber",
                 out string? houseNumber) ||
-            !TryGetRequiredString(
+            !TryGetOptionalString(
                 element,
                 "postalCode",
                 out string? postalCode) ||
@@ -127,6 +150,14 @@ internal static class MarketPropertyCreateRequestParser
                 element,
                 "city",
                 out string? city) ||
+            !TryGetOptionalString(
+                element,
+                "district",
+                out string? district) ||
+            !TryParseOptionalEnum(
+                element,
+                "governorate",
+                out SyrianGovernorate? governorate) ||
             !TryParseOptionalLocation(
                 element,
                 out GeoCoordinate? location))
@@ -137,11 +168,13 @@ internal static class MarketPropertyCreateRequestParser
         try
         {
             address = new PropertyAddress(
-                street!,
-                houseNumber!,
-                postalCode!,
+                street,
+                houseNumber,
+                postalCode,
                 city!,
-                location);
+                location,
+                governorate,
+                district);
             return true;
         }
         catch (ArgumentException)
@@ -303,6 +336,28 @@ internal static class MarketPropertyCreateRequestParser
 
         value = parsed;
         return true;
+    }
+
+    private static bool TryGetOptionalString(
+        JsonElement parent,
+        string propertyName,
+        out string? value)
+    {
+        value = null;
+
+        if (!parent.TryGetProperty(
+                propertyName,
+                out JsonElement element) ||
+            element.ValueKind == JsonValueKind.Null)
+        {
+            return true;
+        }
+
+        if (element.ValueKind != JsonValueKind.String)
+            return false;
+
+        value = element.GetString();
+        return !string.IsNullOrWhiteSpace(value);
     }
 
     private static bool TryGetRequiredString(
