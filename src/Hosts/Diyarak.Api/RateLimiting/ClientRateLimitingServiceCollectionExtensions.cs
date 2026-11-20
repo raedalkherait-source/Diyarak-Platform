@@ -10,6 +10,13 @@ internal static class ClientRateLimitingServiceCollectionExtensions
 
     internal const int DefaultWindowSeconds = 60;
 
+    /// <summary>Stricter per-client policy for endpoints that send paid OTP messages.</summary>
+    internal const string OtpPolicy = "otp";
+
+    internal const int DefaultOtpPermitLimit = 10;
+
+    internal const int DefaultOtpWindowSeconds = 900;
+
     /// <summary>
     /// Registers a global fixed-window limiter partitioned per client IP address so that a
     /// single client cannot exhaust capacity for everyone else. Health probes are exempt.
@@ -46,6 +53,19 @@ internal static class ClientRateLimitingServiceCollectionExtensions
 
         var window = TimeSpan.FromSeconds(windowSeconds);
 
+        int otpPermitLimit =
+            section.GetValue<int?>("Otp:PermitLimit") ?? DefaultOtpPermitLimit;
+        int otpWindowSeconds =
+            section.GetValue<int?>("Otp:WindowSeconds") ?? DefaultOtpWindowSeconds;
+
+        if (otpPermitLimit <= 0 || otpWindowSeconds <= 0)
+        {
+            throw new InvalidOperationException(
+                $"'{SectionName}:Otp' limits must be positive.");
+        }
+
+        var otpWindow = TimeSpan.FromSeconds(otpWindowSeconds);
+
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode =
@@ -64,6 +84,18 @@ internal static class ClientRateLimitingServiceCollectionExtensions
 
                 return ValueTask.CompletedTask;
             };
+
+            options.AddPolicy(
+                OtpPolicy,
+                httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = otpPermitLimit,
+                        Window = otpWindow,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
 
             options.GlobalLimiter =
                 PartitionedRateLimiter.Create<HttpContext, string>(

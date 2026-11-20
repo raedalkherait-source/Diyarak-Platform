@@ -1,4 +1,5 @@
 using Diyarak.Api.Authentication;
+using Diyarak.Api.Authentication.Phone;
 using Diyarak.Api.Market;
 using Diyarak.Api.RateLimiting;
 using Diyarak.Market.Application;
@@ -29,6 +30,11 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDiyarakAuthentication(
     builder.Configuration);
+
+PhoneAuthenticationOptions phoneAuthentication =
+    builder.Services.AddPhoneAuthentication(
+        builder.Configuration,
+        builder.Environment);
 
 builder.Services.AddProblemDetails(options =>
 {
@@ -261,7 +267,13 @@ app.MapGet(
 
 app.MapPublicMarketListingEndpoints();
 
-if (builder.Configuration.GetValue<bool>(
+if (phoneAuthentication.Enabled)
+{
+    app.MapPhoneAuthenticationEndpoints();
+}
+
+if (phoneAuthentication.Enabled ||
+    builder.Configuration.GetValue<bool>(
         $"{OidcAuthenticationOptions.SectionName}:Enabled"))
 {
     app.MapMarketPropertyEndpoints();

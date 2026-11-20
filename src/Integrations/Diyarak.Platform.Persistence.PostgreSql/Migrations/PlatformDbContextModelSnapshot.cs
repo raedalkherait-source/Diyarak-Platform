@@ -48,6 +48,81 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Identity.PhoneAccountRecord", b =>
+                {
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("phone_number");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("PhoneNumber")
+                        .HasName("pk_phone_accounts");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_phone_accounts_user_id");
+
+                    b.ToTable("phone_accounts", "identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_phone_accounts_user_id_non_empty", "user_id <> '00000000-0000-0000-0000-000000000000'::uuid");
+                        });
+                });
+
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Identity.PhoneVerificationChallengeRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .IsConcurrencyToken()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<int>("FailedAttempts")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("failed_attempts");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("issued_at");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("phone_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_phone_verification_challenges");
+
+                    b.HasIndex("PhoneNumber", "IssuedAt")
+                        .HasDatabaseName("ix_phone_verification_challenges_phone_number_issued_at");
+
+                    b.ToTable("phone_verification_challenges", "identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_phone_verification_challenges_expiry_after_issue", "expires_at > issued_at");
+
+                            t.HasCheckConstraint("ck_phone_verification_challenges_failed_attempts_range", "failed_attempts >= 0 AND failed_attempts <= 5");
+                        });
+                });
+
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingRecord", b =>
                 {
                     b.Property<Guid>("Id")

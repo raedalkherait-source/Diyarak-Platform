@@ -11,6 +11,12 @@ public sealed class PlatformDbContext(
     internal DbSet<ExternalIdentityMappingRecord> ExternalIdentityMappings =>
         Set<ExternalIdentityMappingRecord>();
 
+    internal DbSet<PhoneVerificationChallengeRecord> PhoneVerificationChallenges =>
+        Set<PhoneVerificationChallengeRecord>();
+
+    internal DbSet<PhoneAccountRecord> PhoneAccounts =>
+        Set<PhoneAccountRecord>();
+
     internal DbSet<MarketListingRecord> MarketListings =>
         Set<MarketListingRecord>();
 
@@ -24,6 +30,12 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new ExternalIdentityMappingRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new PhoneVerificationChallengeRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new PhoneAccountRecordConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new MarketListingRecordConfiguration());

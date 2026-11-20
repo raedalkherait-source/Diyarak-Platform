@@ -1,5 +1,6 @@
 using Diyarak.Market.Application;
 using Diyarak.Platform.Identity;
+using Diyarak.Platform.Identity.Application;
 using Diyarak.Platform.Persistence.PostgreSql.Identity;
 using Diyarak.Platform.Persistence.PostgreSql.Market;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,18 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<
             IExternalIdentityResolver,
             PostgreSqlExternalIdentityResolver>();
+
+        services.AddScoped<
+            IPhoneVerificationChallengeRepository,
+            PostgreSqlPhoneVerificationChallengeRepository>();
+
+        services.AddScoped<
+            IPhoneAccountRepository,
+            PostgreSqlPhoneAccountRepository>();
+
+        services.AddScoped<
+            IIdentityUnitOfWork,
+            PostgreSqlIdentityUnitOfWork>();
 
         services.AddScoped<
             IMarketListingRepository,
