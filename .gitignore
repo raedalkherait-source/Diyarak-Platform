@@ -51,3 +51,6 @@ TestResults/
 
 # Local/archive snapshots
 *.zip
+
+# Local media storage
+App_Data/

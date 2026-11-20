@@ -123,6 +123,56 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingPhotoRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Format")
+                        .HasColumnType("integer")
+                        .HasColumnName("format");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("storage_key");
+
+                    b.Property<DateTimeOffset>("UploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("uploaded_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_listing_photos");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_listing_photos_storage_key");
+
+                    b.HasIndex("ListingId", "Position")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_listing_photos_listing_id_position");
+
+                    b.ToTable("listing_photos", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_listing_photos_position_range", "position >= 0 AND position < 30");
+
+                            t.HasCheckConstraint("ck_market_listing_photos_size_range", "size_bytes > 0 AND size_bytes <= 10485760");
+                        });
+                });
+
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingRecord", b =>
                 {
                     b.Property<Guid>("Id")

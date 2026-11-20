@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../src/Hosts/Diyarak.Api/Diyarak.Api.csproj" />
+    <ProjectReference Include="../../../src/Integrations/Diyarak.Platform.Storage.FileSystem/Diyarak.Platform.Storage.FileSystem.csproj" />
     <ProjectReference Include="../../../src/Application/Diyarak.Market.Application/Diyarak.Market.Application.csproj" />
     <ProjectReference Include="../../../src/Core/Diyarak.Platform.Identity/Diyarak.Platform.Identity.csproj" />
     <ProjectReference Include="../../../src/Application/Diyarak.Platform.Identity.Application/Diyarak.Platform.Identity.Application.csproj" />
@@ -39,5 +40,8 @@
           Link="FrontendFiles/src/%(RecursiveDir)%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest"
           CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../Application/Diyarak.Market.Application.Tests/Fixtures/**" LinkBase="Fixtures" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
