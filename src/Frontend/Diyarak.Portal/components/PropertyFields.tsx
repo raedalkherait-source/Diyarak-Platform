@@ -1,6 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { LocationPicker } from "@/components/LocationPicker";
+import type { MapConfig } from "@/lib/map";
 import { Options } from "@/components/Options";
 import {
   categoryLabels,
@@ -19,10 +21,16 @@ interface Props {
   category: string;
   /** When provided the category is selectable (new listing); otherwise it is shown read-only. */
   onCategoryChange?: (category: string) => void;
+  mapConfig: MapConfig;
 }
 
 /** Location and property fieldsets shared by the new-listing and property-edit forms. */
-export function PropertyFields({ value, error, selectedFeatures, category, onCategoryChange }: Props) {
+export function PropertyFields({ value, error, selectedFeatures, category, onCategoryChange, mapConfig }: Props) {
+  const [governorate, setGovernorate] = useState(value("governorate"));
+  const latitude = value("latitude");
+  const longitude = value("longitude");
+  const initialPin = latitude && longitude ? { latitude: Number(latitude), longitude: Number(longitude) } : null;
+
   return (
     <>
       <fieldset className="panel">
@@ -30,7 +38,7 @@ export function PropertyFields({ value, error, selectedFeatures, category, onCat
         <div className="form-grid">
           <label className="field">
             المحافظة *
-            <select name="governorate" defaultValue={value("governorate")} required>
+            <select name="governorate" defaultValue={value("governorate")} onChange={(event) => setGovernorate(event.target.value)} required>
               <Options labels={governorateLabels} placeholder="اختر" />
             </select>
             {error("governorate")}
@@ -45,6 +53,7 @@ export function PropertyFields({ value, error, selectedFeatures, category, onCat
             <input name="district" defaultValue={value("district")} maxLength={100} />
             {error("district")}
           </label>
+          <LocationPicker config={mapConfig} governorate={governorate} initial={initialPin} error={error("location")} />
         </div>
       </fieldset>
 

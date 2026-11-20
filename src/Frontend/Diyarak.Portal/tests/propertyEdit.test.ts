@@ -53,6 +53,8 @@ const edited = {
   legalTitleType: "GreenTitleDeed",
   finishingLevel: "SuperDeluxe",
   features: ["SolarPowerSystem"],
+  latitude: "33.5012",
+  longitude: "36.2401",
 };
 
 describe("propertyFormValues", () => {
@@ -62,6 +64,7 @@ describe("propertyFormValues", () => {
     expect(values.floorNumber).toBe("2");
     expect(values.district).toBe("المزة");
     expect(values.features).toEqual(["Elevator"]);
+    expect([values.latitude, values.longitude]).toEqual(["33.5", "36.25"]);
   });
 });
 
@@ -77,9 +80,9 @@ describe("parsePropertyEditForm", () => {
       address: {
         street: "شارع المزة",
         houseNumber: "12",
-        location: { latitude: 33.5, longitude: 36.25 },
         governorate: "Damascus",
         city: "دمشق",
+        location: { latitude: 33.5012, longitude: 36.2401 },
       },
       livingArea: { value: 160, unit: "SquareMeter" },
       usableArea: { value: 140, unit: "SquareMeter" },
@@ -93,6 +96,17 @@ describe("parsePropertyEditForm", () => {
       floorNumber: 3,
       buildingFloorCount: 5,
     });
+  });
+
+  it("removes the pin when the publisher clears it", () => {
+    const result = parsePropertyEditForm(form({ ...edited, latitude: "", longitude: "" }), stored);
+    expect(result.ok && "location" in (result.replacement.address as object)).toBe(false);
+  });
+
+  it("rejects a pin outside Syria", () => {
+    const result = parsePropertyEditForm(form({ ...edited, latitude: "48.85", longitude: "2.35" }), stored);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.location).toBeDefined();
   });
 
   it("keeps the stored category even if the form tries to change it", () => {

@@ -23,6 +23,7 @@ export interface PublicListing {
       postalCode: string | null;
       governorate: string | null;
       district: string | null;
+      approximate: { latitude: number; longitude: number; radiusMeters: number } | null;
     };
     livingArea: PublicListingArea | null;
     totalRooms: number | null;

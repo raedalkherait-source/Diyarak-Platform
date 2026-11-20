@@ -73,6 +73,8 @@ services:
     environment:
       DIYARAK_API_URL: http://api:8080
       PORTAL_PUBLIC_URL: https://${PORTAL_DOMAIN:?set PORTAL_DOMAIN in deploy/.env}
+      MAP_TILE_URL: ${MAP_TILE_URL:-}
+      MAP_ATTRIBUTION: ${MAP_ATTRIBUTION:-}
     networks: [internal]
     depends_on:
       api:

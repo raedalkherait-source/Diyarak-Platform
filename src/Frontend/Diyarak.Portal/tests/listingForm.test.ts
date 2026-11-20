@@ -100,3 +100,19 @@ describe("parseListingEditForm", () => {
     expect(!result.ok && Object.keys(result.errors).sort()).toEqual(["headline", "priceAmount", "priceCurrency", "transactionIntent"]);
   });
 });
+
+describe("parseListingForm location", () => {
+  it("adds the map pin to the address when both coordinates are set", () => {
+    const result = parseListingForm(form({ ...valid, latitude: "33.5138", longitude: "36.2765" }));
+    expect(result.ok && (result.draft.property.address as Record<string, unknown>).location).toEqual({
+      latitude: 33.5138,
+      longitude: 36.2765,
+    });
+  });
+
+  it("reports an invalid pin", () => {
+    const result = parseListingForm(form({ ...valid, latitude: "33.5", longitude: "" }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.location).toBeDefined();
+  });
+});

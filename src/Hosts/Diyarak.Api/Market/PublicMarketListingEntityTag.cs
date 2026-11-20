@@ -8,10 +8,10 @@ namespace Diyarak.Api.Market;
 internal static class PublicMarketListingEntityTag
 {
     private const string DetailRepresentationRevision =
-        "public-market-listing-v3";
+        "public-market-listing-v4";
 
     private const string CollectionRepresentationRevision =
-        "public-market-listing-page-v3";
+        "public-market-listing-page-v4";
 
     internal static string Create(PublishedListingProjection projection)
     {

@@ -1751,6 +1751,7 @@ public sealed class ListPublishedListingsEndpointTests
                 "postalCode",
                 "governorate",
                 "district",
+                "approximate",
             ],
             property.GetProperty("location").EnumerateObject().Select(item => item.Name).ToArray());
 
