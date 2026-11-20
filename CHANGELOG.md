@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Search-engine visibility: `robots.txt`, `sitemap.xml`, schema.org `RealEstateListing` data,
+  canonical URLs, and `noindex` on deep filter combinations; listing photos served as resized
+  AVIF/WebP (ADR-0061).
 - Production container deployment: API, migrations and portal images, a single-server compose
   stack with Caddy HTTPS, PostgreSQL and scheduled backups, `ReverseProxy:KnownNetworks`, CI
   image builds, and an Arabic operations runbook (ADR-0060).

@@ -12,6 +12,7 @@ import {
   legalTitleLabels,
   transactionIntentLabels,
 } from "@/lib/labels";
+import { isIndexableSearch } from "@/lib/seo";
 import { firstValue, pageHref, toApiQuery, type RawSearchParams } from "@/lib/search";
 import type { PublicListingPage } from "@/lib/types";
 
@@ -25,7 +26,12 @@ function describe(params: RawSearchParams): string {
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  return { title: describe(await searchParams) };
+  const params = await searchParams;
+  return {
+    title: describe(params),
+    // Only simple landing combinations are indexed; deep filter combinations stay crawlable but unindexed.
+    robots: isIndexableSearch(params) ? undefined : { index: false, follow: true },
+  };
 }
 
 export default async function SearchPage({ searchParams }: Props) {

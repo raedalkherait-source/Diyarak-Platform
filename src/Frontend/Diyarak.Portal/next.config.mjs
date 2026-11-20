@@ -7,6 +7,15 @@ const nextConfig = {
   // keeps the default output so "next start" works.
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   reactStrictMode: true,
+  images: {
+    // Public listing photos are resized and re-encoded (AVIF/WebP) by the portal, which matters
+    // on slow mobile connections. Photo URLs are immutable, so optimized variants can be cached long.
+    localPatterns: [{ pathname: "/media/listings/**" }],
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [360, 480, 640, 828, 1080, 1280, 1600],
+    imageSizes: [96, 160, 256],
+    minimumCacheTTL: 31536000,
+  },
   experimental: {
     // Photo uploads go through a server action, one file per call (API limit: 10 MB).
     serverActions: { bodySizeLimit: "11mb" },

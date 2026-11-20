@@ -141,8 +141,8 @@ img { max-width: 100%; display: block; }
   transition: transform 0.15s ease;
 }
 .card:hover { transform: translateY(-2px); }
-.card-media { aspect-ratio: 3 / 2; background: var(--brand-soft); position: relative; }
-.card-media img { width: 100%; height: 100%; object-fit: cover; }
+.card-media { aspect-ratio: 3 / 2; background: var(--brand-soft); position: relative; overflow: hidden; }
+.card-media img { object-fit: cover; }
 .card-media .placeholder { display: grid; place-items: center; height: 100%; color: var(--muted); }
 .badge {
   position: absolute;
@@ -185,8 +185,8 @@ img { max-width: 100%; display: block; }
 .detail { padding-block: 24px 56px; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
 .breadcrumbs { color: var(--muted); font-size: 0.9rem; padding-block-start: 20px; display: flex; gap: 6px; flex-wrap: wrap; }
 .breadcrumbs a:hover { color: var(--brand); }
-.gallery-main { aspect-ratio: 3 / 2; border-radius: var(--radius); overflow: hidden; background: var(--brand-soft); }
-.gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-main { aspect-ratio: 3 / 2; border-radius: var(--radius); overflow: hidden; background: var(--brand-soft); position: relative; }
+.gallery-main img { object-fit: cover; }
 .gallery-thumbs { display: flex; gap: 8px; margin-block-start: 8px; overflow-x: auto; padding-block-end: 4px; }
 .gallery-thumbs button { border: 2px solid transparent; padding: 0; border-radius: 8px; overflow: hidden; cursor: pointer; flex: 0 0 96px; aspect-ratio: 3 / 2; background: none; }
 .gallery-thumbs button[aria-current="true"] { border-color: var(--brand); }
