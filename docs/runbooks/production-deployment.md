@@ -20,12 +20,23 @@ backup: نسخة يومية من قاعدة البيانات والصور مع �
 
 ## 2. النطاق (DNS)
 
-أنشئ سجلَّي `A`، أو `AAAA` لعناوين IPv6، يشيران إلى عنوان IP الخادم:
+نطاق المنصة هو `diyarak.app`. أنشئ في لوحة مسجّل النطاق السجلات التالية، وكلها تشير إلى عنوان IP الخادم. أضف `AAAA` بالأسماء نفسها إذا كان للخادم عنوان IPv6:
 
-- `diyarak.example`: الموقع.
-- `api.diyarak.example`: الـAPI.
+| النوع | الاسم | القيمة | الاستخدام |
+|---|---|---|---|
+| `A` | `@` | عنوان IP الخادم | الموقع `diyarak.app` |
+| `A` | `www` | عنوان IP الخادم | يُحوَّل تلقائياً إلى `diyarak.app` |
+| `A` | `api` | عنوان IP الخادم | الـAPI `api.diyarak.app` |
 
 يحصل Caddy على شهادات HTTPS ويجدّدها تلقائياً بمجرد أن يشير النطاق إلى الخادم.
+
+> نطاقات `.app` تعمل عبر HTTPS فقط، فالمتصفحات ترفض فتحها عبر HTTP. لذلك لن يفتح الموقع قبل أن يصدر Caddy الشهادة. تأكد أن المنفذين 80 و443 مفتوحان قبل التشغيل الأول.
+
+للتحقق من أن السجلات وصلت قبل التشغيل:
+
+```bash
+dig +short diyarak.app www.diyarak.app api.diyarak.app
+```
 
 ## 3. التثبيت لأول مرة
 
@@ -47,9 +58,9 @@ cp deploy/api.env.example deploy/api.env
 
 بعد النسخ، عدّل الملفين:
 
-- **`deploy/.env`:** النطاقان، والبريد الإلكتروني لإشعارات الشهادات، و`POSTGRES_PASSWORD`. أنشئ كلمة المرور بالأمر `openssl rand -base64 32`.
+- **`deploy/.env`:** النطاقان (مضبوطان مسبقاً على `diyarak.app` و`api.diyarak.app`)، والبريد الإلكتروني لإشعارات الشهادات، و`POSTGRES_PASSWORD`. أنشئ كلمة المرور بالأمر `openssl rand -base64 32`.
 - **`deploy/api.env`:**
-  - `Authentication__Phone__Issuer`: عنوان الـAPI العام.
+  - `Authentication__Phone__Issuer`: عنوان الـAPI العام `https://api.diyarak.app`.
   - `Authentication__Phone__SigningKey`: أنشئه بالأمر `openssl rand -base64 32`.
   - إعدادات مزوّد الرسائل `Messaging__Sms__Http__*` حسب توثيق المزوّد. ارجع إلى قسم «SMS gateway» في `development.md`.
   - أرقام المشرفين في `Moderation__ModeratorPhoneNumbers__0` وما بعده.
@@ -81,10 +92,10 @@ docker compose -f deploy/compose.production.yaml --env-file deploy/.env ps
 اختبر من جهازك:
 
 ```bash
-curl -s https://api.diyarak.example/health/ready
+curl -s https://api.diyarak.app/health/ready
 ```
 
-ثم افتح `https://diyarak.example`، وسجّل الدخول برقم مشرف، وافتح `/admin`.
+ثم افتح `https://diyarak.app`، وسجّل الدخول برقم مشرف، وافتح `/admin`.
 
 ## 4. نشر تحديث
 
