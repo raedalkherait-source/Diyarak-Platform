@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Draft listings can be deleted permanently, together with their photos and an otherwise unused
+  property: `DELETE /api/market/listings/{id}?version=` and a portal button (ADR-0063).
 - Portal: publishers can edit property details (location, area, rooms, floor, legal title,
   finishing, features) of a listing that is not closed. Fields the portal does not show are
   preserved, and edits made elsewhere in the meantime are reported instead of overwritten.
