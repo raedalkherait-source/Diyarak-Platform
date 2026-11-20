@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Diyarak.Api.Market;
 using Diyarak.Api.RateLimiting;
 using Diyarak.Platform.BuildingBlocks;
 using Diyarak.Platform.Identity.Application;
@@ -26,7 +27,78 @@ internal static class PhoneAuthenticationEndpointRouteBuilderExtensions
             .AllowAnonymous()
             .RequireRateLimiting(ClientRateLimitingServiceCollectionExtensions.OtpPolicy);
 
+        endpoints
+            .MapPost("/api/auth/session/refresh", RefreshAsync)
+            .AllowAnonymous();
+
+        endpoints
+            .MapPost("/api/auth/session/logout", LogoutAsync)
+            .AllowAnonymous();
+
+        endpoints
+            .MapPost("/api/auth/session/logout-all", LogoutAllAsync)
+            .RequireMappedUserManagement();
+
         return endpoints;
+    }
+
+    internal static async Task<IResult> RefreshAsync(
+        JsonElement request,
+        RefreshSessionUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        httpContext.Response.Headers.CacheControl = "no-store";
+
+        Result<RefreshedSession> result = await useCase.ExecuteAsync(
+            ReadString(request, "refreshToken"),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Results.Problem(
+                statusCode: result.Error == SessionErrors.Stale
+                    ? StatusCodes.Status409Conflict
+                    : StatusCodes.Status401Unauthorized,
+                detail: result.Error.Description,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["code"] = result.Error.Code,
+                    ["traceId"] = httpContext.TraceIdentifier,
+                });
+        }
+
+        RefreshedSession session = result.Value;
+        return Results.Ok(
+            new SessionTokensResponse(
+                session.AccessToken.Value,
+                "Bearer",
+                session.AccessToken.ExpiresAt,
+                session.RefreshToken.Value,
+                session.RefreshToken.ExpiresAt));
+    }
+
+    internal static async Task<IResult> LogoutAsync(
+        JsonElement request,
+        RevokeSessionUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        httpContext.Response.Headers.CacheControl = "no-store";
+        await useCase.ExecuteAsync(ReadString(request, "refreshToken"), cancellationToken);
+        return Results.NoContent();
+    }
+
+    internal static async Task<IResult> LogoutAllAsync(
+        IAuthenticatedActorAccessor actorAccessor,
+        RevokeAllSessionsUseCase useCase,
+        CancellationToken cancellationToken)
+    {
+        if (actorAccessor.UserId is not { } userId || userId == Guid.Empty)
+            throw new InvalidOperationException("The mapped-user policy succeeded without a user identifier.");
+
+        await useCase.ExecuteAsync(userId, cancellationToken);
+        return Results.NoContent();
     }
 
     internal static async Task<IResult> RequestCodeAsync(
@@ -71,7 +143,9 @@ internal static class PhoneAuthenticationEndpointRouteBuilderExtensions
                 "Bearer",
                 signIn.AccessToken.ExpiresAt,
                 signIn.UserId,
-                signIn.IsNewUser));
+                signIn.IsNewUser,
+                signIn.RefreshToken?.Value,
+                signIn.RefreshToken?.ExpiresAt));
     }
 
     private static string? ReadString(JsonElement request, string propertyName) =>
@@ -113,5 +187,14 @@ internal static class PhoneAuthenticationEndpointRouteBuilderExtensions
         string TokenType,
         DateTimeOffset ExpiresAt,
         Guid UserId,
-        bool IsNewUser);
+        bool IsNewUser,
+        string? RefreshToken,
+        DateTimeOffset? RefreshTokenExpiresAt);
+
+    internal sealed record SessionTokensResponse(
+        string AccessToken,
+        string TokenType,
+        DateTimeOffset ExpiresAt,
+        string RefreshToken,
+        DateTimeOffset RefreshTokenExpiresAt);
 }

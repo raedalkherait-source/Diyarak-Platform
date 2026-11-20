@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { logout } from "./actions";
+import { logout, logoutEverywhere } from "./actions";
 import { formatPrice } from "@/lib/format";
 import { label, transactionIntentLabels } from "@/lib/labels";
 import { managementFetch, type ManagementListing } from "@/lib/managementApi";
@@ -20,6 +20,9 @@ export default async function MyListingsPage() {
           <Link className="button" href="/my/new">+ إعلان جديد</Link>
           <form action={logout}>
             <button className="button secondary" type="submit">تسجيل الخروج</button>
+          </form>
+          <form action={logoutEverywhere}>
+            <button className="button secondary" type="submit">الخروج من كل الأجهزة</button>
           </form>
         </div>
       </div>

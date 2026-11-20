@@ -17,6 +17,9 @@ public sealed class PlatformDbContext(
     internal DbSet<PhoneAccountRecord> PhoneAccounts =>
         Set<PhoneAccountRecord>();
 
+    internal DbSet<UserSessionRecord> UserSessions =>
+        Set<UserSessionRecord>();
+
     internal DbSet<MarketListingRecord> MarketListings =>
         Set<MarketListingRecord>();
 
@@ -42,6 +45,9 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new PhoneAccountRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new UserSessionRecordConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new MarketListingRecordConfiguration());

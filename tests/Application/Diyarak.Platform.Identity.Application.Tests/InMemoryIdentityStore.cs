@@ -39,8 +39,38 @@ internal sealed class FakeTokenIssuer : IAccessTokenIssuer
 internal sealed class InMemoryIdentityStore
     : IPhoneVerificationChallengeRepository,
       IPhoneAccountRepository,
-      IIdentityUnitOfWork
+      IIdentityUnitOfWork,
+      IUserSessionRepository
 {
+    private readonly List<UserSession> _stagedSessions = [];
+
+    public Dictionary<Guid, UserSession> Sessions { get; } = [];
+
+    public Task AddAsync(UserSession session, CancellationToken cancellationToken = default)
+    {
+        _stagedSessions.Add(session);
+        return Task.CompletedTask;
+    }
+
+    public Task<UserSession?> FindAsync(Guid sessionId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(
+            Sessions.TryGetValue(sessionId, out UserSession? session)
+                ? UserSession.Restore(session.Id, session.UserId, session.CurrentTokenHash, session.PreviousTokenHash, session.CreatedAt, session.LastRotatedAt, session.ExpiresAt, session.RevokedAt)
+                : null);
+
+    public Task UpdateAsync(UserSession session, CancellationToken cancellationToken = default)
+    {
+        _stagedSessions.Add(session);
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeAllAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        foreach (UserSession session in Sessions.Values.Where(session => session.UserId == userId))
+            session.Revoke(now);
+        return Task.CompletedTask;
+    }
+
     private readonly List<PhoneVerificationChallenge> _stagedChallenges = [];
     private readonly List<(PhoneAccount Account, ExternalIdentity Identity)> _stagedAccounts = [];
 
@@ -94,6 +124,7 @@ internal sealed class InMemoryIdentityStore
         if (FailNextSave)
         {
             FailNextSave = false;
+            _stagedSessions.Clear();
             _stagedChallenges.Clear();
             _stagedAccounts.Clear();
             return Task.FromResult(false);
@@ -101,6 +132,10 @@ internal sealed class InMemoryIdentityStore
 
         foreach (PhoneVerificationChallenge challenge in _stagedChallenges)
             Challenges[challenge.Id] = challenge;
+
+        foreach (UserSession session in _stagedSessions)
+            Sessions[session.Id] = session;
+        _stagedSessions.Clear();
 
         foreach ((PhoneAccount account, ExternalIdentity identity) in _stagedAccounts)
         {

@@ -50,6 +50,10 @@ public static class PersistenceServiceCollectionExtensions
             PostgreSqlIdentityUnitOfWork>();
 
         services.AddScoped<
+            IUserSessionRepository,
+            PostgreSqlUserSessionRepository>();
+
+        services.AddScoped<
             IMarketListingRepository,
             PostgreSqlMarketListingRepository>();
 
