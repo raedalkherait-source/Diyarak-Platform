@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.next/
+**/TestResults/
+**/App_Data/
+.git/
+artifacts/
+docker/.env
+deploy/.env
+deploy/api.env
+**/*.user

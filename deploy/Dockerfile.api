@@ -1,0 +1,45 @@
+# syntax=docker/dockerfile:1
+# Build context: repository root.
+
+# Pinned to the SDK in global.json so container builds match CI exactly.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.201 AS build
+WORKDIR /src
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
+
+# Restore first so dependency layers are cached between source changes.
+COPY .editorconfig global.json NuGet.config Directory.Build.props Directory.Build.targets Directory.Packages.props dotnet-tools.json ./
+COPY src/ src/
+RUN dotnet restore src/Hosts/Diyarak.Api/Diyarak.Api.csproj
+RUN dotnet tool restore
+RUN dotnet publish src/Hosts/Diyarak.Api/Diyarak.Api.csproj -c Release --no-restore -o /out/api /p:UseAppHost=false
+
+# Self-contained migration bundle, run once per deployment before the API starts. Building it
+# starts the app host, which requires a connection string; nothing connects at this point.
+RUN ConnectionStrings__Postgres="Host=design-time;Database=design-time" \
+    dotnet ef migrations bundle \
+      --project src/Integrations/Diyarak.Platform.Persistence.PostgreSql \
+      --startup-project src/Hosts/Diyarak.Api \
+      --configuration Release \
+      --self-contained --target-runtime linux-x64 \
+      --output /out/migrations/efbundle
+
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0 AS migrations
+WORKDIR /app
+COPY --from=build /out/migrations/efbundle ./efbundle
+USER app
+ENTRYPOINT ["/app/efbundle"]
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
+WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_EnableDiagnostics=0 \
+    Media__FileSystem__RootPath=/var/lib/diyarak/media
+RUN mkdir -p /var/lib/diyarak/media && chown -R app:app /var/lib/diyarak
+COPY --from=build /out/api ./
+USER app
+EXPOSE 8080
+# The aspnet image has no curl; probe readiness over bash's /dev/tcp.
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
+  CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+ENTRYPOINT ["dotnet", "Diyarak.Api.dll"]

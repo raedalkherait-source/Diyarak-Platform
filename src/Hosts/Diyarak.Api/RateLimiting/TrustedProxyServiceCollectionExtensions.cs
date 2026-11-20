@@ -9,8 +9,9 @@ internal static class TrustedProxyServiceCollectionExtensions
 
     /// <summary>
     /// Honours <c>X-Forwarded-For</c>/<c>X-Forwarded-Proto</c> only from explicitly configured
-    /// proxies (for example the portal server or a load balancer), so per-client rate limits see
-    /// the real client address. With no configuration, forwarded headers are ignored.
+    /// proxies (<c>KnownProxies</c>, individual addresses) or networks (<c>KnownNetworks</c>, CIDR,
+    /// for example a private container network). Per-client rate limits then see the real client
+    /// address. With no configuration, forwarded headers are ignored.
     /// </summary>
     internal static bool AddTrustedProxies(
         this IServiceCollection services,
@@ -21,9 +22,30 @@ internal static class TrustedProxyServiceCollectionExtensions
 
         string[] proxies =
             configuration.GetSection($"{SectionName}:KnownProxies").Get<string[]>() ?? [];
+        string[] networks =
+            configuration.GetSection($"{SectionName}:KnownNetworks").Get<string[]>() ?? [];
 
-        if (proxies.Length == 0)
+        if (proxies.Length == 0 && networks.Length == 0)
             return false;
+
+        var parsedNetworks = new List<System.Net.IPNetwork>();
+
+        foreach (string network in networks)
+        {
+            if (!System.Net.IPNetwork.TryParse(network, out System.Net.IPNetwork parsed))
+            {
+                throw new InvalidOperationException(
+                    $"'{SectionName}:KnownNetworks' contains an invalid CIDR network '{network}'.");
+            }
+
+            if (parsed.PrefixLength == 0)
+            {
+                throw new InvalidOperationException(
+                    $"'{SectionName}:KnownNetworks' must not trust every address.");
+            }
+
+            parsedNetworks.Add(parsed);
+        }
 
         var addresses = new List<IPAddress>();
 
@@ -49,6 +71,9 @@ internal static class TrustedProxyServiceCollectionExtensions
 
                 foreach (IPAddress address in addresses)
                     options.KnownProxies.Add(address);
+
+                foreach (System.Net.IPNetwork network in parsedNetworks)
+                    options.KnownIPNetworks.Add(network);
             });
 
         return true;

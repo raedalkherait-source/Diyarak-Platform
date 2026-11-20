@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Production container deployment: API, migrations and portal images, a single-server compose
+  stack with Caddy HTTPS, PostgreSQL and scheduled backups, `ReverseProxy:KnownNetworks`, CI
+  image builds, and an Arabic operations runbook (ADR-0060).
 - Configurable HTTP SMS gateway (`Authentication:Phone:OtpSender = HttpGateway`,
   `Messaging:Sms:Http`) for production one-time codes; delivery failures return `503`
   (ADR-0059).

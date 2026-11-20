@@ -3,6 +3,9 @@ const apiUrl = (process.env.DIYARAK_API_URL ?? "http://localhost:5080").replace(
 
 const nextConfig = {
   poweredByHeader: false,
+  // Container builds set NEXT_OUTPUT=standalone for a minimal runtime image; local development
+  // keeps the default output so "next start" works.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   reactStrictMode: true,
   experimental: {
     // Photo uploads go through a server action, one file per call (API limit: 10 MB).

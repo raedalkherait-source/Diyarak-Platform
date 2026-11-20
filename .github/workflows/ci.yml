@@ -65,6 +65,22 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: '1'
 
+  container-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -f deploy/Dockerfile.api --target api -t diyarak-api:ci .
+      - name: Build migrations image
+        run: docker build -f deploy/Dockerfile.api --target migrations -t diyarak-migrations:ci .
+      - name: Build portal image
+        run: docker build -f deploy/Dockerfile.portal -t diyarak-portal:ci src/Frontend/Diyarak.Portal
+      - name: Validate production compose file
+        run: |
+          printf 'PORTAL_DOMAIN=diyarak.example\nAPI_DOMAIN=api.diyarak.example\nACME_EMAIL=ops@diyarak.example\nPOSTGRES_PASSWORD=ci-only\n' > /tmp/ci.env
+          cp deploy/api.env.example deploy/api.env
+          docker compose -f deploy/compose.production.yaml --env-file /tmp/ci.env config --quiet
+
   coverage:
     runs-on: ubuntu-latest
     steps:
