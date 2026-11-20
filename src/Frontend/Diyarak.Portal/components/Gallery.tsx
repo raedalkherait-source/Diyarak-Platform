@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { photoSrc } from "@/lib/format";
 import type { PublicListingPhoto } from "@/lib/types";
@@ -15,8 +16,14 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
   return (
     <div>
       <div className="gallery-main">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={photoSrc(listingId, current.photoId)} alt={`${title} — صورة ${index + 1} من ${photos.length}`} />
+        <Image
+          src={photoSrc(listingId, current.photoId)}
+          alt={`${title} — صورة ${index + 1} من ${photos.length}`}
+          fill
+          priority={index === 0}
+          sizes="(max-width: 900px) 100vw, 800px"
+          quality={75}
+        />
       </div>
       {photos.length > 1 ? (
         <div className="gallery-thumbs" role="list">
@@ -29,8 +36,7 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
               aria-label={`عرض الصورة ${photoIndex + 1}`}
               onClick={() => setIndex(photoIndex)}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoSrc(listingId, photo.photoId)} alt="" loading="lazy" />
+              <Image src={photoSrc(listingId, photo.photoId)} alt="" width={96} height={64} sizes="96px" quality={60} />
             </button>
           ))}
         </div>

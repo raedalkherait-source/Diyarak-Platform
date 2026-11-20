@@ -5,6 +5,8 @@ import { ContactButton } from "@/components/ContactButton";
 import { Gallery } from "@/components/Gallery";
 import { ReportListing } from "@/components/ReportListing";
 import { getListing } from "@/lib/api";
+import { listingStructuredData } from "@/lib/seo";
+import { jsonForScript } from "@/lib/site";
 import type { PublicListing } from "@/lib/types";
 import { formatArea, formatFloor, formatLocation, formatNumber, formatPrice, photoSrc } from "@/lib/format";
 import {
@@ -31,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: listing.headline,
     description,
+    alternates: { canonical: `/listings/${listing.listingId}` },
     openGraph: {
       title: listing.headline,
       description,
@@ -63,6 +66,7 @@ export default async function ListingPage({ params }: Props) {
 
   return (
     <div className="container">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(listingStructuredData(listing)) }} />
       <nav className="breadcrumbs" aria-label="مسار التنقل">
         <Link href="/">الرئيسية</Link>
         <span>›</span>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { formatArea, formatFloor, formatLocation, formatPrice, photoSrc } from "@/lib/format";
 import { categoryLabels, label, transactionIntentLabels } from "@/lib/labels";
@@ -18,8 +19,13 @@ export function ListingCard({ listing }: { listing: PublicListing }) {
       <Link href={`/listings/${listing.listingId}`} aria-label={listing.headline}>
         <div className="card-media">
           {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoSrc(listing.listingId, cover.photoId)} alt="" loading="lazy" decoding="async" />
+            <Image
+              src={photoSrc(listing.listingId, cover.photoId)}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 300px"
+              quality={70}
+            />
           ) : (
             <div className="placeholder">لا توجد صور</div>
           )}
