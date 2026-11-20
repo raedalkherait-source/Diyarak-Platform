@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Diyarak.Platform.Storage.FileSystem</AssemblyName>
+    <RootNamespace>Diyarak.Platform.Storage.FileSystem</RootNamespace>
+    <Description>Local file-system storage adapter for Diyarak media.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\Diyarak.Market.Application\Diyarak.Market.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Diyarak.Platform.Storage.FileSystem.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1401,6 +1401,8 @@ public sealed class PublishListingEndpointTests
                     services.AddSingleton<IExternalIdentityResolver>(
                         new StubExternalIdentityResolver(_userId));
 
+                    services.RemoveAll<Diyarak.Market.Application.Photos.IListingPhotoRepository>();
+                    services.AddSingleton<Diyarak.Market.Application.Photos.IListingPhotoRepository>(new EmptyListingPhotoRepository());
                     services.RemoveAll<IMarketListingRepository>();
                     services.AddSingleton<IMarketListingRepository>(
                         ListingRepository);

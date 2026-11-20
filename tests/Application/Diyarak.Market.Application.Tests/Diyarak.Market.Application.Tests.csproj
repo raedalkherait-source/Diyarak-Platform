@@ -25,4 +25,7 @@
     <ProjectReference Include="../../../src/Modules/Diyarak.Market.Listing/Diyarak.Market.Listing.csproj" />
     <ProjectReference Include="../../../src/Modules/Diyarak.Market.Property/Diyarak.Market.Property.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Fixtures/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

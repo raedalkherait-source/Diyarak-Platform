@@ -798,7 +798,10 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 price.Amount?.Amount,
                 price.Amount?.Currency.Code),
             ToPropertyResponse(property),
-            listing.AvailableFromDate?.Value);
+            listing.AvailableFromDate?.Value,
+            [.. projection.Photos
+                .OrderBy(photo => photo.Position)
+                .Select(MarketListingPhotoEndpointRouteBuilderExtensions.ToPublicResponse)]);
     }
 
     private static PublicMarketListingPropertyResponse ToPropertyResponse(
@@ -912,7 +915,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         string Headline,
         PublicMarketListingPriceResponse Price,
         PublicMarketListingPropertyResponse Property,
-        DateOnly? AvailableFromDate);
+        DateOnly? AvailableFromDate,
+        MarketListingPhotoEndpointRouteBuilderExtensions.PublicListingPhotoResponse[] Photos);
 
     internal sealed record PublicMarketListingContextResponse(
         string PublishingRole,

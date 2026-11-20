@@ -549,6 +549,7 @@ public sealed class GetPublishedListingEndpointTests
                 "price",
                 "property",
                 "availableFromDate",
+                "photos",
             ],
             listing.EnumerateObject().Select(property => property.Name).ToArray());
 
@@ -725,6 +726,8 @@ public sealed class GetPublishedListingEndpointTests
             builder.ConfigureServices(
                 services =>
                 {
+                    services.RemoveAll<Diyarak.Market.Application.Photos.IListingPhotoRepository>();
+                    services.AddSingleton<Diyarak.Market.Application.Photos.IListingPhotoRepository>(new EmptyListingPhotoRepository());
                     services.RemoveAll<IMarketListingRepository>();
                     services.AddSingleton<IMarketListingRepository>(
                         ListingRepository);

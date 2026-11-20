@@ -1,3 +1,4 @@
+using Diyarak.Market.Application.Photos;
 using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
 
@@ -16,12 +17,15 @@ public sealed class ListPublishedListingsUseCase
     public const int MaximumResultWindow = 10_000;
 
     private readonly IPublishedListingQuery _publishedListingQuery;
+    private readonly IListingPhotoRepository? _photoRepository;
 
     public ListPublishedListingsUseCase(
-        IPublishedListingQuery publishedListingQuery)
+        IPublishedListingQuery publishedListingQuery,
+        IListingPhotoRepository? photoRepository = null)
     {
         ArgumentNullException.ThrowIfNull(publishedListingQuery);
         _publishedListingQuery = publishedListingQuery;
+        _photoRepository = photoRepository;
     }
 
     public async Task<Result<PublishedListingPage>> ExecuteAsync(
@@ -199,6 +203,20 @@ public sealed class ListPublishedListingsUseCase
         PublishedListingProjection[] items = candidates
             .Take(pageSize)
             .ToArray();
+
+        if (_photoRepository is not null && items.Length > 0)
+        {
+            IReadOnlyDictionary<Guid, IReadOnlyList<ListingPhoto>> photos =
+                await _photoRepository.ListByListingsAsync(
+                    items.Select(item => item.Listing.Id).ToArray(),
+                    cancellationToken);
+
+            items = items
+                .Select(item => photos.TryGetValue(item.Listing.Id, out IReadOnlyList<ListingPhoto>? listingPhotos)
+                    ? item with { Photos = listingPhotos }
+                    : item)
+                .ToArray();
+        }
 
         return Result.Success(
             new PublishedListingPage(

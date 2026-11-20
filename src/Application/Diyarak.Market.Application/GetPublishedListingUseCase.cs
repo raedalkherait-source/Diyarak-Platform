@@ -1,3 +1,4 @@
+using Diyarak.Market.Application.Photos;
 using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
@@ -9,13 +10,16 @@ public sealed class GetPublishedListingUseCase
 {
     private readonly IMarketListingRepository _listingRepository;
     private readonly IMarketPropertyRepository _propertyRepository;
+    private readonly IListingPhotoRepository? _photoRepository;
 
     public GetPublishedListingUseCase(
         IMarketListingRepository listingRepository,
-        IMarketPropertyRepository propertyRepository)
+        IMarketPropertyRepository propertyRepository,
+        IListingPhotoRepository? photoRepository = null)
     {
         _listingRepository = listingRepository;
         _propertyRepository = propertyRepository;
+        _photoRepository = photoRepository;
     }
 
     public async Task<Result<PublishedListingProjection>> ExecuteAsync(
@@ -57,7 +61,15 @@ public sealed class GetPublishedListingUseCase
                 GetListingErrors.NotFound);
         }
 
+        IReadOnlyList<ListingPhoto> photos =
+            _photoRepository is null
+                ? []
+                : await _photoRepository.ListByListingAsync(listing.Id, cancellationToken);
+
         return Result.Success(
-            new PublishedListingProjection(listing, property));
+            new PublishedListingProjection(listing, property)
+            {
+                Photos = photos,
+            });
     }
 }

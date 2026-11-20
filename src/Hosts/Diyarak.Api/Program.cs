@@ -3,10 +3,14 @@ using Diyarak.Api.Authentication.Phone;
 using Diyarak.Api.Market;
 using Diyarak.Api.RateLimiting;
 using Diyarak.Market.Application;
+using Diyarak.Market.Application.Photos;
+using Diyarak.Platform.BuildingBlocks;
 using Diyarak.Platform.Persistence.PostgreSql;
+using Diyarak.Platform.Storage.FileSystem;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 
@@ -109,6 +113,16 @@ builder.Services.AddScoped<GetPublishedListingUseCase>();
 builder.Services.AddScoped<ListPublishedListingsUseCase>();
 builder.Services.AddScoped<UpdateListingUseCase>();
 builder.Services.AddScoped<PublishListingUseCase>();
+
+builder.Services.TryAddSingleton<IClock>(SystemClock.Instance);
+builder.Services.AddSingleton<IListingPhotoStorage>(
+    _ => new FileSystemListingPhotoStorage(
+        builder.Configuration["Media:FileSystem:RootPath"]
+        ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "media")));
+builder.Services.AddScoped<UploadListingPhotoUseCase>();
+builder.Services.AddScoped<ListListingPhotosUseCase>();
+builder.Services.AddScoped<DeleteListingPhotoUseCase>();
+builder.Services.AddScoped<GetListingPhotoContentUseCase>();
 
 var app = builder.Build();
 
@@ -266,6 +280,7 @@ app.MapGet(
             }));
 
 app.MapPublicMarketListingEndpoints();
+app.MapPublicMarketListingPhotoEndpoints();
 
 if (phoneAuthentication.Enabled)
 {
@@ -278,6 +293,7 @@ if (phoneAuthentication.Enabled ||
 {
     app.MapMarketPropertyEndpoints();
     app.MapMarketListingEndpoints();
+    app.MapMarketListingPhotoManagementEndpoints();
 }
 
 app.Run();
