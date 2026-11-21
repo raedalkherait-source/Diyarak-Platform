@@ -375,3 +375,119 @@ export async function bulkImportCsv(_state: BulkImportState, form: FormData): Pr
     errors: result.value.errors,
   };
 }
+
+// --- Off-plan projects ---
+
+export interface OffPlanProjectFormState {
+  status?: "saved" | "error";
+  message?: string;
+}
+
+interface OffPlanProjectPayload {
+  name: string;
+  description: string | null;
+  governorate: string;
+  district: string;
+  constructionStatus: string;
+  totalUnits: number;
+  minPriceUsd: number | null;
+  maxPriceUsd: number | null;
+  expectedCompletion: string | null;
+}
+
+function parseOffPlanForm(form: FormData): OffPlanProjectPayload {
+  return {
+    name: String(form.get("name") ?? "").trim(),
+    description: String(form.get("description") ?? "").trim() || null,
+    governorate: String(form.get("governorate") ?? ""),
+    district: String(form.get("district") ?? "").trim(),
+    constructionStatus: String(form.get("constructionStatus") ?? "Planned"),
+    totalUnits: parseInt(String(form.get("totalUnits") ?? "0"), 10) || 0,
+    minPriceUsd: form.get("minPriceUsd") ? parseFloat(String(form.get("minPriceUsd"))) || null : null,
+    maxPriceUsd: form.get("maxPriceUsd") ? parseFloat(String(form.get("maxPriceUsd"))) || null : null,
+    expectedCompletion: String(form.get("expectedCompletion") ?? "").trim() || null,
+  };
+}
+
+export async function createOffPlanProject(_state: OffPlanProjectFormState, form: FormData): Promise<OffPlanProjectFormState> {
+  const payload = parseOffPlanForm(form);
+  const result = await managementFetch("/api/market/offplan", { method: "POST", json: payload });
+  if (!result.ok) return { status: "error", message: errorMessage(result.code, result.status) };
+  revalidatePath("/my/projects");
+  redirect("/my/projects?notice=created");
+}
+
+export async function updateOffPlanProject(projectId: string, expectedVersion: number, _state: OffPlanProjectFormState, form: FormData): Promise<OffPlanProjectFormState> {
+  const payload = { ...parseOffPlanForm(form), expectedVersion };
+  const result = await managementFetch(`/api/market/offplan/${projectId}`, { method: "PUT", json: payload });
+  if (!result.ok) return { status: "error", message: errorMessage(result.code, result.status) };
+  revalidatePath("/my/projects");
+  return { status: "saved", message: "تم حفظ التعديلات." };
+}
+
+export async function toggleOffPlanPublish(projectId: string, expectedVersion: number, publish: boolean): Promise<void> {
+  await managementFetch(`/api/market/offplan/${projectId}/publish`, { method: "PUT", json: { expectedVersion, publish } });
+  revalidatePath("/my/projects");
+  redirect(`/my/projects?notice=${publish ? "published" : "unpublished"}`);
+}
+
+export async function deleteOffPlanProject(projectId: string): Promise<void> {
+  await managementFetch(`/api/market/offplan/${projectId}`, { method: "DELETE" });
+  revalidatePath("/my/projects");
+  redirect("/my/projects?notice=deleted");
+}
+
+// --- Contractor ---
+
+export interface ContractorFormState {
+  status?: "saved" | "error";
+  message?: string;
+}
+
+interface ContractorPayload {
+  name: string;
+  description: string | null;
+  governorate: string;
+  district: string | null;
+  specialty: string;
+  phone: string;
+}
+
+function parseContractorForm(form: FormData): ContractorPayload {
+  return {
+    name: String(form.get("name") ?? "").trim(),
+    description: String(form.get("description") ?? "").trim() || null,
+    governorate: String(form.get("governorate") ?? ""),
+    district: String(form.get("district") ?? "").trim() || null,
+    specialty: String(form.get("specialty") ?? "GeneralConstruction"),
+    phone: String(form.get("phone") ?? "").trim(),
+  };
+}
+
+export async function createContractor(_state: ContractorFormState, form: FormData): Promise<ContractorFormState> {
+  const payload = parseContractorForm(form);
+  const result = await managementFetch("/api/market/contractor", { method: "POST", json: payload });
+  if (!result.ok) return { status: "error", message: errorMessage(result.code, result.status) };
+  revalidatePath("/my/contractor");
+  redirect("/my/contractor?notice=created");
+}
+
+export async function updateContractor(contractorId: string, expectedVersion: number, _state: ContractorFormState, form: FormData): Promise<ContractorFormState> {
+  const payload = parseContractorForm(form);
+  const result = await managementFetch(`/api/market/contractor/${contractorId}`, { method: "PUT", json: { ...payload, version: expectedVersion } });
+  if (!result.ok) return { status: "error", message: errorMessage(result.code, result.status) };
+  revalidatePath("/my/contractor");
+  return { status: "saved", message: "تم حفظ التعديلات." };
+}
+
+export async function toggleContractorPublish(contractorId: string, expectedVersion: number, publish: boolean): Promise<void> {
+  await managementFetch(`/api/market/contractor/${contractorId}/publish`, { method: "PUT", json: { version: expectedVersion, publish } });
+  revalidatePath("/my/contractor");
+  redirect(`/my/contractor?notice=${publish ? "published" : "unpublished"}`);
+}
+
+export async function deleteContractor(contractorId: string): Promise<void> {
+  await managementFetch(`/api/market/contractor/${contractorId}`, { method: "DELETE" });
+  revalidatePath("/my/contractor");
+  redirect("/my/contractor?notice=deleted");
+}

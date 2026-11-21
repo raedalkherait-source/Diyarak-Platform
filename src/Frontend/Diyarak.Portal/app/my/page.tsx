@@ -33,6 +33,8 @@ export default async function MyListingsPage({ searchParams }: Props) {
           <Link className="button secondary" href="/my/searches">عمليات البحث المحفوظة</Link>
           <Link className="button secondary" href="/my/agency">مكتبي العقاري</Link>
           <Link className="button secondary" href="/my/import">استيراد CSV</Link>
+          <Link className="button secondary" href="/my/projects">مشاريع على المخطط</Link>
+          <Link className="button secondary" href="/my/contractor">ملف المقاول</Link>
           <form action={logout}>
             <button className="button secondary" type="submit">تسجيل الخروج</button>
           </form>

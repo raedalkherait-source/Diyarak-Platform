@@ -5,6 +5,17 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Contractors directory: users create a contractor profile with specialty, governorate and phone;
+  public browsing at `/contractors` with governorate and specialty filters, management at
+  `/my/contractor`; navigation link in header (ADR-0077).
+- Area price reports: aggregated average, min and max prices per governorate and district,
+  split by transaction intent and property category; public API at `/api/market/public/price-reports`,
+  portal page at `/prices` with governorate drill-down; navigation link in header (ADR-0076).
+- Off-plan projects: agencies list upcoming construction projects with unit count, price range
+  and expected completion; public browsing at `/projects` with governorate filter, agency
+  management at `/my/projects`; navigation link in header (ADR-0075).
+- Progressive Web App (PWA): installable on home screen, offline fallback page,
+  web app manifest with Arabic metadata and icons (ADR-0074).
 - CSV bulk import for agencies: upload a CSV file to create properties and draft listings
   in bulk (max 200 rows). API: `POST /api/market/import/csv`, portal: `/my/import` (ADR-0073).
 - Agency packages and listing quotas: moderators assign quota packages to agencies;

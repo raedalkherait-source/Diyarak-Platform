@@ -18,6 +18,10 @@ internal sealed class EmptyAgencyRepository : IAgencyRepository
         Task.FromResult<IReadOnlyDictionary<Guid, Agency>>(
             Agencies.Where(agency => ownerUserIds.Contains(agency.OwnerUserId)).ToDictionary(agency => agency.OwnerUserId));
 
+    public Task<IReadOnlyDictionary<Guid, Agency>> FindByIdsAsync(IReadOnlyCollection<Guid> agencyIds, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyDictionary<Guid, Agency>>(
+            Agencies.Where(agency => agencyIds.Contains(agency.Id)).ToDictionary(agency => agency.Id));
+
     public Task<IReadOnlyList<Agency>> ListByStatusAsync(AgencyVerificationStatus status, int take, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<Agency>>([.. Agencies.Where(agency => agency.VerificationStatus == status).Take(take)]);
 

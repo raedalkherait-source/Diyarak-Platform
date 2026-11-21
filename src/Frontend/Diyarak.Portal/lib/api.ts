@@ -54,3 +54,77 @@ export function getAgency(agencyId: string, page = 1): Promise<PublicAgencyPage 
   if (!/^[0-9a-fA-F-]{36}$/.test(agencyId)) return Promise.resolve(null);
   return getJson<PublicAgencyPage>(`/api/market/public/agencies/${agencyId}?page=${page}`);
 }
+
+export interface PublicOffPlanProject {
+  id: string;
+  name: string;
+  description: string | null;
+  governorate: string;
+  district: string;
+  constructionStatus: string;
+  totalUnits: number;
+  minPriceUsd: number | null;
+  maxPriceUsd: number | null;
+  expectedCompletion: string | null;
+  agency: { id: string; name: string; isVerified: boolean };
+}
+
+export interface PublicOffPlanProjectsPage {
+  items: PublicOffPlanProject[];
+  hasMore: boolean;
+}
+
+export function listOffPlanProjects(page = 1, governorate?: string): Promise<PublicOffPlanProjectsPage | null> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (governorate) params.set("governorate", governorate);
+  return getJson<PublicOffPlanProjectsPage>(`/api/market/public/offplan?${params.toString()}`);
+}
+
+export function getOffPlanProject(projectId: string): Promise<PublicOffPlanProject | null> {
+  if (!/^[0-9a-fA-F-]{36}$/.test(projectId)) return Promise.resolve(null);
+  return getJson<PublicOffPlanProject>(`/api/market/public/offplan/${projectId}`);
+}
+
+export interface PriceReportEntry {
+  area: string;
+  transactionIntent: string;
+  propertyCategory: string;
+  listingCount: number;
+  averagePrice: number;
+  minPrice: number;
+  maxPrice: number;
+  currency: string;
+}
+
+export interface PriceReportResponse {
+  entries: PriceReportEntry[];
+}
+
+export interface PublicContractor {
+  id: string;
+  name: string;
+  description: string | null;
+  governorate: string;
+  district: string | null;
+  specialty: string;
+  phone: string;
+}
+
+export interface PublicContractorsPage {
+  items: PublicContractor[];
+  hasMore: boolean;
+}
+
+export function listContractors(page = 1, governorate?: string, specialty?: string): Promise<PublicContractorsPage | null> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (governorate) params.set("governorate", governorate);
+  if (specialty) params.set("specialty", specialty);
+  return getJson<PublicContractorsPage>(`/api/market/public/contractors?${params.toString()}`);
+}
+
+export function getPriceReport(governorate?: string): Promise<PriceReportResponse | null> {
+  const path = governorate
+    ? `/api/market/public/price-reports/${encodeURIComponent(governorate)}`
+    : "/api/market/public/price-reports";
+  return getJson<PriceReportResponse>(path);
+}
