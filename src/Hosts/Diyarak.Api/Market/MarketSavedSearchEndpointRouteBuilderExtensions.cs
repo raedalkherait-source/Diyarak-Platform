@@ -35,6 +35,7 @@ public static class MarketSavedSearchEndpointRouteBuilderExtensions
         endpoints.MapPost(SavedSearchesPath, CreateAsync).RequireMappedUserManagement();
         endpoints.MapPost($"{SavedSearchesPath}/{{searchId}}/seen", MarkSeenAsync).RequireMappedUserManagement();
         endpoints.MapDelete($"{SavedSearchesPath}/{{searchId}}", DeleteAsync).RequireMappedUserManagement();
+        endpoints.MapPut($"{SavedSearchesPath}/{{searchId}}/alerts", SetAlertsAsync).RequireMappedUserManagement();
 
         return endpoints;
     }
@@ -102,7 +103,8 @@ public static class MarketSavedSearchEndpointRouteBuilderExtensions
                 summary.Search.CreatedAt,
                 summary.Search.LastSeenAt,
                 summary.NewListingCount,
-                summary.NewListingCountCapped))]));
+                summary.NewListingCountCapped,
+                summary.Search.AlertsEnabled))]));
     }
 
     internal static async Task<IResult> CreateAsync(
@@ -126,7 +128,7 @@ public static class MarketSavedSearchEndpointRouteBuilderExtensions
         return result.IsSuccess
             ? Results.Created(
                 $"{SavedSearchesPath}/{result.Value.Id}",
-                new SavedSearchResponse(result.Value.Id, result.Value.Name, result.Value.Query, result.Value.CreatedAt, result.Value.LastSeenAt, 0, false))
+                new SavedSearchResponse(result.Value.Id, result.Value.Name, result.Value.Query, result.Value.CreatedAt, result.Value.LastSeenAt, 0, false, false))
             : ToProblemDetails(result.Error, httpContext);
     }
 
@@ -157,6 +159,23 @@ public static class MarketSavedSearchEndpointRouteBuilderExtensions
         Result result = await useCase.ExecuteAsync(GetRequiredActorUserId(actorAccessor), parsed, cancellationToken);
         return result.IsSuccess ? Results.NoContent() : ToProblemDetails(result.Error, httpContext);
     }
+
+    internal static async Task<IResult> SetAlertsAsync(
+        string searchId,
+        SetAlertsRequest? request,
+        IAuthenticatedActorAccessor actorAccessor,
+        SetSavedSearchAlertsUseCase useCase,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(searchId, out Guid parsed) || request?.Enabled is not { } enabled)
+            return ToProblemDetails(SavedSearchErrors.InvalidRequest, httpContext);
+
+        Result result = await useCase.ExecuteAsync(GetRequiredActorUserId(actorAccessor), parsed, enabled, cancellationToken);
+        return result.IsSuccess ? Results.NoContent() : ToProblemDetails(result.Error, httpContext);
+    }
+
+    internal sealed record SetAlertsRequest(bool? Enabled);
 
     private static Guid GetRequiredActorUserId(IAuthenticatedActorAccessor actorAccessor)
     {
@@ -201,7 +220,8 @@ public static class MarketSavedSearchEndpointRouteBuilderExtensions
         DateTimeOffset CreatedAt,
         DateTimeOffset LastSeenAt,
         int NewListingCount,
-        bool NewListingCountCapped);
+        bool NewListingCountCapped,
+        bool AlertsEnabled);
 
     internal sealed record SavedSearchListResponse(IReadOnlyList<SavedSearchResponse> Items);
 }
