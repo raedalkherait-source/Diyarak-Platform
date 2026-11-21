@@ -34,5 +34,12 @@ internal sealed class MarketSavedSearchRecordConfiguration
         builder.Property(record => record.Query).HasColumnName("query").HasColumnType("text");
         builder.Property(record => record.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp with time zone");
         builder.Property(record => record.LastSeenAt).HasColumnName("last_seen_at").HasColumnType("timestamp with time zone");
+        builder.Property(record => record.AlertsEnabled).HasColumnName("alerts_enabled").HasColumnType("boolean").HasDefaultValue(false);
+        builder.Property(record => record.LastAlertedAt).HasColumnName("last_alerted_at").HasColumnType("timestamp with time zone");
+
+        // Alert runs look up users with alerting searches.
+        builder.HasIndex(record => record.UserId)
+            .HasFilter("alerts_enabled")
+            .HasDatabaseName("ix_market_saved_searches_alerting_user_id");
     }
 }

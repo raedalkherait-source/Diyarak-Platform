@@ -239,6 +239,14 @@ export async function openSavedSearch(searchId: string, href: string): Promise<v
   redirect(href);
 }
 
+/** Turns SMS alerts for a saved search on or off. */
+export async function setSavedSearchAlerts(searchId: string, enabled: boolean): Promise<void> {
+  if (!savedSearchIdPattern.test(searchId)) return;
+  await managementFetch(`/api/market/saved-searches/${searchId}/alerts`, { method: "PUT", json: { enabled } });
+  revalidatePath("/my/searches");
+  redirect(`/my/searches?notice=${enabled ? "alerts-on" : "alerts-off"}`);
+}
+
 export async function deleteSavedSearch(searchId: string): Promise<void> {
   if (!savedSearchIdPattern.test(searchId)) return;
   await managementFetch(`/api/market/saved-searches/${searchId}`, { method: "DELETE" });

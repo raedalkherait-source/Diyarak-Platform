@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { deleteSavedSearch, openSavedSearch } from "@/app/my/actions";
+import { deleteSavedSearch, openSavedSearch, setSavedSearchAlerts } from "@/app/my/actions";
 import { managementFetch } from "@/lib/managementApi";
 import { savedSearchHref } from "@/lib/search";
 
@@ -14,11 +14,20 @@ interface SavedSearch {
   lastSeenAt: string;
   newListingCount: number;
   newListingCountCapped: boolean;
+  alertsEnabled: boolean;
 }
+
+const notices: Record<string, string> = {
+  "alerts-on": "فُعّل التنبيه. ستصلك رسالة SMS واحدة في اليوم على الأكثر عند وجود إعلانات جديدة.",
+  "alerts-off": "أُوقف التنبيه.",
+};
+
+type Props = { searchParams: Promise<{ notice?: string }> };
 
 const dateFormat = new Intl.DateTimeFormat("ar-SY-u-nu-latn", { dateStyle: "medium", timeZone: "Asia/Damascus" });
 
-export default async function SavedSearchesPage() {
+export default async function SavedSearchesPage({ searchParams }: Props) {
+  const { notice } = await searchParams;
   const result = await managementFetch<{ items: SavedSearch[] }>("/api/market/saved-searches");
   const items = result.ok ? result.value.items : [];
 
@@ -28,6 +37,7 @@ export default async function SavedSearchesPage() {
         <h1>عمليات البحث المحفوظة</h1>
         <Link className="button secondary" href="/my">إعلاناتي</Link>
       </div>
+      {notice && notices[notice] ? <p className="success" role="status">{notices[notice]}</p> : null}
       {!result.ok ? (
         <div className="empty">تعذر تحميل عمليات البحث. حاول مجدداً.</div>
       ) : items.length === 0 ? (
@@ -36,6 +46,8 @@ export default async function SavedSearchesPage() {
           <Link className="button" href="/search">ابدأ البحث</Link>
         </div>
       ) : (
+        <>
+        <p className="notice">يمكنك تفعيل تنبيه برسالة SMS لكل بحث: رسالة واحدة يومياً على الأكثر تخبرك بعدد الإعلانات الجديدة.</p>
         <ul className="saved-searches">
           {items.map((search) => {
             const href = savedSearchHref(search.query);
@@ -56,6 +68,11 @@ export default async function SavedSearchesPage() {
                   <form action={openSavedSearch.bind(null, search.searchId, href)}>
                     <button className="button" type="submit">عرض النتائج</button>
                   </form>
+                  <form action={setSavedSearchAlerts.bind(null, search.searchId, !search.alertsEnabled)}>
+                    <button className="button secondary" type="submit" aria-pressed={search.alertsEnabled}>
+                      {search.alertsEnabled ? "🔔 التنبيه مفعّل — إيقاف" : "🔕 تفعيل تنبيه SMS"}
+                    </button>
+                  </form>
                   <form action={deleteSavedSearch.bind(null, search.searchId)}>
                     <button className="button secondary danger" type="submit" aria-label={`حذف ${search.name}`}>حذف</button>
                   </form>
@@ -64,6 +81,7 @@ export default async function SavedSearchesPage() {
             );
           })}
         </ul>
+        </>
       )}
     </div>
   );
