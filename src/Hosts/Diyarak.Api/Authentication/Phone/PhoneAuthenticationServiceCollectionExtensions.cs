@@ -47,7 +47,9 @@ internal static class PhoneAuthenticationServiceCollectionExtensions
             gateway.Validate(allowInsecureHttp: environment.IsDevelopment());
 
             services.AddSingleton(gateway);
-            services.AddHttpClient<IOtpSender, HttpSmsGatewayOtpSender>();
+            // The concrete client is also used for saved-search alerts (ADR-0070).
+            services.AddHttpClient<HttpSmsGatewayOtpSender>();
+            services.AddTransient<IOtpSender>(provider => provider.GetRequiredService<HttpSmsGatewayOtpSender>());
         }
         else
         {

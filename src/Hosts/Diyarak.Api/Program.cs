@@ -1,3 +1,4 @@
+using Diyarak.Api.SavedSearchAlerts;
 using Diyarak.Api.Authentication;
 using Diyarak.Api.Authentication.Phone;
 using Diyarak.Api.Market;
@@ -127,6 +128,7 @@ builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.CreateSavedS
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.ListSavedSearchesUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.MarkSavedSearchSeenUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.DeleteSavedSearchUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.SetSavedSearchAlertsUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Statistics.RecordListingViewUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Statistics.GetListingStatisticsUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Statistics.ListOwnedListingStatisticsUseCase>();
@@ -136,6 +138,8 @@ builder.Services.AddScoped<Diyarak.Market.Application.Agencies.RequestAgencyVeri
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.DecideAgencyVerificationUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetPublicAgencyUseCase>();
 builder.Services.AddModeration(builder.Configuration);
+// After phone authentication, which registers the SMS gateway the alerts reuse.
+builder.Services.AddSavedSearchAlerts(builder.Configuration, builder.Environment);
 
 builder.Services.TryAddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton<IListingPhotoStorage>(

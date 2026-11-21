@@ -647,9 +647,19 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("AlertsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("alerts_enabled");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("LastAlertedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_alerted_at");
 
                     b.Property<DateTimeOffset>("LastSeenAt")
                         .HasColumnType("timestamp with time zone")
@@ -671,6 +681,10 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_market_saved_searches");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_market_saved_searches_alerting_user_id")
+                        .HasFilter("alerts_enabled");
 
                     b.HasIndex("UserId", "Query")
                         .IsUnique()

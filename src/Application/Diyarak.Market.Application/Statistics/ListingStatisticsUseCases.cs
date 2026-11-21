@@ -51,6 +51,8 @@ public static class StatisticsCalendar
     public static DateOnly Today(DateTimeOffset now) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, Damascus).DateTime);
 
+    public static int LocalHour(DateTimeOffset now) => TimeZoneInfo.ConvertTime(now, Damascus).Hour;
+
     private static TimeZoneInfo FindDamascus()
     {
         try
