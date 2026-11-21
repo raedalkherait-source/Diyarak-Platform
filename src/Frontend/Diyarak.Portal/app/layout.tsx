@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { getSessionToken } from "@/lib/session";
 import "./globals.css";
 
@@ -8,6 +9,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.PORTAL_PUBLIC_URL ?? "http://localhost:3000"),
   title: { default: "ديارك — عقارات سوريا للبيع والإيجار", template: "%s | ديارك" },
   description: "ابحث عن شقق وبيوت ومحلات للبيع والإيجار في جميع المحافظات السورية.",
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "ديارك" },
 };
 
 export const viewport: Viewport = {
@@ -21,6 +24,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="ar" dir="rtl">
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body>
         <header className="site-header">
           <div className="container">
@@ -35,6 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </Link>
           </div>
         </header>
+        <ServiceWorkerRegistration />
         <main>{children}</main>
         <footer className="site-footer">
           <div className="container">© ديارك — منصة العقارات في سوريا</div>

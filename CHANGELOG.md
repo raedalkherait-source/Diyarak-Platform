@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Progressive Web App (PWA): installable on home screen, offline fallback page,
+  web app manifest with Arabic metadata and icons (ADR-0074).
 - CSV bulk import for agencies: upload a CSV file to create properties and draft listings
   in bulk (max 200 rows). API: `POST /api/market/import/csv`, portal: `/my/import` (ADR-0073).
 - Agency packages and listing quotas: moderators assign quota packages to agencies;
