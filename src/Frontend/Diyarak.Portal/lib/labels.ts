@@ -85,6 +85,12 @@ export const featureLabels: Record<string, string> = {
   SecurityGuard: "حارس",
 };
 
+export const constructionStatusLabels: Record<string, string> = {
+  Planned: "مخطط",
+  UnderConstruction: "قيد الإنشاء",
+  NearCompletion: "قرب الانتهاء",
+};
+
 export const areaUnitLabels: Record<string, string> = {
   SquareMeter: "م²",
   SquareFoot: "قدم²",

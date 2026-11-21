@@ -13,6 +13,8 @@ public interface IAgencyRepository
     /// <summary>Agencies of the given publishers, keyed by owner (for listing pages).</summary>
     public Task<IReadOnlyDictionary<Guid, Agency>> FindByOwnersAsync(IReadOnlyCollection<Guid> ownerUserIds, CancellationToken cancellationToken = default);
 
+    public Task<IReadOnlyDictionary<Guid, Agency>> FindByIdsAsync(IReadOnlyCollection<Guid> agencyIds, CancellationToken cancellationToken = default);
+
     public Task<IReadOnlyList<Agency>> ListByStatusAsync(AgencyVerificationStatus status, int take, CancellationToken cancellationToken = default);
 
     /// <returns><c>false</c> when the owner already has an agency.</returns>

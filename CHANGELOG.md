@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Off-plan projects: agencies list upcoming construction projects with unit count, price range
+  and expected completion; public browsing at `/projects` with governorate filter, agency
+  management at `/my/projects`; navigation link in header (ADR-0075).
 - Progressive Web App (PWA): installable on home screen, offline fallback page,
   web app manifest with Arabic metadata and icons (ADR-0074).
 - CSV bulk import for agencies: upload a CSV file to create properties and draft listings

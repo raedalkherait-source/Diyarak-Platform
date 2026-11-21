@@ -112,6 +112,10 @@ public static class PersistenceServiceCollectionExtensions
             PostgreSqlActiveListingCounter>();
 
         services.AddScoped<
+            Diyarak.Market.Application.OffPlanProjects.IOffPlanProjectRepository,
+            PostgreSqlOffPlanProjectRepository>();
+
+        services.AddScoped<
             Diyarak.Market.Application.Payments.IPaymentOrderStore,
             PostgreSqlPaymentOrderStore>();
 

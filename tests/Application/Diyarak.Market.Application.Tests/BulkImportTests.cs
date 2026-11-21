@@ -199,6 +199,8 @@ public sealed class BulkImportTests
             Task.FromResult(_agencies.Find(a => a.OwnerUserId == ownerUserId));
         public Task<IReadOnlyDictionary<Guid, Agency>> FindByOwnersAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
             Task.FromResult<IReadOnlyDictionary<Guid, Agency>>(_agencies.Where(a => ids.Contains(a.OwnerUserId)).ToDictionary(a => a.OwnerUserId));
+        public Task<IReadOnlyDictionary<Guid, Agency>> FindByIdsAsync(IReadOnlyCollection<Guid> agencyIds, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyDictionary<Guid, Agency>>(_agencies.Where(a => agencyIds.Contains(a.Id)).ToDictionary(a => a.Id));
         public Task<IReadOnlyList<Agency>> ListByStatusAsync(AgencyVerificationStatus status, int take, CancellationToken ct = default) =>
             Task.FromResult<IReadOnlyList<Agency>>([.. _agencies.Where(a => a.VerificationStatus == status).Take(take)]);
         public Task<bool> TryAddAsync(Agency agency, CancellationToken ct = default)

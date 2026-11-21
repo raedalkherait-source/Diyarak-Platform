@@ -46,6 +46,20 @@ internal sealed class PostgreSqlAgencyRepository
         return records.ToDictionary(record => record.OwnerUserId, ToDomain);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, Agency>> FindByIdsAsync(IReadOnlyCollection<Guid> agencyIds, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(agencyIds);
+        if (agencyIds.Count == 0)
+            return new Dictionary<Guid, Agency>();
+
+        Guid[] ids = [.. agencyIds.Distinct()];
+        List<MarketAgencyRecord> records = await _context.MarketAgencies.AsNoTracking()
+            .Where(agency => ids.Contains(agency.Id))
+            .ToListAsync(cancellationToken);
+
+        return records.ToDictionary(record => record.Id, ToDomain);
+    }
+
     public async Task<IReadOnlyList<Agency>> ListByStatusAsync(AgencyVerificationStatus status, int take, CancellationToken cancellationToken = default)
     {
         List<MarketAgencyRecord> records = await _context.MarketAgencies.AsNoTracking()

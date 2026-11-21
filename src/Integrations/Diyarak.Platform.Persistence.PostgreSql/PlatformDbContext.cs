@@ -50,6 +50,9 @@ public sealed class PlatformDbContext(
     internal DbSet<MarketListingPromotionRecord> MarketListingPromotions =>
         Set<MarketListingPromotionRecord>();
 
+    internal DbSet<MarketOffPlanProjectRecord> MarketOffPlanProjects =>
+        Set<MarketOffPlanProjectRecord>();
+
     internal DbSet<MarketPropertyRecord> MarketProperties =>
         Set<MarketPropertyRecord>();
 
@@ -101,5 +104,8 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new MarketListingPromotionRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new MarketOffPlanProjectRecordConfiguration());
     }
 }

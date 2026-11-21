@@ -142,6 +142,13 @@ builder.Services.AddScoped<Diyarak.Market.Application.Agencies.AssignAgencyPacka
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.RevokeAgencyPackageUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetListingQuotaUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.BulkImport.BulkImportListingsUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.CreateOffPlanProjectUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.UpdateOffPlanProjectUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.PublishOffPlanProjectUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.DeleteOffPlanProjectUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.ListMyOffPlanProjectsUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.ListPublicOffPlanProjectsUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.GetPublicOffPlanProjectUseCase>();
 builder.Services.AddModeration(builder.Configuration);
 builder.Services.AddPayments();
 // After phone authentication, which registers the SMS gateway the alerts reuse.
@@ -342,6 +349,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketListingStatisticsEndpoints();
     app.MapMarketAgencyEndpoints();
     app.MapMarketBulkImportEndpoints();
+    app.MapMarketOffPlanProjectEndpoints();
     app.MapPaymentEndpoints();
     app.MapModerationEndpoints();
 }

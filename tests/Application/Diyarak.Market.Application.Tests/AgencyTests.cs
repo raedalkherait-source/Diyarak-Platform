@@ -119,6 +119,9 @@ public sealed class AgencyTests
         public Task<IReadOnlyDictionary<Guid, Agency>> FindByOwnersAsync(IReadOnlyCollection<Guid> ownerUserIds, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyDictionary<Guid, Agency>>(Items.Where(item => ownerUserIds.Contains(item.OwnerUserId)).ToDictionary(item => item.OwnerUserId));
 
+        public Task<IReadOnlyDictionary<Guid, Agency>> FindByIdsAsync(IReadOnlyCollection<Guid> agencyIds, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyDictionary<Guid, Agency>>(Items.Where(item => agencyIds.Contains(item.Id)).ToDictionary(item => item.Id));
+
         public Task<IReadOnlyList<Agency>> ListByStatusAsync(AgencyVerificationStatus status, int take, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Agency>>([.. Items.Where(item => item.VerificationStatus == status)]);
 
