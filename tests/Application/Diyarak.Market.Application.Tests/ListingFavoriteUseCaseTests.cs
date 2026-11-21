@@ -158,6 +158,9 @@ public sealed class ListingFavoriteUseCaseTests
         public Task<bool> ContainsAsync(Guid userId, Guid listingId, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.Any(item => item.UserId == userId && item.ListingId == listingId));
 
+        public Task<int> CountForListingAsync(Guid listingId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.Count(item => item.ListingId == listingId));
+
         public Task<IReadOnlyList<PublishedListingProjection>> ListPublishedAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default)
         {
             LastWindow = (skip, take);

@@ -204,6 +204,8 @@ public sealed class ListingContactEndpointTests
                     services.AddSingleton<Diyarak.Market.Application.Photos.IListingPhotoRepository>(new EmptyListingPhotoRepository());
                     services.RemoveAll<IPublisherPhoneLookup>();
                     services.AddSingleton<IPublisherPhoneLookup>(new FixedPhoneLookup());
+                    services.RemoveAll<Diyarak.Market.Application.Statistics.IListingStatisticsStore>();
+                    services.AddSingleton<Diyarak.Market.Application.Statistics.IListingStatisticsStore>(Statistics);
                 });
         }
     }
@@ -248,5 +250,27 @@ public sealed class ListingContactEndpointTests
 
         public Task<bool> TrySaveAsync(MarketProperty property, long expectedVersion, CancellationToken cancellationToken = default) =>
             Task.FromResult(true);
+    }
+
+    internal static readonly CountingStatisticsStore Statistics = new();
+
+    internal sealed class CountingStatisticsStore : Diyarak.Market.Application.Statistics.IListingStatisticsStore
+    {
+        private int _reveals;
+
+        public int Reveals => _reveals;
+
+        public Task IncrementAsync(Guid listingId, DateOnly day, Diyarak.Market.Application.Statistics.ListingStatistic statistic, CancellationToken cancellationToken = default)
+        {
+            if (statistic == Diyarak.Market.Application.Statistics.ListingStatistic.ContactReveal)
+                Interlocked.Increment(ref _reveals);
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<Diyarak.Market.Application.Statistics.ListingDailyStatistics>> ListDailyAsync(Guid listingId, DateOnly from, DateOnly to, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Diyarak.Market.Application.Statistics.ListingDailyStatistics>>([]);
+
+        public Task<IReadOnlyList<Diyarak.Market.Application.Statistics.ListingStatisticsTotals>> SumAsync(IReadOnlyCollection<Guid> listingIds, DateOnly from, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Diyarak.Market.Application.Statistics.ListingStatisticsTotals>>([]);
     }
 }

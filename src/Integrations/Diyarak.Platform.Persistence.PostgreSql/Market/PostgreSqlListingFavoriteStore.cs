@@ -79,6 +79,14 @@ internal sealed class PostgreSqlListingFavoriteStore
             .AnyAsync(favorite => favorite.UserId == userId && favorite.ListingId == listingId, cancellationToken);
     }
 
+    public Task<int> CountForListingAsync(
+        Guid listingId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.MarketListingFavorites
+            .CountAsync(favorite => favorite.ListingId == listingId, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<PublishedListingProjection>> ListPublishedAsync(
         Guid userId,
         int skip,

@@ -29,6 +29,11 @@ public interface IListingFavoriteStore
         Guid listingId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>How many users saved the Listing (shown only to its publisher).</summary>
+    public Task<int> CountForListingAsync(
+        Guid listingId,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Saved Listings that are currently published, most recently saved first. Saved Listings that
     /// are paused, closed or suspended are skipped but kept, so they return if republished.

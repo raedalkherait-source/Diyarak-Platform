@@ -16,7 +16,7 @@ interface SavedSearch {
   newListingCountCapped: boolean;
 }
 
-const dateFormat = new Intl.DateTimeFormat("ar-SY", { dateStyle: "medium", timeZone: "Asia/Damascus" });
+const dateFormat = new Intl.DateTimeFormat("ar-SY-u-nu-latn", { dateStyle: "medium", timeZone: "Asia/Damascus" });
 
 export default async function SavedSearchesPage() {
   const result = await managementFetch<{ items: SavedSearch[] }>("/api/market/saved-searches");

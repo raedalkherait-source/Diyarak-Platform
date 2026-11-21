@@ -27,6 +27,9 @@ internal static class ClientRateLimitingServiceCollectionExtensions
     /// <summary>Per-client policy for anonymous listing reports.</summary>
     internal const string ReportPolicy = "report";
 
+    /// <summary>Per-client policy for listing view beacons, bounding how far one client can inflate counts.</summary>
+    internal const string ViewPolicy = "view";
+
     /// <summary>
     /// Registers a global fixed-window limiter partitioned per client IP address so that a
     /// single client cannot exhaust capacity for everyone else. Health probes are exempt.
@@ -140,6 +143,18 @@ internal static class ClientRateLimitingServiceCollectionExtensions
                     {
                         PermitLimit = section.GetValue<int?>("Report:PermitLimit") ?? 10,
                         Window = TimeSpan.FromSeconds(section.GetValue<int?>("Report:WindowSeconds") ?? 3600),
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
+
+            options.AddPolicy(
+                ViewPolicy,
+                httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = section.GetValue<int?>("View:PermitLimit") ?? 120,
+                        Window = TimeSpan.FromSeconds(section.GetValue<int?>("View:WindowSeconds") ?? 3600),
                         QueueLimit = 0,
                         AutoReplenishment = true,
                     }));

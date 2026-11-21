@@ -96,6 +96,10 @@ public static class PersistenceServiceCollectionExtensions
             PostgreSqlSavedSearchStore>();
 
         services.AddScoped<
+            Diyarak.Market.Application.Statistics.IListingStatisticsStore,
+            PostgreSqlListingStatisticsStore>();
+
+        services.AddScoped<
             IDraftListingDeletionStore,
             PostgreSqlDraftListingDeletionStore>();
 

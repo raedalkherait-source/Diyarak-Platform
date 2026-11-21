@@ -35,6 +35,9 @@ public sealed class PlatformDbContext(
     internal DbSet<MarketSavedSearchRecord> MarketSavedSearches =>
         Set<MarketSavedSearchRecord>();
 
+    internal DbSet<MarketListingDailyStatisticsRecord> MarketListingDailyStatistics =>
+        Set<MarketListingDailyStatisticsRecord>();
+
     internal DbSet<MarketPropertyRecord> MarketProperties =>
         Set<MarketPropertyRecord>();
 
@@ -72,5 +75,8 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new MarketSavedSearchRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new MarketListingDailyStatisticsRecordConfiguration());
     }
 }

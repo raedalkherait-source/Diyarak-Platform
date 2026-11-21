@@ -1687,6 +1687,9 @@ public sealed class PublishListingEndpointTests
         public Task<bool> ContainsAsync(Guid userId, Guid listingId, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.Contains((userId, listingId)));
 
+        public Task<int> CountForListingAsync(Guid listingId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Items.Count(item => item.ListingId == listingId));
+
         public Task<IReadOnlyList<PublishedListingProjection>> ListPublishedAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<PublishedListingProjection>>([]);
     }

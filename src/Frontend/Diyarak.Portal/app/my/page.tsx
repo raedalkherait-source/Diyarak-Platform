@@ -14,6 +14,10 @@ export default async function MyListingsPage({ searchParams }: Props) {
   const { notice } = await searchParams;
   const result = await managementFetch<{ items: ManagementListing[]; hasMore: boolean }>("/api/market/listings?pageSize=100");
   const listings = result.ok ? result.value.items : [];
+  const totals = await managementFetch<{ items: { listingId: string; views: number; contactReveals: number }[] }>(
+    "/api/market/listings/statistics?days=30",
+  );
+  const totalsById = new Map((totals.ok ? totals.value.items : []).map((item) => [item.listingId, item]));
 
   return (
     <div className="container section">
@@ -57,6 +61,11 @@ export default async function MyListingsPage({ searchParams }: Props) {
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
+                {listing.status !== "Draft" ? (
+                  <p className="notice listing-totals">
+                    آخر 30 يوماً: {totalsById.get(listing.listingId)?.views ?? 0} مشاهدة · {totalsById.get(listing.listingId)?.contactReveals ?? 0} إظهار رقم
+                  </p>
+                ) : null}
               </div>
               <div className="toolbar">
                 <Link className="button secondary" href={`/my/listings/${listing.listingId}`}>
