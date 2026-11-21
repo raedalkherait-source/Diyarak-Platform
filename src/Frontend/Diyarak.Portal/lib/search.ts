@@ -14,6 +14,7 @@ export const forwardedSearchKeys = [
   "legalTitleType",
   "finishingLevel",
   "propertyFeature",
+  "bbox",
   "page",
 ] as const;
 
@@ -38,6 +39,7 @@ export function toApiQuery(params: RawSearchParams, pageSize: number = defaultPa
 
     for (const value of accepted) {
       if (numericKeys.has(key) && !/^\d+(\.\d+)?$/.test(value)) continue;
+      if (key === "bbox" && !parseBbox(value)) continue;
       query.append(key, value);
     }
   }
@@ -80,6 +82,41 @@ export function savedSearchQuery(params: RawSearchParams): string {
 export function savedSearchHref(query: string): string {
   const params = new URLSearchParams(query);
   params.delete("livingAreaUnit");
+  const text = params.toString();
+  return text ? `/search?${text}` : "/search";
+}
+
+export interface MapBounds {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}
+
+/** Parses "south,west,north,east" (the API's bbox format); invalid or oversized boxes are rejected. */
+export function parseBbox(value: string): MapBounds | null {
+  const parts = value.split(",");
+  if (parts.length !== 4 || parts.some((part) => !/^-?\d{1,3}(\.\d{1,6})?$/.test(part))) return null;
+  const [south = NaN, west = NaN, north = NaN, east = NaN] = parts.map(Number);
+  const valid =
+    south >= -90 && north <= 90 && west >= -180 && east <= 180 &&
+    south < north && west < east && north - south <= 8 && east - west <= 8;
+  return valid ? { south, west, north, east } : null;
+}
+
+export function formatBbox(bounds: MapBounds): string {
+  const fixed = (value: number) => (Math.round(value * 1e4) / 1e4).toString();
+  return [bounds.south, bounds.west, bounds.north, bounds.east].map(fixed).join(",");
+}
+
+/** The current search with a map area (and back to page 1), or without one when bounds is null. */
+export function searchWithArea(query: string, bounds: MapBounds | null): string {
+  const params = new URLSearchParams(query);
+  params.delete("page");
+  params.delete("pageSize");
+  params.delete("livingAreaUnit");
+  if (bounds) params.set("bbox", formatBbox(bounds));
+  else params.delete("bbox");
   const text = params.toString();
   return text ? `/search?${text}` : "/search";
 }

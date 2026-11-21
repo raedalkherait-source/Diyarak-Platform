@@ -22,6 +22,8 @@ interface Props {
   /** Picker mode: the current pin and a callback for map clicks. */
   pin?: LatLng | null;
   onPick?: (point: LatLng) => void;
+  /** Called when the visitor pans or zooms (not for programmatic moves). */
+  onUserMove?: (bounds: { south: number; west: number; north: number; east: number }) => void;
   className?: string;
   label: string;
 }
@@ -32,13 +34,15 @@ const brand = "#0f6b5c";
  * Thin Leaflet wrapper. Leaflet touches `window`, so it is imported inside the effect and the
  * component renders an empty container on the server. Circle markers avoid image assets.
  */
-export function LeafletMap({ config, center, zoom, circle, markers, pin, onPick, className, label }: Props) {
+export function LeafletMap({ config, center, zoom, circle, markers, pin, onPick, onUserMove, className, label }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletInstance | null>(null);
   const pinLayer = useRef<CircleMarker | null>(null);
   const overlay = useRef<LayerGroup | Circle | null>(null);
   const pickRef = useRef(onPick);
   pickRef.current = onPick;
+  const moveRef = useRef(onUserMove);
+  moveRef.current = onUserMove;
 
   // Create the map once.
   useEffect(() => {
@@ -50,6 +54,14 @@ export function LeafletMap({ config, center, zoom, circle, markers, pin, onPick,
       L.tileLayer(config.tileUrl, { attribution: config.attribution, maxZoom: 19 }).addTo(instance);
       instance.setView([center.latitude, center.longitude], zoom);
       instance.on("click", (event) => pickRef.current?.({ latitude: event.latlng.lat, longitude: event.latlng.lng }));
+      // Only moves started by the visitor count; fitBounds and setView also fire "moveend".
+      let interacted = false;
+      for (const type of ["mousedown", "touchstart", "wheel", "keydown"]) container.current.addEventListener(type, () => (interacted = true), { passive: true });
+      instance.on("moveend", () => {
+        if (!interacted) return;
+        const bounds = instance.getBounds();
+        moveRef.current?.({ south: bounds.getSouth(), west: bounds.getWest(), north: bounds.getNorth(), east: bounds.getEast() });
+      });
       map.current = instance;
       container.current.dispatchEvent(new Event("leaflet-ready"));
     });

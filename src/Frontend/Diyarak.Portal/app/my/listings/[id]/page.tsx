@@ -5,6 +5,7 @@ import { changeListingStatus, deleteDraft, deletePhoto } from "@/app/my/actions"
 import { EditListingForm } from "@/components/EditListingForm";
 import { EditPropertyForm } from "@/components/EditPropertyForm";
 import { ListingStatsPanel } from "@/components/ListingStatsPanel";
+import { FeatureListingPanel, type PaymentCatalog, type PaymentOrderView } from "@/components/FeatureListingPanel";
 import type { ListingStatistics } from "@/lib/statistics";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { PublishButton } from "@/components/PublishButton";
@@ -29,6 +30,7 @@ const notices: Record<string, [string, "success" | "form-error"]> = {
   "status-resume": ["عاد الإعلان للظهور للزوار.", "success"],
   "status-close": ["تم إنهاء الإعلان. شكراً لاستخدامك ديارك.", "success"],
   "delete-failed": ["تعذر حذف المسودة. ربما تغيّرت أو نُشرت؛ حدّث الصفحة وحاول مجدداً.", "form-error"],
+  "payment-submitted": ["تم إرسال طلب التمييز. سنفعّله بعد تأكيد وصول المبلغ.", "success"],
   "status-failed": ["تعذر تغيير حالة الإعلان. حدّث الصفحة وحاول مجدداً.", "form-error"],
 };
 
@@ -47,6 +49,16 @@ export default async function ManageListingPage({ params, searchParams }: Props)
 
   const stats =
     value.status !== "Draft" ? await managementFetch<ListingStatistics>(`/api/market/listings/${id}/statistics?days=30`) : null;
+
+  const isPublished = value.status === "Published";
+  const [catalog, promotion, orders] = isPublished
+    ? await Promise.all([
+        managementFetch<PaymentCatalog>("/api/market/payments/catalog"),
+        managementFetch<{ featuredUntil: string | null }>(`/api/market/listings/${id}/promotion`),
+        managementFetch<{ items: PaymentOrderView[] }>("/api/market/payments/orders"),
+      ])
+    : [null, null, null];
+  const offered = catalog?.ok && catalog.value.products.length > 0 && catalog.value.methods.length > 0;
 
   const property =
     editable && value.subject.subjectType === "market.property"
@@ -78,6 +90,15 @@ export default async function ManageListingPage({ params, searchParams }: Props)
       </div>
 
       {stats?.ok ? <ListingStatsPanel stats={stats.value} /> : null}
+
+      {offered && catalog?.ok ? (
+        <FeatureListingPanel
+          listingId={id}
+          catalog={catalog.value}
+          featuredUntil={promotion?.ok ? promotion.value.featuredUntil : null}
+          orders={orders?.ok ? orders.value.items.filter((order) => order.listingId === id) : []}
+        />
+      ) : null}
 
       {value.status === "Suspended" ? (
         <section className="panel">

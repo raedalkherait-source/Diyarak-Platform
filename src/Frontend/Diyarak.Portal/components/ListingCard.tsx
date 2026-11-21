@@ -15,7 +15,7 @@ export function ListingCard({ listing }: { listing: PublicListing }) {
   ].filter(Boolean);
 
   return (
-    <article className="card">
+    <article className={listing.featured ? "card featured" : "card"}>
       <Link href={`/listings/${listing.listingId}`} aria-label={listing.headline}>
         <div className="card-media">
           {cover ? (
@@ -30,6 +30,7 @@ export function ListingCard({ listing }: { listing: PublicListing }) {
             <div className="placeholder">لا توجد صور</div>
           )}
           <span className="badge">{label(transactionIntentLabels, listing.context.transactionIntent)}</span>
+          {listing.featured ? <span className="featured-badge">★ مميز</span> : null}
           {listing.photos.length > 1 ? <span className="photo-count">{listing.photos.length} صور</span> : null}
         </div>
       </Link>
