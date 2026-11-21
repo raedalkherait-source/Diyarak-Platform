@@ -1,6 +1,7 @@
 using Diyarak.Market.Application;
 using Diyarak.Market.Application.Moderation;
 using Diyarak.Market.Application.Photos;
+using Diyarak.Market.Application.PriceReports;
 using Diyarak.Platform.Identity;
 using Diyarak.Platform.Identity.Application;
 using Diyarak.Platform.Persistence.PostgreSql.Identity;
@@ -114,6 +115,10 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<
             Diyarak.Market.Application.OffPlanProjects.IOffPlanProjectRepository,
             PostgreSqlOffPlanProjectRepository>();
+
+        services.AddScoped<
+            IAreaPriceReportQuery,
+            PostgreSqlAreaPriceReportQuery>();
 
         services.AddScoped<
             Diyarak.Market.Application.Payments.IPaymentOrderStore,

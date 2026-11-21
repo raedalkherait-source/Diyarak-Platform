@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Area price reports: aggregated average, min and max prices per governorate and district,
+  split by transaction intent and property category; public API at `/api/market/public/price-reports`,
+  portal page at `/prices` with governorate drill-down; navigation link in header (ADR-0076).
 - Off-plan projects: agencies list upcoming construction projects with unit count, price range
   and expected completion; public browsing at `/projects` with governorate filter, agency
   management at `/my/projects`; navigation link in header (ADR-0075).

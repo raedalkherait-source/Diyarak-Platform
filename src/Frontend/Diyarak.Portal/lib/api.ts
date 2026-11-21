@@ -84,3 +84,25 @@ export function getOffPlanProject(projectId: string): Promise<PublicOffPlanProje
   if (!/^[0-9a-fA-F-]{36}$/.test(projectId)) return Promise.resolve(null);
   return getJson<PublicOffPlanProject>(`/api/market/public/offplan/${projectId}`);
 }
+
+export interface PriceReportEntry {
+  area: string;
+  transactionIntent: string;
+  propertyCategory: string;
+  listingCount: number;
+  averagePrice: number;
+  minPrice: number;
+  maxPrice: number;
+  currency: string;
+}
+
+export interface PriceReportResponse {
+  entries: PriceReportEntry[];
+}
+
+export function getPriceReport(governorate?: string): Promise<PriceReportResponse | null> {
+  const path = governorate
+    ? `/api/market/public/price-reports/${encodeURIComponent(governorate)}`
+    : "/api/market/public/price-reports";
+  return getJson<PriceReportResponse>(path);
+}

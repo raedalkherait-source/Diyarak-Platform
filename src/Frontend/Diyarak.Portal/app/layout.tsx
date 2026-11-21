@@ -36,6 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/search?transactionIntent=Rent">إيجار</Link>
               <Link href="/search?propertyCategory=CommercialProperty">تجاري</Link>
               <Link href="/projects">مشاريع</Link>
+              <Link href="/prices">أسعار</Link>
             </nav>
             <Link className="button header-cta" href={signedIn ? "/my" : "/login"}>
               {signedIn ? "إعلاناتي" : "أضف إعلانك"}

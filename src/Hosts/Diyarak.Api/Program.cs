@@ -350,6 +350,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketAgencyEndpoints();
     app.MapMarketBulkImportEndpoints();
     app.MapMarketOffPlanProjectEndpoints();
+    app.MapMarketPriceReportEndpoints();
     app.MapPaymentEndpoints();
     app.MapModerationEndpoints();
 }
