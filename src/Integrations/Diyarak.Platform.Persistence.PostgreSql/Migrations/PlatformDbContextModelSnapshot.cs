@@ -171,6 +171,54 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketAgencyPackageRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AgencyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("agency_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_revoked");
+
+                    b.Property<int>("ListingQuota")
+                        .HasColumnType("integer")
+                        .HasColumnName("listing_quota");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_agency_packages");
+
+                    b.HasIndex("AgencyId", "ExpiresAt")
+                        .HasDatabaseName("ix_market_agency_packages_agency_expires");
+
+                    b.ToTable("agency_packages", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_agency_packages_expiry", "expires_at > created_at");
+
+                            t.HasCheckConstraint("ck_market_agency_packages_quota", "listing_quota > 0");
+                        });
+                });
+
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketAgencyRecord", b =>
                 {
                     b.Property<Guid>("Id")
