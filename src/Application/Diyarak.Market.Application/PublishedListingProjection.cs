@@ -10,4 +10,7 @@ public sealed record PublishedListingProjection(
 {
     /// <summary>Photos in display order; the first is the cover photo.</summary>
     public IReadOnlyList<ListingPhoto> Photos { get; init; } = [];
+
+    /// <summary>Whether a paid featured period is running (ADR-0071).</summary>
+    public bool IsFeatured { get; init; }
 }

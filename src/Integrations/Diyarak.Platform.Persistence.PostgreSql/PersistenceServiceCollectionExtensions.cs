@@ -100,6 +100,18 @@ public static class PersistenceServiceCollectionExtensions
             PostgreSqlListingStatisticsStore>();
 
         services.AddScoped<
+            Diyarak.Market.Application.Agencies.IAgencyRepository,
+            PostgreSqlAgencyRepository>();
+
+        services.AddScoped<
+            Diyarak.Market.Application.Payments.IPaymentOrderStore,
+            PostgreSqlPaymentOrderStore>();
+
+        services.AddScoped<
+            Diyarak.Market.Application.Payments.IListingPromotionStore,
+            PostgreSqlListingPromotionStore>();
+
+        services.AddScoped<
             IDraftListingDeletionStore,
             PostgreSqlDraftListingDeletionStore>();
 

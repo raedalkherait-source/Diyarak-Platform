@@ -2,29 +2,30 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Diyarak.Market.Application;
+using Diyarak.Market.Company;
 
 namespace Diyarak.Api.Market;
 
 internal static class PublicMarketListingEntityTag
 {
     private const string DetailRepresentationRevision =
-        "public-market-listing-v4";
+        "public-market-listing-v6";
 
     private const string CollectionRepresentationRevision =
-        "public-market-listing-page-v4";
+        "public-market-listing-page-v6";
 
-    internal static string Create(PublishedListingProjection projection)
+    internal static string Create(PublishedListingProjection projection, Agency? agency = null)
     {
         ArgumentNullException.ThrowIfNull(projection);
 
         string material = string.Create(
             CultureInfo.InvariantCulture,
-            $"{DetailRepresentationRevision}:{projection.Listing.Id:N}:{projection.Listing.Version}:{projection.Property.Version}:{PhotoFingerprint(projection)}");
+            $"{DetailRepresentationRevision}:{projection.Listing.Id:N}:{projection.Listing.Version}:{projection.Property.Version}:{PhotoFingerprint(projection)}:{AgencyFingerprint(agency)}");
 
         return CreateOpaqueTag(material);
     }
 
-    internal static string Create(PublishedListingPage page)
+    internal static string Create(PublishedListingPage page, IReadOnlyDictionary<Guid, Agency>? agencyByPublisher = null)
     {
         ArgumentNullException.ThrowIfNull(page);
 
@@ -49,6 +50,9 @@ internal static class PublicMarketListingEntityTag
                 projection.Property.Version.ToString(CultureInfo.InvariantCulture));
             material.Append(':');
             material.Append(PhotoFingerprint(projection));
+            material.Append(':');
+            material.Append(AgencyFingerprint(agencyByPublisher?.GetValueOrDefault(projection.Listing.PublisherUserId)));
+            material.Append(projection.IsFeatured ? ":f" : ":-");
         }
 
         return CreateOpaqueTag(material.ToString());
@@ -120,4 +124,9 @@ internal static class PublicMarketListingEntityTag
 
         return $"\"{Convert.ToHexString(hash)}\"";
     }
+
+    private static string AgencyFingerprint(Agency? agency) =>
+        agency is null
+            ? "-"
+            : string.Create(CultureInfo.InvariantCulture, $"{agency.Id:N}.{agency.Version}");
 }

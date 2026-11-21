@@ -27,6 +27,8 @@ internal sealed class PostgreSqlSavedSearchStore
             Query = search.Query,
             CreatedAt = search.CreatedAt,
             LastSeenAt = search.LastSeenAt,
+            AlertsEnabled = search.AlertsEnabled,
+            LastAlertedAt = search.LastAlertedAt,
         };
 
         _context.MarketSavedSearches.Add(record);
@@ -51,7 +53,7 @@ internal sealed class PostgreSqlSavedSearchStore
             .ToListAsync(cancellationToken);
 
         return [.. records.Select(record => new SavedSearch(
-            record.Id, record.UserId, record.Name, record.Query, record.CreatedAt, record.LastSeenAt))];
+            record.Id, record.UserId, record.Name, record.Query, record.CreatedAt, record.LastSeenAt, record.AlertsEnabled, record.LastAlertedAt))];
     }
 
     public Task<int> CountAsync(Guid userId, CancellationToken cancellationToken = default) =>
@@ -76,5 +78,34 @@ internal sealed class PostgreSqlSavedSearchStore
             .ExecuteDeleteAsync(cancellationToken);
 
         return deleted == 1;
+    }
+
+    public async Task<bool> SetAlertsAsync(Guid userId, Guid searchId, bool enabled, CancellationToken cancellationToken = default)
+    {
+        int updated = await _context.MarketSavedSearches
+            .Where(search => search.Id == searchId && search.UserId == userId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(search => search.AlertsEnabled, enabled), cancellationToken);
+
+        return updated == 1;
+    }
+
+    public async Task<IReadOnlyList<Guid>> ListUsersDueForAlertsAsync(DateTimeOffset alertedBefore, int take, CancellationToken cancellationToken = default)
+    {
+        return await _context.MarketSavedSearches
+            .AsNoTracking()
+            .Where(search => search.AlertsEnabled)
+            .GroupBy(search => search.UserId)
+            .Where(group => group.Max(search => search.LastAlertedAt) == null || group.Max(search => search.LastAlertedAt) < alertedBefore)
+            .OrderBy(group => group.Key)
+            .Select(group => group.Key)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task MarkAlertedAsync(Guid userId, DateTimeOffset alertedAt, CancellationToken cancellationToken = default)
+    {
+        return _context.MarketSavedSearches
+            .Where(search => search.UserId == userId && search.AlertsEnabled)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(search => search.LastAlertedAt, alertedAt), cancellationToken);
     }
 }

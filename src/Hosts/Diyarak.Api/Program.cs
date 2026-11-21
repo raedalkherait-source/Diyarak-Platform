@@ -2,7 +2,9 @@ using Diyarak.Api.Authentication;
 using Diyarak.Api.Authentication.Phone;
 using Diyarak.Api.Market;
 using Diyarak.Api.Moderation;
+using Diyarak.Api.Payments;
 using Diyarak.Api.RateLimiting;
+using Diyarak.Api.SavedSearchAlerts;
 using Diyarak.Market.Application;
 using Diyarak.Market.Application.Photos;
 using Diyarak.Platform.BuildingBlocks;
@@ -127,10 +129,19 @@ builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.CreateSavedS
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.ListSavedSearchesUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.MarkSavedSearchSeenUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.DeleteSavedSearchUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.SetSavedSearchAlertsUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Statistics.RecordListingViewUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Statistics.GetListingStatisticsUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Statistics.ListOwnedListingStatisticsUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Agencies.SaveMyAgencyUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetMyAgencyUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Agencies.RequestAgencyVerificationUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Agencies.DecideAgencyVerificationUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetPublicAgencyUseCase>();
 builder.Services.AddModeration(builder.Configuration);
+builder.Services.AddPayments();
+// After phone authentication, which registers the SMS gateway the alerts reuse.
+builder.Services.AddSavedSearchAlerts(builder.Configuration, builder.Environment);
 
 builder.Services.TryAddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton<IListingPhotoStorage>(
@@ -307,6 +318,7 @@ app.MapPublicMarketListingEndpoints();
 app.MapPublicMarketListingPhotoEndpoints();
 app.MapPublicListingContactEndpoints();
 app.MapPublicListingViewEndpoints();
+app.MapPublicAgencyEndpoints();
 app.MapPublicListingReportEndpoints();
 
 if (phoneAuthentication.Enabled)
@@ -324,6 +336,8 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketFavoriteEndpoints();
     app.MapMarketSavedSearchEndpoints();
     app.MapMarketListingStatisticsEndpoints();
+    app.MapMarketAgencyEndpoints();
+    app.MapPaymentEndpoints();
     app.MapModerationEndpoints();
 }
 

@@ -1,4 +1,6 @@
 using Diyarak.Market.Application;
+using Diyarak.Market.Application.Agencies;
+using Diyarak.Market.Company;
 using Diyarak.Platform.BuildingBlocks;
 using MarketListing = Diyarak.Market.Listing.Listing;
 using MarketProperty = Diyarak.Market.Property.Property;
@@ -39,6 +41,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
 
     internal static async Task<IResult> ListPublishedListingsAsync(
         ListPublishedListingsUseCase useCase,
+        IAgencyRepository agencies,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -81,8 +84,12 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             result.Value.HasMore,
             httpContext.Request.Query);
 
+        IReadOnlyDictionary<Guid, Agency> agencyByPublisher = await agencies.FindByOwnersAsync(
+            [.. result.Value.Items.Select(item => item.Listing.PublisherUserId)],
+            cancellationToken);
+
         string entityTag =
-            PublicMarketListingEntityTag.Create(result.Value);
+            PublicMarketListingEntityTag.Create(result.Value, agencyByPublisher);
 
         httpContext.Response.Headers["ETag"] = entityTag;
 
@@ -98,7 +105,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             return Results.Ok();
 
         PublicMarketListingResponse[] items = result.Value.Items
-            .Select(ToResponse)
+            .Select(item => ToResponse(item, agencyByPublisher.GetValueOrDefault(item.Listing.PublisherUserId)))
             .ToArray();
 
         return Results.Ok(
@@ -112,6 +119,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
     internal static async Task<IResult> GetPublishedListingAsync(
         string listingId,
         GetPublishedListingUseCase useCase,
+        IAgencyRepository agencies,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -134,8 +142,10 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
 
         SetRevalidationCachePolicy(httpContext.Response);
 
+        Agency? agency = await agencies.FindByOwnerAsync(result.Value.Listing.PublisherUserId, cancellationToken);
+
         string entityTag =
-            PublicMarketListingEntityTag.Create(result.Value);
+            PublicMarketListingEntityTag.Create(result.Value, agency);
 
         httpContext.Response.Headers["ETag"] = entityTag;
 
@@ -150,7 +160,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         if (HttpMethods.IsHead(httpContext.Request.Method))
             return Results.Ok();
 
-        return Results.Ok(ToResponse(result.Value));
+        return Results.Ok(ToResponse(result.Value, agency));
     }
 
     internal static bool TryParseSearchCriteria(
@@ -569,7 +579,16 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                     Minimum: floorMinimum,
                     Maximum: floorMaximum)
                 : null;
-        if (transactionIntents is null &&
+        PublishedMapArea? mapArea = null;
+
+        if (query.TryGetValue("bbox", out var bboxValues))
+        {
+            if (bboxValues.Count != 1 || !TryParseMapArea(bboxValues[0], out mapArea))
+                return Fail(out criteria);
+        }
+
+        if (mapArea is null &&
+            transactionIntents is null &&
             categories is null &&
             commercialSubtypes is null &&
             city is null &&
@@ -635,8 +654,34 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             new PublishedListingSearchCriteria(
                 TransactionIntents: transactionIntents,
                 Price: price,
-                Property: property);
+                Property: property)
+            {
+                MapArea = mapArea,
+            };
 
+        return true;
+    }
+
+    /// <summary>Parses <c>bbox=south,west,north,east</c> in decimal degrees.</summary>
+    internal static bool TryParseMapArea(string? value, out PublishedMapArea? area)
+    {
+        area = null;
+        string[] parts = (value ?? string.Empty).Split(',');
+        if (parts.Length != 4)
+            return false;
+
+        var numbers = new double[4];
+        for (int index = 0; index < 4; index++)
+        {
+            if (!double.TryParse(parts[index], System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture, out numbers[index]))
+                return false;
+        }
+
+        var candidate = new PublishedMapArea(numbers[0], numbers[1], numbers[2], numbers[3]);
+        if (!candidate.IsValid)
+            return false;
+
+        area = candidate;
         return true;
     }
     private static bool TryParseOptionalInteger(
@@ -772,7 +817,12 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
     }
 
     internal static PublicMarketListingResponse ToResponse(
-        PublishedListingProjection projection)
+        PublishedListingProjection projection) =>
+        ToResponse(projection, agency: null);
+
+    internal static PublicMarketListingResponse ToResponse(
+        PublishedListingProjection projection,
+        Agency? agency)
     {
         ArgumentNullException.ThrowIfNull(projection);
 
@@ -804,7 +854,9 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 .Select(MarketListingPhotoEndpointRouteBuilderExtensions.ToPublicResponse)],
             listing.Contact is { } contact
                 ? new PublicMarketListingContactOptionsResponse(contact.AllowCalls, contact.AllowWhatsApp)
-                : null);
+                : null,
+            agency is null ? null : new PublicListingAgencyResponse(agency.Id, agency.Name, agency.IsVerified),
+            projection.IsFeatured);
     }
 
     private static PublicMarketListingPropertyResponse ToPropertyResponse(
@@ -921,7 +973,15 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         PublicMarketListingPropertyResponse Property,
         DateOnly? AvailableFromDate,
         MarketListingPhotoEndpointRouteBuilderExtensions.PublicListingPhotoResponse[] Photos,
-        PublicMarketListingContactOptionsResponse? Contact);
+        PublicMarketListingContactOptionsResponse? Contact,
+        PublicListingAgencyResponse? Agency = null,
+        bool Featured = false);
+
+    /// <summary>The publishing agency, when the publisher has one (ADR-0068).</summary>
+    internal sealed record PublicListingAgencyResponse(
+        Guid AgencyId,
+        string Name,
+        bool Verified);
 
     /// <summary>Which channels exist; the number itself is only returned by the contact route.</summary>
     internal sealed record PublicMarketListingContactOptionsResponse(

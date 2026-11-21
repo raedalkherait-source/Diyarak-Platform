@@ -9,12 +9,15 @@ internal sealed class PostgreSqlPublishedListingQuery
     : IPublishedListingQuery
 {
     private readonly PlatformDbContext _context;
+    private readonly Diyarak.Platform.BuildingBlocks.IClock _clock;
 
     public PostgreSqlPublishedListingQuery(
-        PlatformDbContext context)
+        PlatformDbContext context,
+        Diyarak.Platform.BuildingBlocks.IClock? clock = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         _context = context;
+        _clock = clock ?? Diyarak.Platform.BuildingBlocks.SystemClock.Instance;
     }
 
     public async Task<IReadOnlyList<PublishedListingProjection>> ListPageAsync(
@@ -28,6 +31,7 @@ internal sealed class PostgreSqlPublishedListingQuery
 
         IQueryable<MarketListingRecord> query =
             BuildQuery(criteria);
+        DateTimeOffset now = _clock.UtcNow;
         var records =
             await query
                 .Where(
@@ -42,9 +46,12 @@ internal sealed class PostgreSqlPublishedListingQuery
                     {
                         Listing = listing,
                         Property = property,
+                        Featured = _context.MarketListingPromotions.Any(
+                            promotion => promotion.ListingId == listing.Id && promotion.StartsAt <= now && promotion.EndsAt > now),
                     })
-                // Newest first; the id keeps the order stable between pages (ADR-0066).
-                .OrderByDescending(pair => pair.Listing.FirstPublishedAt)
+                // Featured listings first (ADR-0071), then newest; the id keeps paging stable (ADR-0066).
+                .OrderByDescending(pair => pair.Featured)
+                .ThenByDescending(pair => pair.Listing.FirstPublishedAt)
                 .ThenBy(pair => pair.Listing.Id)
                 .Skip(skip)
                 .Take(take)
@@ -54,7 +61,10 @@ internal sealed class PostgreSqlPublishedListingQuery
             .Select(
                 pair => new PublishedListingProjection(
                     MarketListingRecordMapper.ToDomain(pair.Listing),
-                    MarketPropertyRecordMapper.ToDomain(pair.Property)))
+                    MarketPropertyRecordMapper.ToDomain(pair.Property))
+                {
+                    IsFeatured = pair.Featured,
+                })
             .ToArray();
     }
 
@@ -68,6 +78,29 @@ internal sealed class PostgreSqlPublishedListingQuery
                     listing =>
                         listing.Status ==
                         (int)ListingStatus.Published);
+
+        if (criteria?.MapArea is { } area)
+        {
+            const double grid = PublishedMapArea.GridDegrees;
+            double south = area.South, west = area.West, north = area.North, east = area.East;
+
+            query =
+                query.Where(
+                    listing =>
+                        listing.SubjectType == MarketListingSubjectTypes.Property &&
+                        _context.MarketProperties.Any(
+                            property =>
+                                property.Id == listing.SubjectId &&
+                                property.Latitude.HasValue &&
+                                property.Longitude.HasValue &&
+                                Math.Round(property.Latitude.Value / grid) * grid >= south &&
+                                Math.Round(property.Latitude.Value / grid) * grid <= north &&
+                                Math.Round(property.Longitude.Value / grid) * grid >= west &&
+                                Math.Round(property.Longitude.Value / grid) * grid <= east));
+        }
+
+        if (criteria?.PublisherUserId is { } publisherUserId)
+            query = query.Where(listing => listing.PublisherUserId == publisherUserId);
 
         if (criteria?.PublishedAfter is { } publishedAfter)
         {

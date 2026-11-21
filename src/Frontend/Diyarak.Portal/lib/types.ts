@@ -43,6 +43,9 @@ export interface PublicListing {
   photos: PublicListingPhoto[];
   /** Which contact channels exist. The number itself is fetched on demand. */
   contact: { allowCalls: boolean; allowWhatsApp: boolean } | null;
+  agency: { agencyId: string; name: string; verified: boolean } | null;
+  /** A paid featured period is running (ADR-0071). Absent on single-listing responses. */
+  featured?: boolean;
 }
 
 export interface PublicListingContact {
