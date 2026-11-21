@@ -61,3 +61,18 @@ export async function decidePayment(orderId: string, form: FormData): Promise<vo
   // A confirmed payment changes search order and badges.
   revalidateTag(publicListingsTag);
 }
+
+export async function assignPackage(agencyId: string, form: FormData): Promise<void> {
+  const listingQuota = Number(form.get("listingQuota") ?? "0");
+  const durationDays = Number(form.get("durationDays") ?? "0");
+  const note = String(form.get("note") ?? "").trim() || null;
+  if (!/^[0-9a-f-]{36}$/i.test(agencyId) || listingQuota <= 0 || durationDays <= 0) return;
+
+  await managementFetch(`/api/moderation/agencies/${agencyId}/packages`, {
+    method: "POST",
+    json: { listingQuota, durationDays, note },
+    allowForbidden: true,
+  });
+
+  revalidatePath("/admin");
+}

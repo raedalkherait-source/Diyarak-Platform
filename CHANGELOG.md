@@ -5,6 +5,11 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- CSV bulk import for agencies: upload a CSV file to create properties and draft listings
+  in bulk (max 200 rows). API: `POST /api/market/import/csv`, portal: `/my/import` (ADR-0073).
+- Agency packages and listing quotas: moderators assign quota packages to agencies;
+  `PublishListingUseCase` enforces the limit (default free quota: 5). Dashboard shows
+  quota bar. API: `GET /api/market/quota`, moderation package CRUD (ADR-0072).
 - Featured listings and payment orders: owners submit a payment request (bank transfer,
   Syriatel Cash, MTN Cash) to feature their listing for 7 or 30 days; a moderator confirms
   or rejects the payment; confirmed listings appear first in search results with a "★ مميز"
@@ -84,5 +89,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [1.0.0] - 2026-08-03
 
 ### Added
+- Agency packages and listing quotas: moderators assign quota packages to agencies;
+  `PublishListingUseCase` enforces the limit (default free quota: 5). Dashboard shows
+  quota bar. API: `GET /api/market/quota`, moderation package CRUD (ADR-0072).
 - Enterprise repository bootstrap targeting .NET 10 LTS.
 - Foundation libraries, tests, CI/CD, development services, documentation, and governance files.

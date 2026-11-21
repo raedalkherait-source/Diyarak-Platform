@@ -41,6 +41,9 @@ public sealed class PlatformDbContext(
     internal DbSet<MarketAgencyRecord> MarketAgencies =>
         Set<MarketAgencyRecord>();
 
+    internal DbSet<MarketAgencyPackageRecord> MarketAgencyPackages =>
+        Set<MarketAgencyPackageRecord>();
+
     internal DbSet<MarketPaymentOrderRecord> MarketPaymentOrders =>
         Set<MarketPaymentOrderRecord>();
 
@@ -90,6 +93,8 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new MarketAgencyRecordConfiguration());
+        modelBuilder.ApplyConfiguration(
+            new MarketAgencyPackageRecordConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new MarketPaymentOrderRecordConfiguration());

@@ -4,6 +4,7 @@ using Diyarak.Api.Moderation;
 using Diyarak.Market.Application.Agencies;
 using Diyarak.Market.Company;
 using Diyarak.Platform.BuildingBlocks;
+using AgencyPackage = Diyarak.Market.Company.AgencyPackage;
 
 namespace Diyarak.Api.Market;
 
@@ -34,6 +35,12 @@ public static class MarketAgencyEndpointRouteBuilderExtensions
             DecideAsync(agencyId, AgencyVerificationDecision.Verify, null, useCase, http, token));
         moderation.MapPost("/{agencyId}/reject", (string agencyId, RejectAgencyRequest? request, DecideAgencyVerificationUseCase useCase, HttpContext http, CancellationToken token) =>
             DecideAsync(agencyId, AgencyVerificationDecision.Reject, request?.Note, useCase, http, token));
+
+        moderation.MapPost("/{agencyId}/packages", AssignPackageAsync);
+        moderation.MapDelete("/{agencyId}/packages/{packageId}", RevokePackageAsync);
+        moderation.MapGet("/{agencyId}/packages", ListPackagesAsync);
+
+        endpoints.MapGet("/api/market/quota", GetQuotaAsync).RequireMappedUserManagement();
 
         return endpoints;
     }
@@ -105,6 +112,62 @@ public static class MarketAgencyEndpointRouteBuilderExtensions
 
         Result<Agency> result = await useCase.ExecuteAsync(parsed, decision, note, token);
         return result.IsSuccess ? Results.Ok(ToOwnerResponse(result.Value)) : ToProblem(result.Error, http);
+    }
+
+    internal static async Task<IResult> GetQuotaAsync(IAuthenticatedActorAccessor actor, GetListingQuotaUseCase useCase, HttpContext http, CancellationToken token)
+    {
+        ListingQuotaInfo info = await useCase.ExecuteAsync(RequireActor(actor), token);
+        http.Response.Headers.CacheControl = "no-store";
+
+        return Results.Ok(new QuotaResponse(
+            info.Quota,
+            info.ActiveListings,
+            info.Remaining,
+            info.ActivePackage is { } package
+                ? new PackageResponse(package.Id, package.ListingQuota, package.ExpiresAt, package.Note, package.CreatedAt)
+                : null));
+    }
+
+    internal static async Task<IResult> AssignPackageAsync(
+        string agencyId, AssignPackageRequest? request,
+        AssignAgencyPackageUseCase useCase, HttpContext http, CancellationToken token)
+    {
+        if (!Guid.TryParse(agencyId, out Guid parsed) || request is null || request.ListingQuota is not > 0 || request.DurationDays is not > 0)
+            return ToProblem(AgencyPackageErrors.InvalidRequest, http);
+
+        Result<AgencyPackage> result = await useCase.ExecuteAsync(parsed, request.ListingQuota.Value, request.DurationDays.Value, request.Note, token);
+        if (!result.IsSuccess)
+            return ToProblem(result.Error, http);
+
+        AgencyPackage package = result.Value;
+        return Results.Created(
+            $"/api/moderation/agencies/{agencyId}/packages",
+            new PackageResponse(package.Id, package.ListingQuota, package.ExpiresAt, package.Note, package.CreatedAt));
+    }
+
+    internal static async Task<IResult> RevokePackageAsync(
+        string agencyId, string packageId,
+        RevokeAgencyPackageUseCase useCase, HttpContext http, CancellationToken token)
+    {
+        if (!Guid.TryParse(agencyId, out _) || !Guid.TryParse(packageId, out Guid parsedPackageId))
+            return ToProblem(AgencyPackageErrors.InvalidRequest, http);
+
+        Result result = await useCase.ExecuteAsync(parsedPackageId, token);
+        return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error, http);
+    }
+
+    internal static async Task<IResult> ListPackagesAsync(
+        string agencyId,
+        IAgencyPackageRepository packages, HttpContext http, CancellationToken token)
+    {
+        if (!Guid.TryParse(agencyId, out Guid parsed))
+            return ToProblem(AgencyPackageErrors.InvalidRequest, http);
+
+        IReadOnlyList<AgencyPackage> all = await packages.ListByAgencyAsync(parsed, token);
+        http.Response.Headers.CacheControl = "no-store";
+
+        return Results.Ok(new PackageListResponse([.. all.Select(p =>
+            new PackageDetailResponse(p.Id, p.ListingQuota, p.ExpiresAt, p.Note, p.CreatedAt, p.IsRevoked, p.RevokedAt))]));
     }
 
     private static OwnerAgencyResponse ToOwnerResponse(Agency agency) =>
@@ -179,4 +242,16 @@ public static class MarketAgencyEndpointRouteBuilderExtensions
         IReadOnlyList<PublicMarketListingEndpointRouteBuilderExtensions.PublicMarketListingResponse> Items,
         int Page,
         bool HasMore);
+
+    internal sealed record AssignPackageRequest(int? ListingQuota, int? DurationDays, string? Note);
+
+    internal sealed record PackageResponse(Guid PackageId, int ListingQuota, DateTimeOffset ExpiresAt, string? Note, DateTimeOffset CreatedAt);
+
+    internal sealed record PackageDetailResponse(
+        Guid PackageId, int ListingQuota, DateTimeOffset ExpiresAt, string? Note,
+        DateTimeOffset CreatedAt, bool IsRevoked, DateTimeOffset? RevokedAt);
+
+    internal sealed record PackageListResponse(IReadOnlyList<PackageDetailResponse> Items);
+
+    internal sealed record QuotaResponse(int Quota, int ActiveListings, int Remaining, PackageResponse? ActivePackage);
 }

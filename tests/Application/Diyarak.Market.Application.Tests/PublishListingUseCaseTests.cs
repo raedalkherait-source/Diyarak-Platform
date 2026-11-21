@@ -1,3 +1,5 @@
+using Diyarak.Market.Application.Agencies;
+using Diyarak.Market.Company;
 using Diyarak.Market.Listing;
 using Diyarak.Platform.BuildingBlocks;
 using Diyarak.Platform.Listing;
@@ -24,7 +26,10 @@ public sealed class PublishListingUseCaseTests
             new PublishListingUseCase(
                 repository,
                 checker,
-                transactionRunner);
+                transactionRunner,
+                new PermissiveCounter(),
+                new EmptyAgencyRepository(),
+                new EmptyPackageRepository());
 
         Result result =
             await useCase.ExecuteAsync(Guid.Empty, Guid.NewGuid());
@@ -55,7 +60,10 @@ public sealed class PublishListingUseCaseTests
             new PublishListingUseCase(
                 repository,
                 checker,
-                transactionRunner);
+                transactionRunner,
+                new PermissiveCounter(),
+                new EmptyAgencyRepository(),
+                new EmptyPackageRepository());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -82,10 +90,7 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(
-                repository,
-                checker,
-                new StubMarketTransactionRunner());
+            new PublishListingUseCase(repository, checker, new StubMarketTransactionRunner(), new PermissiveCounter(), new EmptyAgencyRepository(), new EmptyPackageRepository());
 
         Guid listingId = Guid.NewGuid();
         Guid actorUserId = Guid.NewGuid();
@@ -117,10 +122,7 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(
-                repository,
-                checker,
-                new StubMarketTransactionRunner());
+            new PublishListingUseCase(repository, checker, new StubMarketTransactionRunner(), new PermissiveCounter(), new EmptyAgencyRepository(), new EmptyPackageRepository());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -148,10 +150,7 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: false);
 
         var useCase =
-            new PublishListingUseCase(
-                repository,
-                checker,
-                new StubMarketTransactionRunner());
+            new PublishListingUseCase(repository, checker, new StubMarketTransactionRunner(), new PermissiveCounter(), new EmptyAgencyRepository(), new EmptyPackageRepository());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -181,10 +180,7 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(
-                repository,
-                checker,
-                new StubMarketTransactionRunner());
+            new PublishListingUseCase(repository, checker, new StubMarketTransactionRunner(), new PermissiveCounter(), new EmptyAgencyRepository(), new EmptyPackageRepository());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -214,11 +210,7 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(
-                repository,
-                checker,
-                new StubMarketTransactionRunner(),
-                new FixedClock());
+            new PublishListingUseCase(repository, checker, new StubMarketTransactionRunner(), new PermissiveCounter(), new EmptyAgencyRepository(), new EmptyPackageRepository(), new FixedClock());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -251,10 +243,7 @@ public sealed class PublishListingUseCaseTests
             new StubPropertyExistenceChecker(exists: true);
 
         var useCase =
-            new PublishListingUseCase(
-                repository,
-                checker,
-                new StubMarketTransactionRunner());
+            new PublishListingUseCase(repository, checker, new StubMarketTransactionRunner(), new PermissiveCounter(), new EmptyAgencyRepository(), new EmptyPackageRepository());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -371,5 +360,50 @@ public sealed class PublishListingUseCaseTests
         public static readonly DateTimeOffset Now = new(2026, 11, 21, 9, 15, 0, TimeSpan.Zero);
 
         public DateTimeOffset UtcNow => Now;
+    }
+
+    private sealed class PermissiveCounter : IActiveListingCounter
+    {
+        public Task<int> CountActiveByPublisherAsync(Guid publisherUserId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(0);
+    }
+
+    private sealed class EmptyAgencyRepository : IAgencyRepository
+    {
+        public Task<Agency?> FindByIdAsync(Guid agencyId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Agency?>(null);
+
+        public Task<Agency?> FindByOwnerAsync(Guid ownerUserId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Agency?>(null);
+
+        public Task<IReadOnlyDictionary<Guid, Agency>> FindByOwnersAsync(IReadOnlyCollection<Guid> ownerUserIds, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyDictionary<Guid, Agency>>(new Dictionary<Guid, Agency>());
+
+        public Task<IReadOnlyList<Agency>> ListByStatusAsync(AgencyVerificationStatus status, int take, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Agency>>([]);
+
+        public Task<bool> TryAddAsync(Agency agency, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
+
+        public Task<bool> TrySaveAsync(Agency agency, long expectedVersion, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
+    }
+
+    private sealed class EmptyPackageRepository : IAgencyPackageRepository
+    {
+        public Task<AgencyPackage?> FindByIdAsync(Guid packageId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<AgencyPackage?>(null);
+
+        public Task<AgencyPackage?> FindActiveByAgencyAsync(Guid agencyId, DateTimeOffset now, CancellationToken cancellationToken = default) =>
+            Task.FromResult<AgencyPackage?>(null);
+
+        public Task<IReadOnlyList<AgencyPackage>> ListByAgencyAsync(Guid agencyId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AgencyPackage>>([]);
+
+        public Task AddAsync(AgencyPackage package, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<bool> TrySaveAsync(AgencyPackage package, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
     }
 }
