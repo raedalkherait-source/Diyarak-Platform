@@ -24,12 +24,36 @@ public sealed class HttpSmsGatewayOtpSender : IOtpSender
         _options = options;
     }
 
-    public async Task SendAsync(PhoneNumber phoneNumber, string code, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Whether the gateway can deliver arbitrary text: its parameters must use <c>{message}</c>
+    /// (some OTP-only APIs take just the code).
+    /// </summary>
+    public bool SupportsText =>
+        _options.Parameters.Values.Any(value => value.Contains("{message}", StringComparison.Ordinal));
+
+    public Task SendAsync(PhoneNumber phoneNumber, string code, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(phoneNumber);
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
 
-        using HttpRequestMessage request = BuildRequest(phoneNumber, code);
+        return SendCoreAsync(BuildRequest(phoneNumber, code), cancellationToken);
+    }
+
+    /// <summary>Sends a free-text message (e.g. a saved-search alert). Requires <see cref="SupportsText"/>.</summary>
+    public Task SendTextAsync(PhoneNumber phoneNumber, string text, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(phoneNumber);
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
+
+        if (!SupportsText)
+            throw new InvalidOperationException("The SMS gateway parameters do not include {message}.");
+
+        return SendCoreAsync(BuildRequest(phoneNumber, string.Empty, text), cancellationToken);
+    }
+
+    private async Task SendCoreAsync(HttpRequestMessage builtRequest, CancellationToken cancellationToken)
+    {
+        using HttpRequestMessage request = builtRequest;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(_options.TimeoutSeconds));
 
@@ -63,9 +87,9 @@ public sealed class HttpSmsGatewayOtpSender : IOtpSender
         }
     }
 
-    internal HttpRequestMessage BuildRequest(PhoneNumber phoneNumber, string code)
+    internal HttpRequestMessage BuildRequest(PhoneNumber phoneNumber, string code, string? text = null)
     {
-        Dictionary<string, string> values = CreatePlaceholderValues(phoneNumber, code);
+        Dictionary<string, string> values = CreatePlaceholderValues(phoneNumber, code, text);
         var parameters = _options.Parameters.ToDictionary(
             pair => pair.Key,
             pair => Render(pair.Value, values),
@@ -110,7 +134,7 @@ public sealed class HttpSmsGatewayOtpSender : IOtpSender
         return request;
     }
 
-    private Dictionary<string, string> CreatePlaceholderValues(PhoneNumber phoneNumber, string code)
+    private Dictionary<string, string> CreatePlaceholderValues(PhoneNumber phoneNumber, string code, string? text)
     {
         string digits = phoneNumber.Value.TrimStart('+');
         string local = digits.StartsWith("963", StringComparison.Ordinal) ? $"0{digits[3..]}" : digits;
@@ -124,7 +148,7 @@ public sealed class HttpSmsGatewayOtpSender : IOtpSender
             ["{apiKey}"] = _options.ApiKey,
         };
 
-        values["{message}"] = Render(_options.MessageTemplate, values);
+        values["{message}"] = text ?? Render(_options.MessageTemplate, values);
         return values;
     }
 

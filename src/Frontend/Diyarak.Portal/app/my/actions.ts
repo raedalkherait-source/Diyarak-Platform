@@ -239,11 +239,87 @@ export async function openSavedSearch(searchId: string, href: string): Promise<v
   redirect(href);
 }
 
+/** Turns SMS alerts for a saved search on or off. */
+export async function setSavedSearchAlerts(searchId: string, enabled: boolean): Promise<void> {
+  if (!savedSearchIdPattern.test(searchId)) return;
+  await managementFetch(`/api/market/saved-searches/${searchId}/alerts`, { method: "PUT", json: { enabled } });
+  revalidatePath("/my/searches");
+  redirect(`/my/searches?notice=${enabled ? "alerts-on" : "alerts-off"}`);
+}
+
 export async function deleteSavedSearch(searchId: string): Promise<void> {
   if (!savedSearchIdPattern.test(searchId)) return;
   await managementFetch(`/api/market/saved-searches/${searchId}`, { method: "DELETE" });
   revalidatePath("/my/searches");
   redirect("/my/searches");
+}
+
+export interface AgencyFormState {
+  status?: "saved" | "error";
+  message?: string;
+  values?: Record<string, string>;
+}
+
+const agencyMessages: Record<string, string> = {
+  "market.agency.invalid_request": "تحقق من البيانات: الاسم بين 2 و 80 حرفاً والمدينة إلزامية.",
+  "market.agency.concurrent_modification": "تغيّرت بيانات المكتب في مكان آخر. حدّث الصفحة وحاول مجدداً.",
+  "market.agency.invalid_transition": "لا يمكن تقديم طلب توثيق الآن.",
+};
+
+/** Creates or updates the signed-in user's agency profile. */
+export async function saveAgency(version: number | null, _state: AgencyFormState, form: FormData): Promise<AgencyFormState> {
+  const values = {
+    name: String(form.get("name") ?? "").trim(),
+    description: String(form.get("description") ?? "").trim(),
+    governorate: String(form.get("governorate") ?? ""),
+    city: String(form.get("city") ?? "").trim(),
+  };
+  const result = await managementFetch("/api/market/agency", {
+    method: "PUT",
+    json: { ...values, description: values.description || null, governorate: values.governorate || null, version },
+  });
+  if (!result.ok) return { status: "error", message: agencyMessages[result.code ?? ""] ?? errorMessage(result.code, result.status), values };
+
+  revalidatePath("/my/agency");
+  revalidateTag(publicListingsTag);
+  redirect("/my/agency?notice=saved");
+}
+
+export async function requestAgencyVerification(version: number, _state: AgencyFormState, form: FormData): Promise<AgencyFormState> {
+  const registrationNumber = String(form.get("registrationNumber") ?? "").trim();
+  if (!registrationNumber || registrationNumber.length > 60) return { status: "error", message: "أدخل رقم السجل التجاري أو الترخيص." };
+
+  const result = await managementFetch("/api/market/agency/verification", { method: "POST", json: { registrationNumber, version } });
+  if (!result.ok) return { status: "error", message: agencyMessages[result.code ?? ""] ?? errorMessage(result.code, result.status) };
+
+  revalidatePath("/my/agency");
+  redirect("/my/agency?notice=requested");
+}
+
+export interface PaymentFormState {
+  status?: "error";
+  message?: string;
+}
+
+const paymentMessages: Record<string, string> = {
+  "market.payment.invalid_request": "تحقق من رقم العملية (بين 3 و 60 حرفاً).",
+  "market.payment.not_offered": "طريقة الدفع أو الباقة غير متاحة حالياً.",
+  "market.payment.listing_not_published": "يمكن تمييز الإعلانات المنشورة فقط.",
+  "market.payment.pending_exists": "لديك طلب دفع قيد المراجعة لهذا الإعلان.",
+};
+
+/** Submits a manual payment (bank transfer or mobile wallet) for a featured period. */
+export async function createPaymentOrder(listingId: string, _state: PaymentFormState, form: FormData): Promise<PaymentFormState> {
+  if (!isListingId(listingId)) return { status: "error", message: errorMessage(null, 404) };
+  const product = String(form.get("product") ?? "");
+  const method = String(form.get("method") ?? "");
+  const reference = String(form.get("reference") ?? "").trim();
+
+  const result = await managementFetch("/api/market/payments/orders", { method: "POST", json: { listingId, product, method, reference } });
+  if (!result.ok) return { status: "error", message: paymentMessages[result.code ?? ""] ?? errorMessage(result.code, result.status) };
+
+  revalidatePath(`/my/listings/${listingId}`);
+  redirect(`/my/listings/${listingId}?notice=payment-submitted`);
 }
 
 const statusActions = new Set(["pause", "resume", "close"]);
@@ -265,4 +341,37 @@ export async function changeListingStatus(listingId: string, form: FormData): Pr
   revalidatePath(`/listings/${listingId}`);
   revalidateTag(publicListingsTag);
   redirect(`/my/listings/${listingId}?notice=${result.ok ? `status-${action}` : "status-failed"}`);
+}
+
+export interface BulkImportState {
+  status?: "success" | "error";
+  message?: string;
+  created?: number;
+  failed?: number;
+  errors?: string[];
+}
+
+export async function bulkImportCsv(_state: BulkImportState, form: FormData): Promise<BulkImportState> {
+  const file = form.get("csv");
+  if (!(file instanceof File) || file.size === 0) return { status: "error", message: "اختر ملف CSV." };
+  if (file.size > 2 * 1024 * 1024) return { status: "error", message: "حجم الملف يجب ألا يتجاوز 2 ميغابايت." };
+
+  const body = new FormData();
+  body.append("file", file);
+
+  const result = await managementFetch<{ created: number; failed: number; errors: string[] }>("/api/market/import/csv", {
+    method: "POST",
+    body,
+  });
+
+  if (!result.ok) return { status: "error", message: errorMessage(result.code, result.status) };
+
+  revalidatePath("/my");
+  return {
+    status: "success",
+    message: `تم استيراد ${result.value.created} إعلان بنجاح.`,
+    created: result.value.created,
+    failed: result.value.failed,
+    errors: result.value.errors,
+  };
 }

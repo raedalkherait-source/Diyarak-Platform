@@ -171,6 +171,123 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketAgencyPackageRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AgencyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("agency_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_revoked");
+
+                    b.Property<int>("ListingQuota")
+                        .HasColumnType("integer")
+                        .HasColumnName("listing_quota");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_agency_packages");
+
+                    b.HasIndex("AgencyId", "ExpiresAt")
+                        .HasDatabaseName("ix_market_agency_packages_agency_expires");
+
+                    b.ToTable("agency_packages", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_agency_packages_expiry", "expires_at > created_at");
+
+                            t.HasCheckConstraint("ck_market_agency_packages_quota", "listing_quota > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketAgencyRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("city");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Governorate")
+                        .HasColumnType("text")
+                        .HasColumnName("governorate");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("registration_number");
+
+                    b.Property<string>("VerificationNote")
+                        .HasColumnType("text")
+                        .HasColumnName("verification_note");
+
+                    b.Property<int>("VerificationStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("verification_status");
+
+                    b.Property<DateTimeOffset?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verified_at");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_agencies");
+
+                    b.HasIndex("OwnerUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_agencies_owner_user_id");
+
+                    b.HasIndex("VerificationStatus")
+                        .HasDatabaseName("ix_market_agencies_verification_status");
+
+                    b.ToTable("agencies", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_agencies_name_length", "char_length(name) BETWEEN 2 AND 80");
+
+                            t.HasCheckConstraint("ck_market_agencies_registration", "verification_status = 0 OR registration_number IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_market_agencies_verified_at", "(verification_status = 2) = (verified_at IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingDailyStatisticsRecord", b =>
                 {
                     b.Property<Guid>("ListingId")
@@ -269,6 +386,44 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                             t.HasCheckConstraint("ck_market_listing_photos_position_range", "position >= 0 AND position < 30");
 
                             t.HasCheckConstraint("ck_market_listing_photos_size_range", "size_bytes > 0 AND size_bytes <= 10485760");
+                        });
+                });
+
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingPromotionRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_listing_promotions");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_listing_promotions_order_id");
+
+                    b.HasIndex("ListingId", "EndsAt")
+                        .HasDatabaseName("ix_market_listing_promotions_listing_id_ends_at");
+
+                    b.ToTable("listing_promotions", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_listing_promotions_period", "ends_at > starts_at");
                         });
                 });
 
@@ -421,6 +576,87 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                             t.HasCheckConstraint("ck_market_listing_reports_comment_length", "comment IS NULL OR char_length(comment) <= 500");
 
                             t.HasCheckConstraint("ck_market_listing_reports_resolution", "(resolution IS NULL) = (resolved_at IS NULL) AND (resolution IS NULL) = (resolved_by_user_id IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketPaymentOrderRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by");
+
+                    b.Property<string>("DecisionNote")
+                        .HasColumnType("text")
+                        .HasColumnName("decision_note");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("integer")
+                        .HasColumnName("method");
+
+                    b.Property<string>("PayerReference")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("payer_reference");
+
+                    b.Property<int>("Product")
+                        .HasColumnType("integer")
+                        .HasColumnName("product");
+
+                    b.Property<int>("Status")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_payment_orders");
+
+                    b.HasIndex("ListingId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_payment_orders_pending_listing")
+                        .HasFilter("status = 1");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_market_payment_orders_status_created_at");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .HasDatabaseName("ix_market_payment_orders_user_id_created_at");
+
+                    b.ToTable("payment_orders", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_payment_orders_amount", "amount > 0");
+
+                            t.HasCheckConstraint("ck_market_payment_orders_decision", "(status = 1) = (decided_at IS NULL)");
+
+                            t.HasCheckConstraint("ck_market_payment_orders_rejection_note", "status <> 3 OR decision_note IS NOT NULL");
                         });
                 });
 
@@ -578,9 +814,19 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("AlertsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("alerts_enabled");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("LastAlertedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_alerted_at");
 
                     b.Property<DateTimeOffset>("LastSeenAt")
                         .HasColumnType("timestamp with time zone")
@@ -602,6 +848,10 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_market_saved_searches");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_market_saved_searches_alerting_user_id")
+                        .HasFilter("alerts_enabled");
 
                     b.HasIndex("UserId", "Query")
                         .IsUnique()

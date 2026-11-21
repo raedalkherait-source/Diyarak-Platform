@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Modules\Diyarak.Market.Property\Diyarak.Market.Property.csproj" />
+    <ProjectReference Include="..\..\Modules\Diyarak.Market.Company\Diyarak.Market.Company.csproj" />
     <ProjectReference Include="..\..\Application\Diyarak.Market.Application\Diyarak.Market.Application.csproj" />
     <ProjectReference Include="..\..\Core\Diyarak.Platform.Identity\Diyarak.Platform.Identity.csproj" />
     <ProjectReference Include="..\..\Application\Diyarak.Platform.Identity.Application\Diyarak.Platform.Identity.Application.csproj" />

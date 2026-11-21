@@ -84,6 +84,57 @@ public sealed class SavedSearchUseCaseTests
         Assert.Empty(store.Items);
     }
 
+    [Fact]
+    public async Task Alert_run_sends_one_summary_per_user_and_respects_the_daily_interval()
+    {
+        var store = new Store();
+        var seen = Clock.Now.AddDays(-2);
+        store.Items.Add(new SavedSearch(Guid.NewGuid(), User, "a", "a", seen, seen, AlertsEnabled: true));
+        store.Items.Add(new SavedSearch(Guid.NewGuid(), User, "b", "b", seen, seen, AlertsEnabled: true));
+        store.Items.Add(new SavedSearch(Guid.NewGuid(), User, "off", "c", seen, seen, AlertsEnabled: false));
+        Guid quietUser = Guid.NewGuid();
+        store.Items.Add(new SavedSearch(Guid.NewGuid(), quietUser, "none", "d", seen, seen, AlertsEnabled: true));
+        var listings = new CountingQuery(new Dictionary<string, int> { ["a"] = 2, ["b"] = 3, ["c"] = 50 });
+        var notifier = new Notifier();
+        var useCase = new SendSavedSearchAlertsUseCase(store, listings, notifier, new Clock());
+        SavedSearchCriteriaParser parse = query => new PublishedListingSearchCriteria(Property: new PublishedPropertySearchCriteria(Location: new PublishedPropertyLocationSearchCriteria(query, null)));
+
+        SavedSearchAlertRun first = await useCase.ExecuteAsync(parse, 100);
+
+        Assert.Equal(2, first.UsersChecked);
+        Assert.Equal(1, first.AlertsSent);
+        Assert.Equal((User, 5), Assert.Single(notifier.Sent));
+        Assert.All(store.Items.Where(item => item.UserId == User && item.AlertsEnabled), item => Assert.Equal(Clock.Now, item.LastAlertedAt));
+        Assert.Null(store.Items.Single(item => item.UserId == quietUser).LastAlertedAt);
+
+        SavedSearchAlertRun second = await useCase.ExecuteAsync(parse, 100);
+        Assert.Equal(0, second.AlertsSent);
+        Assert.Single(notifier.Sent);
+    }
+
+    [Fact]
+    public void Alerts_count_from_the_later_of_last_visit_and_last_alert()
+    {
+        var visited = Clock.Now.AddDays(-3);
+        var alerted = Clock.Now.AddDays(-1);
+        var search = new SavedSearch(Guid.NewGuid(), User, "a", "a", visited, visited, AlertsEnabled: true, LastAlertedAt: alerted);
+        Assert.Equal(alerted, search.AlertSince);
+        Assert.Equal(Clock.Now, (search with { LastSeenAt = Clock.Now }).AlertSince);
+    }
+
+    [Fact]
+    public async Task Alerts_toggle_is_owner_scoped()
+    {
+        var store = new Store();
+        var search = new SavedSearch(Guid.NewGuid(), User, "s", "q", Clock.Now, Clock.Now);
+        store.Items.Add(search);
+        var useCase = new SetSavedSearchAlertsUseCase(store);
+
+        Assert.Equal(SavedSearchErrors.NotFound, (await useCase.ExecuteAsync(Guid.NewGuid(), search.Id, true)).Error);
+        Assert.True((await useCase.ExecuteAsync(User, search.Id, true)).IsSuccess);
+        Assert.True(store.Items.Single().AlertsEnabled);
+    }
+
     private sealed class Clock : IClock
     {
         public static readonly DateTimeOffset Now = new(2026, 11, 21, 10, 0, 0, TimeSpan.Zero);
@@ -135,5 +186,48 @@ public sealed class SavedSearchUseCaseTests
 
         public Task<bool> DeleteAsync(Guid userId, Guid searchId, CancellationToken cancellationToken = default) =>
             Task.FromResult(Items.RemoveAll(item => item.Id == searchId && item.UserId == userId) == 1);
+
+        public Task<bool> SetAlertsAsync(Guid userId, Guid searchId, bool enabled, CancellationToken cancellationToken = default)
+        {
+            int index = Items.FindIndex(item => item.Id == searchId && item.UserId == userId);
+            if (index < 0)
+                return Task.FromResult(false);
+
+            Items[index] = Items[index] with { AlertsEnabled = enabled };
+            return Task.FromResult(true);
+        }
+
+        public Task<IReadOnlyList<Guid>> ListUsersDueForAlertsAsync(DateTimeOffset alertedBefore, int take, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Guid>>(
+            [
+                .. Items.Where(item => item.AlertsEnabled)
+                    .GroupBy(item => item.UserId)
+                    .Where(group => group.Max(item => item.LastAlertedAt) is not { } last || last < alertedBefore)
+                    .Select(group => group.Key)
+                    .Take(take),
+            ]);
+
+        public Task MarkAlertedAsync(Guid userId, DateTimeOffset alertedAt, CancellationToken cancellationToken = default)
+        {
+            for (int index = 0; index < Items.Count; index++)
+            {
+                if (Items[index].UserId == userId && Items[index].AlertsEnabled)
+                    Items[index] = Items[index] with { LastAlertedAt = alertedAt };
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class Notifier(bool reachable = true) : ISavedSearchAlertNotifier
+    {
+        public List<(Guid UserId, int Count)> Sent { get; } = [];
+
+        public Task<bool> NotifyAsync(Guid userId, int newListingCount, CancellationToken cancellationToken = default)
+        {
+            if (reachable)
+                Sent.Add((userId, newListingCount));
+            return Task.FromResult(reachable);
+        }
     }
 }

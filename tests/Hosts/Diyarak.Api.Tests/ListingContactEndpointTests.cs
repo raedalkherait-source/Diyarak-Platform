@@ -202,6 +202,8 @@ public sealed class ListingContactEndpointTests
                     services.AddSingleton<IMarketPropertyRepository>(new ListingContactPropertyRepository());
                     services.RemoveAll<Diyarak.Market.Application.Photos.IListingPhotoRepository>();
                     services.AddSingleton<Diyarak.Market.Application.Photos.IListingPhotoRepository>(new EmptyListingPhotoRepository());
+                    services.RemoveAll<Diyarak.Market.Application.Agencies.IAgencyRepository>();
+                    services.AddSingleton<Diyarak.Market.Application.Agencies.IAgencyRepository>(new EmptyAgencyRepository());
                     services.RemoveAll<IPublisherPhoneLookup>();
                     services.AddSingleton<IPublisherPhoneLookup>(new FixedPhoneLookup());
                     services.RemoveAll<Diyarak.Market.Application.Statistics.IListingStatisticsStore>();

@@ -18,6 +18,7 @@ const listing: PublicListing = {
   availableFromDate: null,
   photos: [{ photoId: "p1", url: "/api/market/public/listings/x/photos/p1" }],
   contact: null,
+  agency: null,
 };
 
 describe("seo", () => {

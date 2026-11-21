@@ -13,4 +13,8 @@ internal sealed class MarketSavedSearchRecord
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset LastSeenAt { get; set; }
+
+    public bool AlertsEnabled { get; set; }
+
+    public DateTimeOffset? LastAlertedAt { get; set; }
 }
