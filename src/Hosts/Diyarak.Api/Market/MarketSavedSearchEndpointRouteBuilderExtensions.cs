@@ -23,7 +23,7 @@ public static class MarketSavedSearchEndpointRouteBuilderExtensions
         "totalRoomsMin", "totalRoomsMax", "bedroomCountMin", "bedroomCountMax",
         "bathroomCountMin", "bathroomCountMax", "furnishingQuality", "propertyFeature",
         "constructionYearMin", "constructionYearMax", "parkingSpaceCountMin", "parkingSpaceCountMax",
-        "legalTitleType", "finishingLevel", "floorMin", "floorMax",
+        "legalTitleType", "finishingLevel", "floorMin", "floorMax", "bbox",
     };
 
     public static IEndpointRouteBuilder MapMarketSavedSearchEndpoints(

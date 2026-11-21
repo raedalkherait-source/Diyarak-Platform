@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pageHref, savedSearchHref, savedSearchQuery, toApiQuery } from "@/lib/search";
+import { pageHref, parseBbox, savedSearchHref, savedSearchQuery, searchWithArea, toApiQuery } from "@/lib/search";
 
 describe("toApiQuery", () => {
   it("forwards known filters, keeps repeatable values and adds paging", () => {
@@ -63,5 +63,28 @@ describe("saved search helpers", () => {
 
   it("opens an unfiltered search at /search", () => {
     expect(savedSearchHref(savedSearchQuery({}))).toBe("/search");
+  });
+});
+
+describe("map area", () => {
+  it("parses valid boxes and rejects malformed or oversized ones", () => {
+    expect(parseBbox("33.45,36.2,33.55,36.35")).toEqual({ south: 33.45, west: 36.2, north: 33.55, east: 36.35 });
+    expect(parseBbox("33.55,36.2,33.45,36.35")).toBeNull(); // south above north
+    expect(parseBbox("30,30,40,40")).toBeNull(); // more than 8 degrees
+    expect(parseBbox("33,36,34")).toBeNull();
+    expect(parseBbox("1e1,36,34,37")).toBeNull();
+  });
+
+  it("forwards only a valid bbox to the API", () => {
+    expect(toApiQuery({ bbox: "33.45,36.2,33.55,36.35" }).get("bbox")).toBe("33.45,36.2,33.55,36.35");
+    expect(toApiQuery({ bbox: "nonsense" }).has("bbox")).toBe(false);
+  });
+
+  it("replaces the area, resets paging and can remove it", () => {
+    const query = "governorate=Damascus&page=3&bbox=1,1,2,2";
+    expect(searchWithArea(query, { south: 33.451234, west: 36.2, north: 33.55, east: 36.35 })).toBe(
+      "/search?governorate=Damascus&bbox=33.4512%2C36.2%2C33.55%2C36.35",
+    );
+    expect(searchWithArea(query, null)).toBe("/search?governorate=Damascus");
   });
 });

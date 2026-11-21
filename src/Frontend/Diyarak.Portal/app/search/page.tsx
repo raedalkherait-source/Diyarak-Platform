@@ -17,7 +17,7 @@ import {
   transactionIntentLabels,
 } from "@/lib/labels";
 import { isIndexableSearch } from "@/lib/seo";
-import { firstValue, pageHref, savedSearchHref, savedSearchQuery, toApiQuery, type RawSearchParams } from "@/lib/search";
+import { firstValue, pageHref, parseBbox, savedSearchHref, savedSearchQuery, toApiQuery, type RawSearchParams } from "@/lib/search";
 import type { PublicListingPage } from "@/lib/types";
 
 type Props = { searchParams: Promise<RawSearchParams> };
@@ -26,6 +26,7 @@ function describe(params: RawSearchParams): string {
   const intent = label(transactionIntentLabels, firstValue(params.transactionIntent));
   const category = label(categoryLabels, firstValue(params.propertyCategory)) || "عقارات";
   const place = firstValue(params.district) || label(governorateLabels, firstValue(params.governorate)) || "سوريا";
+  if (parseBbox(firstValue(params.bbox))) return [category, intent, "ضمن منطقة على الخريطة"].filter(Boolean).join(" ");
   return [category, intent, "في", place].filter(Boolean).join(" ");
 }
 
@@ -140,10 +141,22 @@ export default async function SearchPage({ searchParams }: Props) {
         ) : !result ? (
           <div className="empty">قيم البحث غير صالحة. عدّل الفلاتر وحاول مجدداً.</div>
         ) : result.items.length === 0 ? (
-          <div className="empty">لا توجد نتائج مطابقة. جرّب توسيع البحث.</div>
+          <>
+            {parseBbox(firstValue(params.bbox)) ? (
+              <ResultsMap config={mapConfig()} markers={[]} query={savedSearchQuery(params)} area={parseBbox(firstValue(params.bbox))} />
+            ) : null}
+            <div className="empty">لا توجد نتائج مطابقة. جرّب توسيع البحث.</div>
+          </>
         ) : (
           <>
-            {mapMarkers(result).length > 0 ? <ResultsMap config={mapConfig()} markers={mapMarkers(result)} /> : null}
+            {mapMarkers(result).length > 0 || parseBbox(firstValue(params.bbox)) ? (
+              <ResultsMap
+                config={mapConfig()}
+                markers={mapMarkers(result)}
+                query={savedSearchQuery(params)}
+                area={parseBbox(firstValue(params.bbox))}
+              />
+            ) : null}
             <div className="grid">
               {result.items.map((listing) => (
                 <ListingCard key={listing.listingId} listing={listing} />
