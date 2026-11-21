@@ -127,6 +127,9 @@ builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.CreateSavedS
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.ListSavedSearchesUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.MarkSavedSearchSeenUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.SavedSearches.DeleteSavedSearchUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Statistics.RecordListingViewUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Statistics.GetListingStatisticsUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Statistics.ListOwnedListingStatisticsUseCase>();
 builder.Services.AddModeration(builder.Configuration);
 
 builder.Services.TryAddSingleton<IClock>(SystemClock.Instance);
@@ -303,6 +306,7 @@ app.MapGet(
 app.MapPublicMarketListingEndpoints();
 app.MapPublicMarketListingPhotoEndpoints();
 app.MapPublicListingContactEndpoints();
+app.MapPublicListingViewEndpoints();
 app.MapPublicListingReportEndpoints();
 
 if (phoneAuthentication.Enabled)
@@ -319,6 +323,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketListingPhotoManagementEndpoints();
     app.MapMarketFavoriteEndpoints();
     app.MapMarketSavedSearchEndpoints();
+    app.MapMarketListingStatisticsEndpoints();
     app.MapModerationEndpoints();
 }
 

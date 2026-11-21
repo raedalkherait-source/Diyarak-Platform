@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Publisher statistics: daily views (bot-filtered beacon, owner views excluded), contact
+  reveals and favorites per listing, with a 30-day chart on the listing editor and totals on
+  `/my` (ADR-0067).
 - Saved searches with in-site "new since last visit" counts (`/my/searches`, `/api/market/saved-searches`),
   listing publication time (`first_published_at`) and newest-first public search; portal search
   caches are invalidated when listings change (ADR-0066).

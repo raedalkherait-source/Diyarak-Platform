@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContactButton } from "@/components/ContactButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { ViewBeacon } from "@/components/ViewBeacon";
 import { ApproximateAreaMap } from "@/components/ListingMaps";
 import { mapConfig } from "@/lib/map";
 import { Gallery } from "@/components/Gallery";
@@ -92,6 +93,7 @@ export default async function ListingPage({ params }: Props) {
               .join(" — ")}
           </div>
           <FavoriteButton listingId={listing.listingId} />
+          <ViewBeacon listingId={listing.listingId} />
 
           <div className="mobile-only" style={{ marginBlockStart: 16 }}>
             <ContactPanel listing={listing} />

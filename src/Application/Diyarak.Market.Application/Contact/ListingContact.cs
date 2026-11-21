@@ -29,7 +29,9 @@ public static class GetListingContactErrors
 /// <summary>Reveals contact details for a Published Listing whose publisher opted in.</summary>
 public sealed class GetListingContactUseCase(
     IMarketListingRepository listings,
-    IPublisherPhoneLookup phones)
+    IPublisherPhoneLookup phones,
+    Statistics.IListingStatisticsStore? statistics = null,
+    IClock? clock = null)
 {
     public async Task<Result<ListingContactDetails>> ExecuteAsync(
         Guid listingId,
@@ -45,8 +47,15 @@ public sealed class GetListingContactUseCase(
 
         PhoneNumber? phone = await phones.FindVerifiedPhoneAsync(listing.PublisherUserId, cancellationToken);
 
-        return phone is null
-            ? Result.Failure<ListingContactDetails>(GetListingContactErrors.NotFound)
-            : Result.Success(new ListingContactDetails(phone, contact.AllowCalls, contact.AllowWhatsApp));
+        if (phone is null)
+            return Result.Failure<ListingContactDetails>(GetListingContactErrors.NotFound);
+
+        if (statistics is not null)
+        {
+            DateOnly today = Statistics.StatisticsCalendar.Today((clock ?? SystemClock.Instance).UtcNow);
+            await statistics.IncrementAsync(listing.Id, today, Statistics.ListingStatistic.ContactReveal, cancellationToken);
+        }
+
+        return Result.Success(new ListingContactDetails(phone, contact.AllowCalls, contact.AllowWhatsApp));
     }
 }

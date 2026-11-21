@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { changeListingStatus, deleteDraft, deletePhoto } from "@/app/my/actions";
 import { EditListingForm } from "@/components/EditListingForm";
 import { EditPropertyForm } from "@/components/EditPropertyForm";
+import { ListingStatsPanel } from "@/components/ListingStatsPanel";
+import type { ListingStatistics } from "@/lib/statistics";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { PublishButton } from "@/components/PublishButton";
 import { isListingId } from "@/lib/contact";
@@ -43,6 +45,9 @@ export default async function ManageListingPage({ params, searchParams }: Props)
   const value = listing.value;
   const editable = value.status !== "Closed";
 
+  const stats =
+    value.status !== "Draft" ? await managementFetch<ListingStatistics>(`/api/market/listings/${id}/statistics?days=30`) : null;
+
   const property =
     editable && value.subject.subjectType === "market.property"
       ? await managementFetch<ManagementProperty>(`/api/market/properties/${value.subject.subjectId}`)
@@ -71,6 +76,8 @@ export default async function ManageListingPage({ params, searchParams }: Props)
         </p>
         {value.status === "Published" ? <Link className="button secondary" href={`/listings/${id}`}>عرض الصفحة العامة</Link> : null}
       </div>
+
+      {stats?.ok ? <ListingStatsPanel stats={stats.value} /> : null}
 
       {value.status === "Suspended" ? (
         <section className="panel">
