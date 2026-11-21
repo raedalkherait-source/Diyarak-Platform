@@ -69,6 +69,9 @@ internal sealed class PostgreSqlPublishedListingQuery
                         listing.Status ==
                         (int)ListingStatus.Published);
 
+        if (criteria?.PublisherUserId is { } publisherUserId)
+            query = query.Where(listing => listing.PublisherUserId == publisherUserId);
+
         if (criteria?.PublishedAfter is { } publishedAfter)
         {
             query =

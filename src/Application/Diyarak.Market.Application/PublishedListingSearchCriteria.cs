@@ -11,6 +11,9 @@ public sealed record PublishedListingSearchCriteria(
 {
     /// <summary>Only Listings first published strictly after this instant (saved-search counts).</summary>
     public DateTimeOffset? PublishedAfter { get; init; }
+
+    /// <summary>Only Listings of this publisher (an agency's public page).</summary>
+    public Guid? PublisherUserId { get; init; }
 }
 
 public sealed record PublishedListingPriceSearchCriteria(

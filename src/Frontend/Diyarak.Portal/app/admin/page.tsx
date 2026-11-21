@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { moderate } from "./actions";
+import { decideAgency, moderate } from "./actions";
+import type { OwnerAgency } from "@/lib/agency";
 import { formatPrice } from "@/lib/format";
 import { label } from "@/lib/labels";
 import { managementFetch } from "@/lib/managementApi";
@@ -38,12 +39,34 @@ export default async function AdminPage() {
   }
 
   const suspended = await managementFetch<{ items: ModerationListing[] }>("/api/moderation/suspended", { allowForbidden: true });
+  const agencies = await managementFetch<{ items: OwnerAgency[] }>("/api/moderation/agencies", { allowForbidden: true });
+  const pendingAgencies = agencies.ok ? agencies.value.items : [];
   const items = queue.ok ? queue.value.items : [];
   const suspendedItems = suspended.ok ? suspended.value.items : [];
 
   return (
     <div className="container section narrow">
       <h1>مراجعة الإعلانات</h1>
+
+      <section>
+        <h2>طلبات توثيق المكاتب ({pendingAgencies.length})</h2>
+        {pendingAgencies.length === 0 ? <div className="empty">لا توجد طلبات توثيق.</div> : null}
+        <ul className="my-list">
+          {pendingAgencies.map((agency) => (
+            <li key={agency.agencyId} className="panel moderation-item">
+              <div>
+                <h3><Link href={`/agencies/${agency.agencyId}`} target="_blank">{agency.name}</Link></h3>
+                <p className="notice">{agency.city} · رقم السجل/الترخيص: <strong dir="ltr">{agency.registrationNumber}</strong></p>
+              </div>
+              <form action={decideAgency.bind(null, agency.agencyId)} className="toolbar">
+                <button className="button" type="submit" name="decision" value="verify">توثيق</button>
+                <input name="note" placeholder="سبب الرفض" maxLength={500} aria-label="سبب الرفض" />
+                <button className="button secondary" type="submit" name="decision" value="reject">رفض</button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section>
         <h2>البلاغات المفتوحة ({items.length})</h2>

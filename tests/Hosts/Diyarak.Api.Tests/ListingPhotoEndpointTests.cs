@@ -261,6 +261,8 @@ public sealed class ListingPhotoEndpointTests : IDisposable
 
                     services.RemoveAll<IListingPhotoRepository>();
                     services.AddSingleton<IListingPhotoRepository>(Photos);
+                    services.RemoveAll<Diyarak.Market.Application.Agencies.IAgencyRepository>();
+                    services.AddSingleton<Diyarak.Market.Application.Agencies.IAgencyRepository>(new EmptyAgencyRepository());
 
                     services.RemoveAll<IListingPhotoStorage>();
                     services.AddSingleton<IListingPhotoStorage>(new FileSystemListingPhotoStorage(storageRoot));

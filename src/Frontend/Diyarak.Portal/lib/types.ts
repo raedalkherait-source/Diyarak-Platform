@@ -43,6 +43,7 @@ export interface PublicListing {
   photos: PublicListingPhoto[];
   /** Which contact channels exist. The number itself is fetched on demand. */
   contact: { allowCalls: boolean; allowWhatsApp: boolean } | null;
+  agency: { agencyId: string; name: string; verified: boolean } | null;
 }
 
 export interface PublicListingContact {

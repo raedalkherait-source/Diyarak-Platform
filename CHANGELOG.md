@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Real-estate agency pages: agency profile at `/my/agency`, public `/agencies/{id}` with the
+  agency's listings, moderator verification with a ✓ badge on the agency page and its listings;
+  renaming removes verification (ADR-0068).
 - Publisher statistics: daily views (bot-filtered beacon, owner views excluded), contact
   reveals and favorites per listing, with a 30-day chart on the listing editor and totals on
   `/my` (ADR-0067).

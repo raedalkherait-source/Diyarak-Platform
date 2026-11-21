@@ -142,7 +142,15 @@ function ContactPanel({ listing }: { listing: PublicListing }) {
     <div className="panel">
       <div className="notice">{label(transactionIntentLabels, listing.context.transactionIntent)}</div>
       <div className="price" style={{ fontSize: "1.7rem" }}>{formatPrice(listing.price)}</div>
-      <p className="notice">المعلن: {label(publishingRoleLabels, listing.context.publishingRole)}</p>
+      {listing.agency ? (
+        <p className="notice">
+          المعلن:{" "}
+          <Link href={`/agencies/${listing.agency.agencyId}`}>{listing.agency.name}</Link>
+          {listing.agency.verified ? <span className="verified-badge" title="مكتب موثّق من ديارك"> ✓ موثّق</span> : null}
+        </p>
+      ) : (
+        <p className="notice">المعلن: {label(publishingRoleLabels, listing.context.publishingRole)}</p>
+      )}
       {listing.contact ? (
         <ContactButton listingId={listing.listingId} headline={listing.headline} />
       ) : (

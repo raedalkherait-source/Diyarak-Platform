@@ -246,6 +246,48 @@ export async function deleteSavedSearch(searchId: string): Promise<void> {
   redirect("/my/searches");
 }
 
+export interface AgencyFormState {
+  status?: "saved" | "error";
+  message?: string;
+  values?: Record<string, string>;
+}
+
+const agencyMessages: Record<string, string> = {
+  "market.agency.invalid_request": "تحقق من البيانات: الاسم بين 2 و 80 حرفاً والمدينة إلزامية.",
+  "market.agency.concurrent_modification": "تغيّرت بيانات المكتب في مكان آخر. حدّث الصفحة وحاول مجدداً.",
+  "market.agency.invalid_transition": "لا يمكن تقديم طلب توثيق الآن.",
+};
+
+/** Creates or updates the signed-in user's agency profile. */
+export async function saveAgency(version: number | null, _state: AgencyFormState, form: FormData): Promise<AgencyFormState> {
+  const values = {
+    name: String(form.get("name") ?? "").trim(),
+    description: String(form.get("description") ?? "").trim(),
+    governorate: String(form.get("governorate") ?? ""),
+    city: String(form.get("city") ?? "").trim(),
+  };
+  const result = await managementFetch("/api/market/agency", {
+    method: "PUT",
+    json: { ...values, description: values.description || null, governorate: values.governorate || null, version },
+  });
+  if (!result.ok) return { status: "error", message: agencyMessages[result.code ?? ""] ?? errorMessage(result.code, result.status), values };
+
+  revalidatePath("/my/agency");
+  revalidateTag(publicListingsTag);
+  redirect("/my/agency?notice=saved");
+}
+
+export async function requestAgencyVerification(version: number, _state: AgencyFormState, form: FormData): Promise<AgencyFormState> {
+  const registrationNumber = String(form.get("registrationNumber") ?? "").trim();
+  if (!registrationNumber || registrationNumber.length > 60) return { status: "error", message: "أدخل رقم السجل التجاري أو الترخيص." };
+
+  const result = await managementFetch("/api/market/agency/verification", { method: "POST", json: { registrationNumber, version } });
+  if (!result.ok) return { status: "error", message: agencyMessages[result.code ?? ""] ?? errorMessage(result.code, result.status) };
+
+  revalidatePath("/my/agency");
+  redirect("/my/agency?notice=requested");
+}
+
 const statusActions = new Set(["pause", "resume", "close"]);
 const closureReasons = new Set(["Sold", "Rented", "Withdrawn"]);
 
