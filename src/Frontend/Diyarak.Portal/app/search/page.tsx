@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FiltersDisclosure } from "@/components/FiltersDisclosure";
 import { ListingCard } from "@/components/ListingCard";
+import { ResultsMap } from "@/components/ListingMaps";
+import { mapConfig } from "@/lib/map";
 import { Options } from "@/components/Options";
 import { ApiUnavailableError, searchListings } from "@/lib/api";
 import {
@@ -133,6 +135,7 @@ export default async function SearchPage({ searchParams }: Props) {
           <div className="empty">لا توجد نتائج مطابقة. جرّب توسيع البحث.</div>
         ) : (
           <>
+            {mapMarkers(result).length > 0 ? <ResultsMap config={mapConfig()} markers={mapMarkers(result)} /> : null}
             <div className="grid">
               {result.items.map((listing) => (
                 <ListingCard key={listing.listingId} listing={listing} />
@@ -146,5 +149,18 @@ export default async function SearchPage({ searchParams }: Props) {
         )}
       </section>
     </div>
+  );
+}
+
+function mapMarkers(result: PublicListingPage) {
+  return result.items.flatMap((listing) =>
+    listing.property.location.approximate
+      ? [{
+          latitude: listing.property.location.approximate.latitude,
+          longitude: listing.property.location.approximate.longitude,
+          href: `/listings/${listing.listingId}`,
+          label: listing.headline,
+        }]
+      : [],
   );
 }

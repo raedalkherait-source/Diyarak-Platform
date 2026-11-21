@@ -8,6 +8,7 @@ import {
   publishingRoleLabels,
   transactionIntentLabels,
 } from "./labels";
+import { parseCoordinates } from "./geo";
 
 export type FormValues = Record<string, string | string[]>;
 
@@ -29,7 +30,7 @@ const singleFields = [
   "category", "commercialSubtype", "governorate", "city", "district", "livingArea", "totalRooms",
   "bedroomCount", "bathroomCount", "floorNumber", "buildingFloorCount", "legalTitleType",
   "finishingLevel", "transactionIntent", "publishingRole", "headline", "priceMode", "priceAmount",
-  "priceCurrency", "allowCalls", "allowWhatsApp",
+  "priceCurrency", "allowCalls", "allowWhatsApp", "latitude", "longitude",
 ] as const;
 
 function readValues(form: FormData): FormValues {
@@ -78,6 +79,8 @@ function parsePropertyFields(values: FormValues, category: string, errors: Recor
   if (!oneOf(v("governorate"), governorateLabels)) errors.governorate = "اختر المحافظة.";
   if (!v("city") || v("city").length > 100) errors.city = "أدخل المدينة.";
   if (v("district").length > 100) errors.district = "اسم الحي طويل جداً.";
+  const location = parseCoordinates(v("latitude"), v("longitude"));
+  if (location === "invalid") errors.location = "اختر موقعاً داخل سوريا على الخريطة.";
 
   const livingArea = decimal(v("livingArea"), 1, 100000);
   if (livingArea === "invalid") errors.livingArea = "أدخل مساحة صحيحة بالمتر المربع.";
@@ -105,6 +108,7 @@ function parsePropertyFields(values: FormValues, category: string, errors: Recor
       governorate: v("governorate"),
       city: v("city"),
       ...(v("district") ? { district: v("district") } : {}),
+      ...(location && location !== "invalid" ? { location } : {}),
     },
   };
   const optional: Record<string, unknown> = {
@@ -196,6 +200,8 @@ export function propertyFormValues(property: ManagementProperty): FormValues {
     governorate: text(property.address.governorate),
     city: property.address.city,
     district: text(property.address.district),
+    latitude: text(property.address.location?.latitude),
+    longitude: text(property.address.location?.longitude),
     livingArea: text(property.livingArea?.value),
     totalRooms: text(property.totalRooms),
     bedroomCount: text(property.bedroomCount),
@@ -224,7 +230,9 @@ export function mergePropertyReplacement(existing: ManagementProperty, edited: R
   for (const key of managedPropertyKeys) delete body[key];
 
   const editedAddress = edited.address as Record<string, unknown>;
-  const mergedAddress = withoutNulls({ ...address, governorate: undefined, city: undefined, district: undefined });
+  // The portal manages governorate, city, district and the map pin; street, house number and
+  // postal code are kept as stored.
+  const mergedAddress = withoutNulls({ ...address, governorate: undefined, city: undefined, district: undefined, location: undefined });
   const preservedFeatures = features.filter((feature) => !oneOf(feature, featureLabels));
   const editedFeatures = (edited.features as string[] | undefined) ?? [];
   const mergedFeatures = [...editedFeatures, ...preservedFeatures];

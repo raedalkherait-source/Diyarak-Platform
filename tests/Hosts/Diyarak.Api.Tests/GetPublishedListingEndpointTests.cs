@@ -129,6 +129,14 @@ public sealed class GetPublishedListingEndpointTests
         JsonElement root = document.RootElement;
         AssertPublicListingContract(root);
 
+        // Exact coordinates never leave the API; only the snapped grid point does (ADR-0065).
+        JsonElement approximate = root.GetProperty("property").GetProperty("location").GetProperty("approximate");
+        Assert.Equal(33.512, approximate.GetProperty("latitude").GetDouble());
+        Assert.Equal(36.276, approximate.GetProperty("longitude").GetDouble());
+        Assert.Equal(500, approximate.GetProperty("radiusMeters").GetInt32());
+        Assert.DoesNotContain("33.51234", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("36.27654", body, StringComparison.Ordinal);
+
         Assert.Equal(
             listing.Id,
             root.GetProperty("listingId").GetGuid());
@@ -597,6 +605,7 @@ public sealed class GetPublishedListingEndpointTests
                 "postalCode",
                 "governorate",
                 "district",
+                "approximate",
             ],
             property.GetProperty("location").EnumerateObject().Select(item => item.Name).ToArray());
 
@@ -671,7 +680,8 @@ public sealed class GetPublishedListingEndpointTests
                 "Test Street",
                 "1",
                 "10115",
-                "Berlin"));
+                "Berlin",
+                new Diyarak.Platform.Domain.Primitives.GeoCoordinate(33.51234, 36.27654)));
 
     private sealed class TestApiFactory : WebApplicationFactory<Program>
     {

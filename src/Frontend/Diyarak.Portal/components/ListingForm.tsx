@@ -4,9 +4,10 @@ import { useActionState, useState } from "react";
 import { createListing, type CreateListingState } from "@/app/my/actions";
 import { Options } from "@/components/Options";
 import { PropertyFields } from "@/components/PropertyFields";
+import type { MapConfig } from "@/lib/map";
 import { publishingRoleLabels, transactionIntentLabels } from "@/lib/labels";
 
-export function ListingForm() {
+export function ListingForm({ mapConfig }: { mapConfig: MapConfig }) {
   const [state, action, pending] = useActionState<CreateListingState, FormData>(createListing, {});
   const values = state.values ?? {};
   const value = (name: string) => (typeof values[name] === "string" ? (values[name] as string) : "");
@@ -52,6 +53,7 @@ export function ListingForm() {
         selectedFeatures={selectedFeatures}
         category={category}
         onCategoryChange={setCategory}
+        mapConfig={mapConfig}
       />
 
       <fieldset className="panel">

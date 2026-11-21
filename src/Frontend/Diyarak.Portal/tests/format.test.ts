@@ -18,8 +18,8 @@ describe("format", () => {
   it("formats areas and locations", () => {
     expect(formatArea({ value: 160, unit: "SquareMeter" })).toBe("160 م²");
     expect(formatArea(null)).toBe("");
-    expect(formatLocation({ city: "دمشق", district: "المزة", governorate: "Damascus", postalCode: null })).toBe("المزة، دمشق");
-    expect(formatLocation({ city: "حلب", district: null, governorate: null, postalCode: null })).toBe("حلب");
+    expect(formatLocation({ city: "دمشق", district: "المزة", governorate: "Damascus", postalCode: null, approximate: null })).toBe("المزة، دمشق");
+    expect(formatLocation({ city: "حلب", district: null, governorate: null, postalCode: null, approximate: null })).toBe("حلب");
   });
 
   it("builds same-origin photo paths with encoded segments", () => {

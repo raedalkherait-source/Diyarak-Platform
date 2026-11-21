@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContactButton } from "@/components/ContactButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { ApproximateAreaMap } from "@/components/ListingMaps";
+import { mapConfig } from "@/lib/map";
 import { Gallery } from "@/components/Gallery";
 import { ReportListing } from "@/components/ReportListing";
 import { getListing } from "@/lib/api";
@@ -106,6 +108,10 @@ export default async function ListingPage({ params }: Props) {
               ))}
             </dl>
           </section>
+
+          {property.location.approximate ? (
+            <ApproximateAreaMap config={mapConfig()} area={property.location.approximate} />
+          ) : null}
 
           <ReportListing listingId={listing.listingId} />
 

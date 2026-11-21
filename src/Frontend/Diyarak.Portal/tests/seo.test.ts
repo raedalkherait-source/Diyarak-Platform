@@ -10,7 +10,7 @@ const listing: PublicListing = {
   price: { isOnRequest: false, amount: 145000, currency: "USD" },
   property: {
     category: "Apartment",
-    location: { city: "دمشق", postalCode: null, governorate: "Damascus", district: "المزة" },
+    location: { city: "دمشق", postalCode: null, governorate: "Damascus", district: "المزة", approximate: null },
     livingArea: null, totalRooms: null, bedroomCount: null, bathroomCount: null, furnishingQuality: null,
     features: [], constructionYear: null, commercialSubtype: null, parkingSpaceCount: null,
     legalTitleType: null, finishingLevel: null, floorNumber: null, buildingFloorCount: null,

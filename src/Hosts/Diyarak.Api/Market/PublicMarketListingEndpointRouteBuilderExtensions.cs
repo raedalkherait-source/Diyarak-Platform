@@ -825,7 +825,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                 property.Address.City,
                 property.Address.PostalCode,
                 property.Address.Governorate?.ToString(),
-                property.Address.District),
+                property.Address.District,
+                PublicApproximateLocation.From(property.Address.Location)),
             livingArea,
             property.TotalRooms,
             property.BedroomCount,
@@ -957,7 +958,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         string City,
         string? PostalCode,
         string? Governorate,
-        string? District);
+        string? District,
+        PublicApproximateLocation? Approximate);
 
     internal sealed record PublicMarketListingAreaResponse(
         decimal Value,

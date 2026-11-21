@@ -8,6 +8,7 @@ import { PhotoUploader } from "@/components/PhotoUploader";
 import { PublishButton } from "@/components/PublishButton";
 import { isListingId } from "@/lib/contact";
 import { formatPrice } from "@/lib/format";
+import { mapConfig } from "@/lib/map";
 import { propertyFormValues, type ManagementProperty } from "@/lib/listingForm";
 import { label, publishingRoleLabels, transactionIntentLabels } from "@/lib/labels";
 import { managementFetch, type ManagementListing, type ManagementPhoto } from "@/lib/managementApi";
@@ -129,6 +130,7 @@ export default async function ManageListingPage({ params, searchParams }: Props)
             version={property.value.version}
             category={property.value.category}
             initialValues={propertyFormValues(property.value)}
+            mapConfig={mapConfig()}
           />
         </section>
       ) : null}

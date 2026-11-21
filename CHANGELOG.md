@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Maps: publishers can pin the property on a map; visitors see only an approximate 500 m area
+  on the listing page and a map of search results. The public API exposes
+  `property.location.approximate` snapped to a 0.004° grid, never the exact point. Tile provider
+  configured with `MAP_TILE_URL`/`MAP_ATTRIBUTION` (ADR-0065).
 - Favorites: signed-in users save published listings from the listing page and find them under
   `/my/favorites`; `GET|PUT|DELETE /api/market/favorites/{id}` and `GET /api/market/favorites`;
   migration `MarketListingFavorites` (ADR-0064).
