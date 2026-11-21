@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pageHref, toApiQuery } from "@/lib/search";
+import { pageHref, savedSearchHref, savedSearchQuery, toApiQuery } from "@/lib/search";
 
 describe("toApiQuery", () => {
   it("forwards known filters, keeps repeatable values and adds paging", () => {
@@ -51,5 +51,17 @@ describe("pageHref", () => {
     expect(query.get("governorate")).toBe("Aleppo");
     expect(query.get("page")).toBe("3");
     expect(query.has("pageSize")).toBe(false);
+  });
+});
+
+describe("saved search helpers", () => {
+  it("stores filters without paging and reopens them as a portal URL", () => {
+    const query = savedSearchQuery({ governorate: "Damascus", livingAreaMin: "100", page: "3", utm: "x" });
+    expect(query).toBe("governorate=Damascus&livingAreaMin=100&livingAreaUnit=SquareMeter");
+    expect(savedSearchHref(query)).toBe("/search?governorate=Damascus&livingAreaMin=100");
+  });
+
+  it("opens an unfiltered search at /search", () => {
+    expect(savedSearchHref(savedSearchQuery({}))).toBe("/search");
   });
 });

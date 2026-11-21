@@ -22,6 +22,7 @@ export default async function MyListingsPage({ searchParams }: Props) {
         <div className="toolbar">
           <Link className="button" href="/my/new">+ إعلان جديد</Link>
           <Link className="button secondary" href="/my/favorites">المفضلة</Link>
+          <Link className="button secondary" href="/my/searches">عمليات البحث المحفوظة</Link>
           <form action={logout}>
             <button className="button secondary" type="submit">تسجيل الخروج</button>
           </form>

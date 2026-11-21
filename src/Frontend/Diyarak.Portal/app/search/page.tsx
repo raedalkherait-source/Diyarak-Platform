@@ -3,6 +3,8 @@ import Link from "next/link";
 import { FiltersDisclosure } from "@/components/FiltersDisclosure";
 import { ListingCard } from "@/components/ListingCard";
 import { ResultsMap } from "@/components/ListingMaps";
+import { SaveSearchButton } from "@/components/SaveSearchButton";
+import { getSessionToken } from "@/lib/session";
 import { mapConfig } from "@/lib/map";
 import { Options } from "@/components/Options";
 import { ApiUnavailableError, searchListings } from "@/lib/api";
@@ -15,7 +17,7 @@ import {
   transactionIntentLabels,
 } from "@/lib/labels";
 import { isIndexableSearch } from "@/lib/seo";
-import { firstValue, pageHref, toApiQuery, type RawSearchParams } from "@/lib/search";
+import { firstValue, pageHref, savedSearchHref, savedSearchQuery, toApiQuery, type RawSearchParams } from "@/lib/search";
 import type { PublicListingPage } from "@/lib/types";
 
 type Props = { searchParams: Promise<RawSearchParams> };
@@ -125,6 +127,12 @@ export default async function SearchPage({ searchParams }: Props) {
         <div className="results-header">
           <h1>{describe(params)}</h1>
           {page > 1 ? <span className="notice">الصفحة {page}</span> : null}
+          <SaveSearchButton
+            query={savedSearchQuery(params)}
+            name={describe(params)}
+            signedIn={Boolean(await getSessionToken())}
+            returnTo={savedSearchHref(savedSearchQuery(params))}
+          />
         </div>
 
         {unavailable ? (

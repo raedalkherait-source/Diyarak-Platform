@@ -49,7 +49,23 @@ public sealed class MarketListingLifecycleMapperTests
         Assert.Throws<InvalidOperationException>(() => MarketListingRecordMapper.ToDomain(unexpectedReason));
     }
 
-    private static MarketListing CreatePublished()
+    [Fact]
+    public void Publication_time_round_trips_and_drafts_cannot_carry_one()
+    {
+        var publishedAt = new DateTimeOffset(2026, 11, 21, 8, 30, 0, TimeSpan.Zero);
+        MarketListing listing = CreatePublished(publishedAt);
+
+        MarketListingRecord record = MarketListingRecordMapper.FromDomain(listing);
+        MarketListing restored = MarketListingRecordMapper.ToDomain(record);
+
+        Assert.Equal(publishedAt, record.FirstPublishedAt);
+        Assert.Equal(publishedAt, restored.PublishedAt);
+
+        record.Status = (int)ListingStatus.Draft;
+        Assert.Throws<InvalidOperationException>(() => MarketListingRecordMapper.ToDomain(record));
+    }
+
+    private static MarketListing CreatePublished(DateTimeOffset? publishedAt = null)
     {
         var listing = new MarketListing(
             Guid.NewGuid(),
@@ -58,7 +74,7 @@ public sealed class MarketListingLifecycleMapperTests
         listing.SetContext(new ListingContext(PublishingRole.Owner, TransactionIntent.Sell));
         listing.SetHeadline(new ListingHeadline("Apartment"));
         listing.SetPrice(ListingPrice.OnRequest());
-        listing.Publish();
+        listing.Publish(publishedAt);
         return listing;
     }
 }

@@ -5,6 +5,9 @@ import type { PublicListing, PublicListingPage } from "./types";
 
 const apiUrl = (process.env.DIYARAK_API_URL ?? "http://localhost:5080").replace(/\/$/, "");
 
+/** Cache tag of every public listing response; invalidated when listings change or a saved search opens. */
+export const publicListingsTag = "public-listings";
+
 export class ApiUnavailableError extends Error {}
 
 async function getJson<T>(path: string): Promise<T | null> {
@@ -19,7 +22,7 @@ async function getJson<T>(path: string): Promise<T | null> {
   try {
     response = await fetch(`${apiUrl}${path}`, {
       headers: requestHeaders,
-      next: { revalidate: 30 },
+      next: { revalidate: 30, tags: [publicListingsTag] },
     });
   } catch (error) {
     throw new ApiUnavailableError(`Diyarak API is unreachable: ${(error as Error).message}`);

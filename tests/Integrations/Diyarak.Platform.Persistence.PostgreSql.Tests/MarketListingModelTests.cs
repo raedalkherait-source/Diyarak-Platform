@@ -31,6 +31,7 @@ public sealed class MarketListingModelTests
             "ModerationNote",
             "ContactAllowCalls",
             "ContactAllowWhatsApp",
+            "FirstPublishedAt",
             "Headline",
             "Id",
             "PriceAmount",
@@ -72,6 +73,19 @@ public sealed class MarketListingModelTests
             property => Assert.Equal("Status", property.Name),
             property => Assert.Equal("Id", property.Name));
         Assert.False(publicCollectionIndex.IsUnique);
+
+        var newestFirstIndex = Assert.Single(
+            entityType.GetIndexes(),
+            index =>
+                index.GetDatabaseName() ==
+                "ix_market_listings_status_first_published_at");
+
+        Assert.Equal(
+            ["Status", "FirstPublishedAt", "Id"],
+            newestFirstIndex.Properties.Select(property => property.Name));
+        Assert.Equal(
+            "first_published_at",
+            entityType.FindProperty("FirstPublishedAt")!.GetColumnName());
 
         var statusProperty = entityType.FindProperty("Status");
         var versionProperty = entityType.FindProperty("Version");

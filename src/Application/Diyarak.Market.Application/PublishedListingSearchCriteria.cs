@@ -7,7 +7,11 @@ namespace Diyarak.Market.Application;
 public sealed record PublishedListingSearchCriteria(
     IReadOnlyCollection<TransactionIntent>? TransactionIntents = null,
     PublishedListingPriceSearchCriteria? Price = null,
-    PublishedPropertySearchCriteria? Property = null);
+    PublishedPropertySearchCriteria? Property = null)
+{
+    /// <summary>Only Listings first published strictly after this instant (saved-search counts).</summary>
+    public DateTimeOffset? PublishedAfter { get; init; }
+}
 
 public sealed record PublishedListingPriceSearchCriteria(
     decimal? Minimum,

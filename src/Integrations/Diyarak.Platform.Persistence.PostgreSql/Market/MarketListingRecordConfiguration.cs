@@ -24,6 +24,9 @@ internal sealed class MarketListingRecordConfiguration
                 tableBuilder.HasCheckConstraint(
                     "ck_market_listings_moderation_note",
                     "(status = 5) = (moderation_note IS NOT NULL)");
+                tableBuilder.HasCheckConstraint(
+                    "ck_market_listings_first_published_at",
+                    "(status = 1) = (first_published_at IS NULL)");
             });
 
         builder.HasKey(record => record.Id);
@@ -36,6 +39,18 @@ internal sealed class MarketListingRecordConfiguration
                 })
             .HasDatabaseName(
                 "ix_market_listings_status_id");
+
+        // Newest-first public search and "new since" counts for saved searches.
+        builder.HasIndex(
+                record => new
+                {
+                    record.Status,
+                    record.FirstPublishedAt,
+                    record.Id,
+                })
+            .IsDescending(false, true, false)
+            .HasDatabaseName(
+                "ix_market_listings_status_first_published_at");
 
         builder.HasIndex(
                 record => new
@@ -117,5 +132,9 @@ internal sealed class MarketListingRecordConfiguration
         builder.Property(record => record.ModerationNote)
             .HasColumnName("moderation_note")
             .HasColumnType("text");
+
+        builder.Property(record => record.FirstPublishedAt)
+            .HasColumnName("first_published_at")
+            .HasColumnType("timestamp with time zone");
     }
 }

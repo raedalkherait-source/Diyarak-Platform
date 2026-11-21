@@ -32,6 +32,8 @@ internal sealed class MarketListingRecord
 
     public string? ModerationNote { get; set; }
 
+    public DateTimeOffset? FirstPublishedAt { get; set; }
+
     public bool? ContactAllowCalls { get; set; }
 
     public bool? ContactAllowWhatsApp { get; set; }

@@ -40,6 +40,7 @@ internal static class MarketListingRecordMapper
                 ? (int)closureReason
                 : null,
             ModerationNote = listing.ModerationNote,
+            FirstPublishedAt = listing.PublishedAt,
             ContactAllowCalls = listing.Contact?.AllowCalls,
             ContactAllowWhatsApp = listing.Contact?.AllowWhatsApp,
         };
@@ -92,7 +93,10 @@ internal static class MarketListingRecordMapper
 
         // Replay the lifecycle so the aggregate enforces the same invariants on rehydration.
         if (status is ListingStatus.Published or ListingStatus.Paused or ListingStatus.Closed or ListingStatus.Suspended)
-            listing.Publish();
+            listing.Publish(record.FirstPublishedAt);
+        else if (record.FirstPublishedAt is not null)
+            throw new InvalidOperationException(
+                "A persisted Draft Listing cannot have a publication time.");
 
         if (status == ListingStatus.Paused)
             listing.Pause();
