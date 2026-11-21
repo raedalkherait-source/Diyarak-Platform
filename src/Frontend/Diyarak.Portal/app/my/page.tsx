@@ -10,6 +10,8 @@ export const metadata: Metadata = { title: "إعلاناتي", robots: { index: 
 
 type Props = { searchParams: Promise<{ notice?: string }> };
 
+type QuotaInfo = { quota: number; activeListings: number; remaining: number; activePackage: { packageId: string; listingQuota: number; expiresAt: string } | null };
+
 export default async function MyListingsPage({ searchParams }: Props) {
   const { notice } = await searchParams;
   const result = await managementFetch<{ items: ManagementListing[]; hasMore: boolean }>("/api/market/listings?pageSize=100");
@@ -18,6 +20,8 @@ export default async function MyListingsPage({ searchParams }: Props) {
     "/api/market/listings/statistics?days=30",
   );
   const totalsById = new Map((totals.ok ? totals.value.items : []).map((item) => [item.listingId, item]));
+  const quotaResult = await managementFetch<QuotaInfo>("/api/market/quota");
+  const quota = quotaResult.ok ? quotaResult.value : null;
 
   return (
     <div className="container section">
@@ -36,6 +40,18 @@ export default async function MyListingsPage({ searchParams }: Props) {
           </form>
         </div>
       </div>
+
+      {quota ? (
+        <div className="panel quota-bar">
+          <span>الإعلانات النشطة: <strong>{quota.activeListings}</strong> / {quota.quota}</span>
+          {quota.remaining === 0 ? <span className="warning">تم استنفاد الحصة</span> : null}
+          {quota.activePackage ? (
+            <span className="notice">باقة {quota.activePackage.listingQuota} إعلان · تنتهي {new Date(quota.activePackage.expiresAt).toLocaleDateString("ar-SY")}</span>
+          ) : (
+            <span className="notice">الباقة المجانية ({quota.quota} إعلانات)</span>
+          )}
+        </div>
+      ) : null}
 
       {notice === "deleted" ? <p className="success" role="status">تم حذف المسودة.</p> : null}
 

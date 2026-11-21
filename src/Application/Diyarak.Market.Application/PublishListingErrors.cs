@@ -33,4 +33,9 @@ public static class PublishListingErrors
         Error.Conflict(
             "market.listing.cannot_publish",
             "The Listing cannot be published in its current state.");
+
+    public static Error QuotaExceeded { get; } =
+        Error.Conflict(
+            "market.listing.quota_exceeded",
+            "The active listing quota has been reached. Upgrade your package or close an existing listing.");
 }

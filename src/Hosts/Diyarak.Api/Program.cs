@@ -138,6 +138,9 @@ builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetMyAgencyUseCas
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.RequestAgencyVerificationUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.DecideAgencyVerificationUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetPublicAgencyUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Agencies.AssignAgencyPackageUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Agencies.RevokeAgencyPackageUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetListingQuotaUseCase>();
 builder.Services.AddModeration(builder.Configuration);
 builder.Services.AddPayments();
 // After phone authentication, which registers the SMS gateway the alerts reuse.
