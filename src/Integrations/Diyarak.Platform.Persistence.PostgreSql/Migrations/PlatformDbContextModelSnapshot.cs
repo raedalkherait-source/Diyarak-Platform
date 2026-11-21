@@ -341,6 +341,44 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingPromotionRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_listing_promotions");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_listing_promotions_order_id");
+
+                    b.HasIndex("ListingId", "EndsAt")
+                        .HasDatabaseName("ix_market_listing_promotions_listing_id_ends_at");
+
+                    b.ToTable("listing_promotions", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_listing_promotions_period", "ends_at > starts_at");
+                        });
+                });
+
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -490,6 +528,87 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                             t.HasCheckConstraint("ck_market_listing_reports_comment_length", "comment IS NULL OR char_length(comment) <= 500");
 
                             t.HasCheckConstraint("ck_market_listing_reports_resolution", "(resolution IS NULL) = (resolved_at IS NULL) AND (resolution IS NULL) = (resolved_by_user_id IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketPaymentOrderRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by");
+
+                    b.Property<string>("DecisionNote")
+                        .HasColumnType("text")
+                        .HasColumnName("decision_note");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("integer")
+                        .HasColumnName("method");
+
+                    b.Property<string>("PayerReference")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("payer_reference");
+
+                    b.Property<int>("Product")
+                        .HasColumnType("integer")
+                        .HasColumnName("product");
+
+                    b.Property<int>("Status")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_payment_orders");
+
+                    b.HasIndex("ListingId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_payment_orders_pending_listing")
+                        .HasFilter("status = 1");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_market_payment_orders_status_created_at");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .HasDatabaseName("ix_market_payment_orders_user_id_created_at");
+
+                    b.ToTable("payment_orders", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_payment_orders_amount", "amount > 0");
+
+                            t.HasCheckConstraint("ck_market_payment_orders_decision", "(status = 1) = (decided_at IS NULL)");
+
+                            t.HasCheckConstraint("ck_market_payment_orders_rejection_note", "status <> 3 OR decision_note IS NOT NULL");
                         });
                 });
 

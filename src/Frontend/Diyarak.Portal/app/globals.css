@@ -338,3 +338,8 @@ img { max-width: 100%; display: block; }
 .agency-description { white-space: pre-line; margin: 8px 0 0; }
 .section-subtitle { font-size: 1.15rem; margin: 8px 0 12px; }
 .map-actions { margin-block-start: 10px; align-items: center; }
+
+/* Featured listings */
+.featured-badge { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; background: #b45309; color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; font-weight: 700; }
+.card.featured { border-color: #d97706; box-shadow: 0 0 0 1px #d97706, var(--shadow); }
+.payment-instructions { white-space: pre-line; background: var(--bg); border-radius: 10px; padding: 10px 12px; margin: 0; }

@@ -42,3 +42,22 @@ export async function decideAgency(agencyId: string, form: FormData): Promise<vo
   // The badge appears on every listing of the agency.
   revalidateTag(publicListingsTag);
 }
+
+const paymentDecisions = new Set(["confirm", "reject"]);
+
+export async function decidePayment(orderId: string, form: FormData): Promise<void> {
+  const decision = String(form.get("decision") ?? "");
+  const note = String(form.get("note") ?? "").trim();
+  if (!/^[0-9a-f-]{36}$/i.test(orderId) || !paymentDecisions.has(decision)) return;
+  if (decision === "reject" && (note.length === 0 || note.length > 300)) return;
+
+  await managementFetch(`/api/moderation/payments/${orderId}/${decision}`, {
+    method: "POST",
+    json: decision === "reject" ? { note } : {},
+    allowForbidden: true,
+  });
+
+  revalidatePath("/admin");
+  // A confirmed payment changes search order and badges.
+  revalidateTag(publicListingsTag);
+}

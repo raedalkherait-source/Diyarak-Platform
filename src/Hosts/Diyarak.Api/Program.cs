@@ -2,6 +2,7 @@ using Diyarak.Api.Authentication;
 using Diyarak.Api.Authentication.Phone;
 using Diyarak.Api.Market;
 using Diyarak.Api.Moderation;
+using Diyarak.Api.Payments;
 using Diyarak.Api.RateLimiting;
 using Diyarak.Api.SavedSearchAlerts;
 using Diyarak.Market.Application;
@@ -138,6 +139,7 @@ builder.Services.AddScoped<Diyarak.Market.Application.Agencies.RequestAgencyVeri
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.DecideAgencyVerificationUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetPublicAgencyUseCase>();
 builder.Services.AddModeration(builder.Configuration);
+builder.Services.AddPayments();
 // After phone authentication, which registers the SMS gateway the alerts reuse.
 builder.Services.AddSavedSearchAlerts(builder.Configuration, builder.Environment);
 
@@ -335,6 +337,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketSavedSearchEndpoints();
     app.MapMarketListingStatisticsEndpoints();
     app.MapMarketAgencyEndpoints();
+    app.MapPaymentEndpoints();
     app.MapModerationEndpoints();
 }
 

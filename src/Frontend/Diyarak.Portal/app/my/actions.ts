@@ -296,6 +296,32 @@ export async function requestAgencyVerification(version: number, _state: AgencyF
   redirect("/my/agency?notice=requested");
 }
 
+export interface PaymentFormState {
+  status?: "error";
+  message?: string;
+}
+
+const paymentMessages: Record<string, string> = {
+  "market.payment.invalid_request": "تحقق من رقم العملية (بين 3 و 60 حرفاً).",
+  "market.payment.not_offered": "طريقة الدفع أو الباقة غير متاحة حالياً.",
+  "market.payment.listing_not_published": "يمكن تمييز الإعلانات المنشورة فقط.",
+  "market.payment.pending_exists": "لديك طلب دفع قيد المراجعة لهذا الإعلان.",
+};
+
+/** Submits a manual payment (bank transfer or mobile wallet) for a featured period. */
+export async function createPaymentOrder(listingId: string, _state: PaymentFormState, form: FormData): Promise<PaymentFormState> {
+  if (!isListingId(listingId)) return { status: "error", message: errorMessage(null, 404) };
+  const product = String(form.get("product") ?? "");
+  const method = String(form.get("method") ?? "");
+  const reference = String(form.get("reference") ?? "").trim();
+
+  const result = await managementFetch("/api/market/payments/orders", { method: "POST", json: { listingId, product, method, reference } });
+  if (!result.ok) return { status: "error", message: paymentMessages[result.code ?? ""] ?? errorMessage(result.code, result.status) };
+
+  revalidatePath(`/my/listings/${listingId}`);
+  redirect(`/my/listings/${listingId}?notice=payment-submitted`);
+}
+
 const statusActions = new Set(["pause", "resume", "close"]);
 const closureReasons = new Set(["Sold", "Rented", "Withdrawn"]);
 

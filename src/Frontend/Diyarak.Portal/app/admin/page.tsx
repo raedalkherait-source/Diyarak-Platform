@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { decideAgency, moderate } from "./actions";
+import { decideAgency, decidePayment, moderate } from "./actions";
+import type { PaymentOrderView } from "@/components/FeatureListingPanel";
 import type { OwnerAgency } from "@/lib/agency";
 import { formatPrice } from "@/lib/format";
 import { label } from "@/lib/labels";
@@ -41,12 +42,37 @@ export default async function AdminPage() {
   const suspended = await managementFetch<{ items: ModerationListing[] }>("/api/moderation/suspended", { allowForbidden: true });
   const agencies = await managementFetch<{ items: OwnerAgency[] }>("/api/moderation/agencies", { allowForbidden: true });
   const pendingAgencies = agencies.ok ? agencies.value.items : [];
+  const payments = await managementFetch<{ items: PaymentOrderView[] }>("/api/moderation/payments", { allowForbidden: true });
+  const pendingPayments = payments.ok ? payments.value.items : [];
   const items = queue.ok ? queue.value.items : [];
   const suspendedItems = suspended.ok ? suspended.value.items : [];
 
   return (
     <div className="container section narrow">
       <h1>مراجعة الإعلانات</h1>
+
+      <section>
+        <h2>مدفوعات بانتظار التأكيد ({pendingPayments.length})</h2>
+        {pendingPayments.length === 0 ? <div className="empty">لا توجد مدفوعات بانتظار التأكيد.</div> : null}
+        <ul className="my-list">
+          {pendingPayments.map((order) => (
+            <li key={order.orderId} className="panel moderation-item">
+              <div>
+                <h3><Link href={`/listings/${order.listingId}`} target="_blank">تمييز {order.days} يوماً</Link></h3>
+                <p className="notice">
+                  {order.amount.toLocaleString("en-US")} {order.currency} · {order.method} · رقم العملية <strong dir="ltr">{order.reference}</strong> ·{" "}
+                  {dateFormat.format(new Date(order.createdAt))}
+                </p>
+              </div>
+              <form action={decidePayment.bind(null, order.orderId)} className="toolbar">
+                <button className="button" type="submit" name="decision" value="confirm">وصل المبلغ — تفعيل</button>
+                <input name="note" placeholder="سبب الرفض" maxLength={300} aria-label="سبب الرفض" />
+                <button className="button secondary" type="submit" name="decision" value="reject">رفض</button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section>
         <h2>طلبات توثيق المكاتب ({pendingAgencies.length})</h2>
