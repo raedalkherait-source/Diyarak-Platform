@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Contractors directory: users create a contractor profile with specialty, governorate and phone;
+  public browsing at `/contractors` with governorate and specialty filters, management at
+  `/my/contractor`; navigation link in header (ADR-0077).
 - Area price reports: aggregated average, min and max prices per governorate and district,
   split by transaction intent and property category; public API at `/api/market/public/price-reports`,
   portal page at `/prices` with governorate drill-down; navigation link in header (ADR-0076).

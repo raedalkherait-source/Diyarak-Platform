@@ -436,3 +436,58 @@ export async function deleteOffPlanProject(projectId: string): Promise<void> {
   revalidatePath("/my/projects");
   redirect("/my/projects?notice=deleted");
 }
+
+// --- Contractor ---
+
+export interface ContractorFormState {
+  status?: "saved" | "error";
+  message?: string;
+}
+
+interface ContractorPayload {
+  name: string;
+  description: string | null;
+  governorate: string;
+  district: string | null;
+  specialty: string;
+  phone: string;
+}
+
+function parseContractorForm(form: FormData): ContractorPayload {
+  return {
+    name: String(form.get("name") ?? "").trim(),
+    description: String(form.get("description") ?? "").trim() || null,
+    governorate: String(form.get("governorate") ?? ""),
+    district: String(form.get("district") ?? "").trim() || null,
+    specialty: String(form.get("specialty") ?? "GeneralConstruction"),
+    phone: String(form.get("phone") ?? "").trim(),
+  };
+}
+
+export async function createContractor(_state: ContractorFormState, form: FormData): Promise<ContractorFormState> {
+  const payload = parseContractorForm(form);
+  const result = await managementFetch("/api/market/contractor", { method: "POST", json: payload });
+  if (!result.ok) return { status: "error", message: errorMessage(result.code, result.status) };
+  revalidatePath("/my/contractor");
+  redirect("/my/contractor?notice=created");
+}
+
+export async function updateContractor(contractorId: string, expectedVersion: number, _state: ContractorFormState, form: FormData): Promise<ContractorFormState> {
+  const payload = parseContractorForm(form);
+  const result = await managementFetch(`/api/market/contractor/${contractorId}`, { method: "PUT", json: { ...payload, version: expectedVersion } });
+  if (!result.ok) return { status: "error", message: errorMessage(result.code, result.status) };
+  revalidatePath("/my/contractor");
+  return { status: "saved", message: "تم حفظ التعديلات." };
+}
+
+export async function toggleContractorPublish(contractorId: string, expectedVersion: number, publish: boolean): Promise<void> {
+  await managementFetch(`/api/market/contractor/${contractorId}/publish`, { method: "PUT", json: { version: expectedVersion, publish } });
+  revalidatePath("/my/contractor");
+  redirect(`/my/contractor?notice=${publish ? "published" : "unpublished"}`);
+}
+
+export async function deleteContractor(contractorId: string): Promise<void> {
+  await managementFetch(`/api/market/contractor/${contractorId}`, { method: "DELETE" });
+  revalidatePath("/my/contractor");
+  redirect("/my/contractor?notice=deleted");
+}

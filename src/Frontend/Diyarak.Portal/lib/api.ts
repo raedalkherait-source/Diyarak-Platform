@@ -100,6 +100,28 @@ export interface PriceReportResponse {
   entries: PriceReportEntry[];
 }
 
+export interface PublicContractor {
+  id: string;
+  name: string;
+  description: string | null;
+  governorate: string;
+  district: string | null;
+  specialty: string;
+  phone: string;
+}
+
+export interface PublicContractorsPage {
+  items: PublicContractor[];
+  hasMore: boolean;
+}
+
+export function listContractors(page = 1, governorate?: string, specialty?: string): Promise<PublicContractorsPage | null> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (governorate) params.set("governorate", governorate);
+  if (specialty) params.set("specialty", specialty);
+  return getJson<PublicContractorsPage>(`/api/market/public/contractors?${params.toString()}`);
+}
+
 export function getPriceReport(governorate?: string): Promise<PriceReportResponse | null> {
   const path = governorate
     ? `/api/market/public/price-reports/${encodeURIComponent(governorate)}`

@@ -149,6 +149,12 @@ builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.DeleteOffP
 builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.ListMyOffPlanProjectsUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.ListPublicOffPlanProjectsUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.OffPlanProjects.GetPublicOffPlanProjectUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Contractors.CreateContractorUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Contractors.UpdateContractorUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Contractors.ToggleContractorPublishUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Contractors.DeleteContractorUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Contractors.GetMyContractorUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Contractors.ListPublicContractorsUseCase>();
 builder.Services.AddModeration(builder.Configuration);
 builder.Services.AddPayments();
 // After phone authentication, which registers the SMS gateway the alerts reuse.
@@ -351,6 +357,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketBulkImportEndpoints();
     app.MapMarketOffPlanProjectEndpoints();
     app.MapMarketPriceReportEndpoints();
+    app.MapMarketContractorEndpoints();
     app.MapPaymentEndpoints();
     app.MapModerationEndpoints();
 }

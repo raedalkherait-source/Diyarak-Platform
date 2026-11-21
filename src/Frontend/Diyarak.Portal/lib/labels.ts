@@ -85,6 +85,19 @@ export const featureLabels: Record<string, string> = {
   SecurityGuard: "حارس",
 };
 
+export const contractorSpecialtyLabels: Record<string, string> = {
+  GeneralConstruction: "بناء عام",
+  InteriorDesign: "تصميم داخلي",
+  Plumbing: "سباكة",
+  Electrical: "كهرباء",
+  Painting: "دهان",
+  Tiling: "بلاط",
+  Carpentry: "نجارة",
+  Landscaping: "تنسيق حدائق",
+  Demolition: "هدم",
+  Surveying: "مساحة",
+};
+
 export const constructionStatusLabels: Record<string, string> = {
   Planned: "مخطط",
   UnderConstruction: "قيد الإنشاء",

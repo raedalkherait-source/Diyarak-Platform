@@ -121,6 +121,10 @@ public static class PersistenceServiceCollectionExtensions
             PostgreSqlAreaPriceReportQuery>();
 
         services.AddScoped<
+            Diyarak.Market.Application.Contractors.IContractorRepository,
+            PostgreSqlContractorRepository>();
+
+        services.AddScoped<
             Diyarak.Market.Application.Payments.IPaymentOrderStore,
             PostgreSqlPaymentOrderStore>();
 
