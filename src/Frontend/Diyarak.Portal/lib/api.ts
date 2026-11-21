@@ -1,6 +1,7 @@
 import "server-only";
 import { headers } from "next/headers";
 import { nearestForwardedFor } from "./contact";
+import type { PublicAgencyProfile } from "./agency";
 import type { PublicListing, PublicListingPage } from "./types";
 
 const apiUrl = (process.env.DIYARAK_API_URL ?? "http://localhost:5080").replace(/\/$/, "");
@@ -40,4 +41,16 @@ export function searchListings(query: URLSearchParams): Promise<PublicListingPag
 export function getListing(listingId: string): Promise<PublicListing | null> {
   if (!/^[0-9a-fA-F-]{36}$/.test(listingId)) return Promise.resolve(null);
   return getJson<PublicListing>(`/api/market/public/listings/${listingId}`);
+}
+
+export interface PublicAgencyPage {
+  agency: PublicAgencyProfile;
+  items: PublicListing[];
+  page: number;
+  hasMore: boolean;
+}
+
+export function getAgency(agencyId: string, page = 1): Promise<PublicAgencyPage | null> {
+  if (!/^[0-9a-fA-F-]{36}$/.test(agencyId)) return Promise.resolve(null);
+  return getJson<PublicAgencyPage>(`/api/market/public/agencies/${agencyId}?page=${page}`);
 }

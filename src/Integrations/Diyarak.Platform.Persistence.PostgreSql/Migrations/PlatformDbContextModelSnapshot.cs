@@ -171,6 +171,75 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketAgencyRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("city");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Governorate")
+                        .HasColumnType("text")
+                        .HasColumnName("governorate");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("registration_number");
+
+                    b.Property<string>("VerificationNote")
+                        .HasColumnType("text")
+                        .HasColumnName("verification_note");
+
+                    b.Property<int>("VerificationStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("verification_status");
+
+                    b.Property<DateTimeOffset?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verified_at");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_agencies");
+
+                    b.HasIndex("OwnerUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_agencies_owner_user_id");
+
+                    b.HasIndex("VerificationStatus")
+                        .HasDatabaseName("ix_market_agencies_verification_status");
+
+                    b.ToTable("agencies", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_agencies_name_length", "char_length(name) BETWEEN 2 AND 80");
+
+                            t.HasCheckConstraint("ck_market_agencies_registration", "verification_status = 0 OR registration_number IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_market_agencies_verified_at", "(verification_status = 2) = (verified_at IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketListingDailyStatisticsRecord", b =>
                 {
                     b.Property<Guid>("ListingId")
