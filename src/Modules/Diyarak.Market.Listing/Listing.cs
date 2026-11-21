@@ -54,6 +54,9 @@ public sealed class Listing : AggregateRoot<Guid>
 
     public ListingStatus Status { get; private set; }
 
+    /// <summary>When the Listing was first published; <c>null</c> for drafts.</summary>
+    public DateTimeOffset? PublishedAt { get; private set; }
+
     public ListingContext? Context { get; private set; }
 
     public ListingHeadline? Headline { get; private set; }
@@ -137,7 +140,11 @@ public sealed class Listing : AggregateRoot<Guid>
         Contact = null;
     }
 
-    public void Publish()
+    /// <param name="publishedAt">
+    /// The publication time. Supplied by the application layer; <c>null</c> only when rehydrating
+    /// rows that predate publication timestamps.
+    /// </param>
+    public void Publish(DateTimeOffset? publishedAt = null)
     {
         if (Status != ListingStatus.Draft)
             throw new InvalidOperationException(
@@ -148,6 +155,7 @@ public sealed class Listing : AggregateRoot<Guid>
                 "Listing is not ready for publication.");
 
         Status = ListingStatus.Published;
+        PublishedAt = publishedAt;
     }
 
     /// <summary>Hides a Published listing temporarily.</summary>

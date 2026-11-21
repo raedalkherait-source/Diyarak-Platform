@@ -217,7 +217,8 @@ public sealed class PublishListingUseCaseTests
             new PublishListingUseCase(
                 repository,
                 checker,
-                new StubMarketTransactionRunner());
+                new StubMarketTransactionRunner(),
+                new FixedClock());
 
         Result result =
             await useCase.ExecuteAsync(
@@ -226,6 +227,7 @@ public sealed class PublishListingUseCaseTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(ListingStatus.Published, listing.Status);
+        Assert.Equal(FixedClock.Now, listing.PublishedAt);
         Assert.Equal(
             listing.SubjectReference.SubjectId,
             checker.LastPropertyId);
@@ -362,5 +364,12 @@ public sealed class PublishListingUseCaseTests
 
             return Task.FromResult(exists);
         }
+    }
+
+    private sealed class FixedClock : Diyarak.Platform.BuildingBlocks.IClock
+    {
+        public static readonly DateTimeOffset Now = new(2026, 11, 21, 9, 15, 0, TimeSpan.Zero);
+
+        public DateTimeOffset UtcNow => Now;
     }
 }

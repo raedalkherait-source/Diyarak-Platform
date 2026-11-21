@@ -8,11 +8,13 @@ public sealed class PublishListingUseCase
     private readonly IMarketListingRepository _listingRepository;
     private readonly IPropertyExistenceChecker _propertyExistenceChecker;
     private readonly IMarketTransactionRunner _transactionRunner;
+    private readonly IClock _clock;
 
     public PublishListingUseCase(
         IMarketListingRepository listingRepository,
         IPropertyExistenceChecker propertyExistenceChecker,
-        IMarketTransactionRunner transactionRunner)
+        IMarketTransactionRunner transactionRunner,
+        IClock? clock = null)
     {
         ArgumentNullException.ThrowIfNull(listingRepository);
         ArgumentNullException.ThrowIfNull(propertyExistenceChecker);
@@ -21,6 +23,7 @@ public sealed class PublishListingUseCase
         _listingRepository = listingRepository;
         _propertyExistenceChecker = propertyExistenceChecker;
         _transactionRunner = transactionRunner;
+        _clock = clock ?? SystemClock.Instance;
     }
 
     public async Task<Result> ExecuteAsync(
@@ -75,7 +78,7 @@ public sealed class PublishListingUseCase
 
                 try
                 {
-                    listing.Publish();
+                    listing.Publish(_clock.UtcNow);
                 }
                 catch (InvalidOperationException)
                 {

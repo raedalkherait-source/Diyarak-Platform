@@ -267,6 +267,10 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("contact_allow_whatsapp");
 
+                    b.Property<DateTimeOffset?>("FirstPublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_published_at");
+
                     b.Property<string>("Headline")
                         .HasColumnType("text")
                         .HasColumnName("headline");
@@ -325,11 +329,17 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                     b.HasIndex("Status", "Id")
                         .HasDatabaseName("ix_market_listings_status_id");
 
+                    b.HasIndex("Status", "FirstPublishedAt", "Id")
+                        .IsDescending(false, true, false)
+                        .HasDatabaseName("ix_market_listings_status_first_published_at");
+
                     b.ToTable("listings", "market", t =>
                         {
                             t.HasCheckConstraint("ck_market_listings_closure_reason", "(status = 4) = (closure_reason IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_market_listings_contact_options", "(contact_allow_calls IS NULL) = (contact_allow_whatsapp IS NULL) AND (contact_allow_calls IS NULL OR contact_allow_calls OR contact_allow_whatsapp)");
+
+                            t.HasCheckConstraint("ck_market_listings_first_published_at", "(status = 1) = (first_published_at IS NULL)");
 
                             t.HasCheckConstraint("ck_market_listings_moderation_note", "(status = 5) = (moderation_note IS NOT NULL)");
                         });
@@ -532,6 +542,49 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations
                     b.ToTable("properties", "market", t =>
                         {
                             t.HasCheckConstraint("ck_market_properties_owner_user_id_non_empty", "owner_user_id IS NULL OR owner_user_id <> '00000000-0000-0000-0000-000000000000'::uuid");
+                        });
+                });
+
+            modelBuilder.Entity("Diyarak.Platform.Persistence.PostgreSql.Market.MarketSavedSearchRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Query")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("query");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_saved_searches");
+
+                    b.HasIndex("UserId", "Query")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_saved_searches_user_id_query");
+
+                    b.ToTable("saved_searches", "market", t =>
+                        {
+                            t.HasCheckConstraint("ck_market_saved_searches_name_length", "char_length(name) BETWEEN 1 AND 80");
+
+                            t.HasCheckConstraint("ck_market_saved_searches_query_length", "char_length(query) <= 1000");
                         });
                 });
 #pragma warning restore 612, 618

@@ -43,7 +43,9 @@ internal sealed class PostgreSqlPublishedListingQuery
                         Listing = listing,
                         Property = property,
                     })
-                .OrderBy(pair => pair.Listing.Id)
+                // Newest first; the id keeps the order stable between pages (ADR-0066).
+                .OrderByDescending(pair => pair.Listing.FirstPublishedAt)
+                .ThenBy(pair => pair.Listing.Id)
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync(cancellationToken);
@@ -66,6 +68,15 @@ internal sealed class PostgreSqlPublishedListingQuery
                     listing =>
                         listing.Status ==
                         (int)ListingStatus.Published);
+
+        if (criteria?.PublishedAfter is { } publishedAfter)
+        {
+            query =
+                query.Where(
+                    listing =>
+                        listing.FirstPublishedAt.HasValue &&
+                        listing.FirstPublishedAt.Value > publishedAfter);
+        }
 
         if (criteria?.TransactionIntents is { Count: > 0 } transactionIntents)
         {

@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { publicListingsTag } from "@/lib/api";
 import { redirect } from "next/navigation";
 import { errorMessage } from "@/lib/errors";
 import {
@@ -80,6 +81,7 @@ export async function uploadPhoto(listingId: string, form: FormData): Promise<Ac
   if (!result.ok) return { ok: false, error: errorMessage(result.code, result.status) };
   revalidatePath(`/my/listings/${listingId}`);
   revalidatePath(`/listings/${listingId}`);
+  revalidateTag(publicListingsTag);
   return { ok: true };
 }
 
@@ -88,6 +90,7 @@ export async function deletePhoto(listingId: string, photoId: string): Promise<v
   await managementFetch(`/api/market/listings/${listingId}/photos/${photoId}`, { method: "DELETE" });
   revalidatePath(`/my/listings/${listingId}`);
   revalidatePath(`/listings/${listingId}`);
+  revalidateTag(publicListingsTag);
 }
 
 export async function publishListing(listingId: string, version: number, _state: ActionResult): Promise<ActionResult> {
@@ -101,6 +104,7 @@ export async function publishListing(listingId: string, version: number, _state:
   if (!result.ok) return { ok: false, error: errorMessage(result.code, result.status) };
   revalidatePath("/my");
   revalidatePath(`/my/listings/${listingId}`);
+  revalidateTag(publicListingsTag);
   return { ok: true };
 }
 
@@ -146,6 +150,7 @@ export async function updateListing(
   revalidatePath("/my");
   revalidatePath(`/my/listings/${listingId}`);
   revalidatePath(`/listings/${listingId}`);
+  revalidateTag(publicListingsTag);
   redirect(`/my/listings/${listingId}?notice=updated`);
 }
 
@@ -188,6 +193,7 @@ export async function updateProperty(
   revalidatePath("/my");
   revalidatePath(`/my/listings/${listingId}`);
   revalidatePath(`/listings/${listingId}`);
+  revalidateTag(publicListingsTag);
   redirect(`/my/listings/${listingId}?notice=property-updated`);
 }
 
@@ -200,6 +206,44 @@ export async function deleteDraft(listingId: string, version: number): Promise<v
   revalidatePath("/my");
   if (result.ok) redirect("/my?notice=deleted");
   redirect(`/my/listings/${listingId}?notice=delete-failed`);
+}
+
+export interface SaveSearchState {
+  status?: "saved" | "error";
+  message?: string;
+}
+
+const saveSearchMessages: Record<string, string> = {
+  "market.saved_search.duplicate": "هذا البحث محفوظ مسبقاً.",
+  "market.saved_search.limit_reached": "وصلت إلى الحد الأقصى (20 بحثاً محفوظاً). احذف بعضها أولاً.",
+};
+
+/** Saves the current search filters under a name. */
+export async function saveSearch(query: string, name: string, _state: SaveSearchState): Promise<SaveSearchState> {
+  const result = await managementFetch("/api/market/saved-searches", { method: "POST", json: { name, query } });
+  if (!result.ok) return { status: "error", message: saveSearchMessages[result.code ?? ""] ?? errorMessage(result.code, result.status) };
+
+  revalidatePath("/my/searches");
+  return { status: "saved", message: "تم حفظ البحث. ستجد عدد الإعلانات الجديدة في «عمليات البحث المحفوظة»." };
+}
+
+const savedSearchIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Marks a saved search as seen (resetting its "new" count) and opens its results. */
+export async function openSavedSearch(searchId: string, href: string): Promise<void> {
+  if (!savedSearchIdPattern.test(searchId) || !href.startsWith("/search")) return;
+  await managementFetch(`/api/market/saved-searches/${searchId}/seen`, { method: "POST" });
+  revalidatePath("/my/searches");
+  // The "new" count came from live data; show the same listings rather than a cached page.
+  revalidateTag(publicListingsTag);
+  redirect(href);
+}
+
+export async function deleteSavedSearch(searchId: string): Promise<void> {
+  if (!savedSearchIdPattern.test(searchId)) return;
+  await managementFetch(`/api/market/saved-searches/${searchId}`, { method: "DELETE" });
+  revalidatePath("/my/searches");
+  redirect("/my/searches");
 }
 
 const statusActions = new Set(["pause", "resume", "close"]);
@@ -219,5 +263,6 @@ export async function changeListingStatus(listingId: string, form: FormData): Pr
   revalidatePath("/my");
   revalidatePath(`/my/listings/${listingId}`);
   revalidatePath(`/listings/${listingId}`);
+  revalidateTag(publicListingsTag);
   redirect(`/my/listings/${listingId}?notice=${result.ok ? `status-${action}` : "status-failed"}`);
 }

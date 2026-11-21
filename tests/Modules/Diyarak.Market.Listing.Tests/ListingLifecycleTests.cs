@@ -49,7 +49,7 @@ public sealed class ListingLifecycleTests
 
         Listing published = CreatePublished();
         Assert.Throws<InvalidOperationException>(published.Resume);
-        Assert.Throws<InvalidOperationException>(published.Publish);
+        Assert.Throws<InvalidOperationException>(() => published.Publish());
 
         published.Close(ListingClosureReason.Rented);
         Assert.Throws<InvalidOperationException>(published.Pause);

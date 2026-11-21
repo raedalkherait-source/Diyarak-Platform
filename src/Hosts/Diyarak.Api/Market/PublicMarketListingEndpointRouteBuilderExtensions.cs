@@ -153,7 +153,7 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         return Results.Ok(ToResponse(result.Value));
     }
 
-    private static bool TryParseSearchCriteria(
+    internal static bool TryParseSearchCriteria(
         IQueryCollection query,
         out PublishedListingSearchCriteria? criteria)
     {

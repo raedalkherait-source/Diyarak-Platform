@@ -32,6 +32,9 @@ public sealed class PlatformDbContext(
     internal DbSet<MarketListingFavoriteRecord> MarketListingFavorites =>
         Set<MarketListingFavoriteRecord>();
 
+    internal DbSet<MarketSavedSearchRecord> MarketSavedSearches =>
+        Set<MarketSavedSearchRecord>();
+
     internal DbSet<MarketPropertyRecord> MarketProperties =>
         Set<MarketPropertyRecord>();
 
@@ -66,5 +69,8 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new MarketListingFavoriteRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new MarketSavedSearchRecordConfiguration());
     }
 }

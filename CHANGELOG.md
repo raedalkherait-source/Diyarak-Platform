@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Saved searches with in-site "new since last visit" counts (`/my/searches`, `/api/market/saved-searches`),
+  listing publication time (`first_published_at`) and newest-first public search; portal search
+  caches are invalidated when listings change (ADR-0066).
 - Maps: publishers can pin the property on a map; visitors see only an approximate 500 m area
   on the listing page and a map of search results. The public API exposes
   `property.location.approximate` snapped to a 0.004° grid, never the exact point. Tile provider

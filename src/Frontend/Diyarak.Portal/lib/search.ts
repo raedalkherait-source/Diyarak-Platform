@@ -67,3 +67,19 @@ export function pageHref(params: RawSearchParams, page: number): string {
 export function firstValue(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value) ?? "";
 }
+
+/** The filters of a search, without paging, as stored for a saved search. */
+export function savedSearchQuery(params: RawSearchParams): string {
+  const query = toApiQuery(params);
+  query.delete("page");
+  query.delete("pageSize");
+  return query.toString();
+}
+
+/** Portal URL that reopens a saved search (the portal re-adds derived parameters itself). */
+export function savedSearchHref(query: string): string {
+  const params = new URLSearchParams(query);
+  params.delete("livingAreaUnit");
+  const text = params.toString();
+  return text ? `/search?${text}` : "/search";
+}

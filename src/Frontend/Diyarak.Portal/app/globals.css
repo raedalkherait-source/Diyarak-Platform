@@ -301,3 +301,11 @@ img { max-width: 100%; display: block; }
 .results-map[open] summary { margin-block-end: 12px; }
 .leaflet-container { font: inherit; }
 .leaflet-container a { color: var(--brand); }
+
+/* Saved searches */
+.save-search-form { display: flex; flex-direction: column; gap: 6px; }
+.saved-searches { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.saved-search { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; }
+.saved-search h2 { margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
+.saved-search .toolbar { grid-column: 1 / -1; }
+.new-count { background: var(--brand); color: #fff; border-radius: 999px; padding: 4px 12px; font-weight: 700; white-space: nowrap; justify-self: end; }
