@@ -560,6 +560,7 @@ public sealed class GetPublishedListingEndpointTests
                 "photos",
                 "contact",
                 "agency",
+                "featured",
             ],
             listing.EnumerateObject().Select(property => property.Name).ToArray());
 

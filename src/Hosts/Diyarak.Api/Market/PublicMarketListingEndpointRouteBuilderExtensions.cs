@@ -855,7 +855,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             listing.Contact is { } contact
                 ? new PublicMarketListingContactOptionsResponse(contact.AllowCalls, contact.AllowWhatsApp)
                 : null,
-            agency is null ? null : new PublicListingAgencyResponse(agency.Id, agency.Name, agency.IsVerified));
+            agency is null ? null : new PublicListingAgencyResponse(agency.Id, agency.Name, agency.IsVerified),
+            projection.IsFeatured);
     }
 
     private static PublicMarketListingPropertyResponse ToPropertyResponse(
@@ -973,7 +974,8 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
         DateOnly? AvailableFromDate,
         MarketListingPhotoEndpointRouteBuilderExtensions.PublicListingPhotoResponse[] Photos,
         PublicMarketListingContactOptionsResponse? Contact,
-        PublicListingAgencyResponse? Agency = null);
+        PublicListingAgencyResponse? Agency = null,
+        bool Featured = false);
 
     /// <summary>The publishing agency, when the publisher has one (ADR-0068).</summary>
     internal sealed record PublicListingAgencyResponse(

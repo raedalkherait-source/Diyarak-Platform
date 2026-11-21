@@ -9,10 +9,10 @@ namespace Diyarak.Api.Market;
 internal static class PublicMarketListingEntityTag
 {
     private const string DetailRepresentationRevision =
-        "public-market-listing-v5";
+        "public-market-listing-v6";
 
     private const string CollectionRepresentationRevision =
-        "public-market-listing-page-v5";
+        "public-market-listing-page-v6";
 
     internal static string Create(PublishedListingProjection projection, Agency? agency = null)
     {
@@ -52,6 +52,7 @@ internal static class PublicMarketListingEntityTag
             material.Append(PhotoFingerprint(projection));
             material.Append(':');
             material.Append(AgencyFingerprint(agencyByPublisher?.GetValueOrDefault(projection.Listing.PublisherUserId)));
+            material.Append(projection.IsFeatured ? ":f" : ":-");
         }
 
         return CreateOpaqueTag(material.ToString());

@@ -5,6 +5,11 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Featured listings and payment orders: owners submit a payment request (bank transfer,
+  Syriatel Cash, MTN Cash) to feature their listing for 7 or 30 days; a moderator confirms
+  or rejects the payment; confirmed listings appear first in search results with a "★ مميز"
+  badge. Catalog is configuration-driven (`Payments:Products:*`, `Payments:Methods:*`).
+  Public response ETag bumped to v6 (ADR-0071).
 - SMS alerts for saved searches: opt-in per search, at most one daily summary SMS per user
   within a daytime window, off by default (`SavedSearchAlerts:*`) (ADR-0070).
 - Map-area search: `bbox=south,west,north,east` on public search (matched on the snapped grid
