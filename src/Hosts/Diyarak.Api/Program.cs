@@ -141,6 +141,7 @@ builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetPublicAgencyUs
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.AssignAgencyPackageUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.RevokeAgencyPackageUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Agencies.GetListingQuotaUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.BulkImport.BulkImportListingsUseCase>();
 builder.Services.AddModeration(builder.Configuration);
 builder.Services.AddPayments();
 // After phone authentication, which registers the SMS gateway the alerts reuse.
@@ -340,6 +341,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketSavedSearchEndpoints();
     app.MapMarketListingStatisticsEndpoints();
     app.MapMarketAgencyEndpoints();
+    app.MapMarketBulkImportEndpoints();
     app.MapPaymentEndpoints();
     app.MapModerationEndpoints();
 }

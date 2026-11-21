@@ -342,3 +342,36 @@ export async function changeListingStatus(listingId: string, form: FormData): Pr
   revalidateTag(publicListingsTag);
   redirect(`/my/listings/${listingId}?notice=${result.ok ? `status-${action}` : "status-failed"}`);
 }
+
+export interface BulkImportState {
+  status?: "success" | "error";
+  message?: string;
+  created?: number;
+  failed?: number;
+  errors?: string[];
+}
+
+export async function bulkImportCsv(_state: BulkImportState, form: FormData): Promise<BulkImportState> {
+  const file = form.get("csv");
+  if (!(file instanceof File) || file.size === 0) return { status: "error", message: "اختر ملف CSV." };
+  if (file.size > 2 * 1024 * 1024) return { status: "error", message: "حجم الملف يجب ألا يتجاوز 2 ميغابايت." };
+
+  const body = new FormData();
+  body.append("file", file);
+
+  const result = await managementFetch<{ created: number; failed: number; errors: string[] }>("/api/market/import/csv", {
+    method: "POST",
+    body,
+  });
+
+  if (!result.ok) return { status: "error", message: errorMessage(result.code, result.status) };
+
+  revalidatePath("/my");
+  return {
+    status: "success",
+    message: `تم استيراد ${result.value.created} إعلان بنجاح.`,
+    created: result.value.created,
+    failed: result.value.failed,
+    errors: result.value.errors,
+  };
+}

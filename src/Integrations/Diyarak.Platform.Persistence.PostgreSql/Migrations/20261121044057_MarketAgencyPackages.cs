@@ -7,6 +7,8 @@ namespace Diyarak.Platform.Persistence.PostgreSql.Migrations;
 /// <inheritdoc />
 public partial class MarketAgencyPackages : Migration
 {
+    private static readonly string[] IndexColumns = ["agency_id", "expires_at"];
+
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
@@ -35,7 +37,7 @@ public partial class MarketAgencyPackages : Migration
             name: "ix_market_agency_packages_agency_expires",
             schema: "market",
             table: "agency_packages",
-            columns: new[] { "agency_id", "expires_at" });
+            columns: IndexColumns);
     }
 
     /// <inheritdoc />

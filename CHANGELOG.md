@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- CSV bulk import for agencies: upload a CSV file to create properties and draft listings
+  in bulk (max 200 rows). API: `POST /api/market/import/csv`, portal: `/my/import` (ADR-0073).
 - Agency packages and listing quotas: moderators assign quota packages to agencies;
   `PublishListingUseCase` enforces the limit (default free quota: 5). Dashboard shows
   quota bar. API: `GET /api/market/quota`, moderation package CRUD (ADR-0072).
