@@ -579,7 +579,16 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
                     Minimum: floorMinimum,
                     Maximum: floorMaximum)
                 : null;
-        if (transactionIntents is null &&
+        PublishedMapArea? mapArea = null;
+
+        if (query.TryGetValue("bbox", out var bboxValues))
+        {
+            if (bboxValues.Count != 1 || !TryParseMapArea(bboxValues[0], out mapArea))
+                return Fail(out criteria);
+        }
+
+        if (mapArea is null &&
+            transactionIntents is null &&
             categories is null &&
             commercialSubtypes is null &&
             city is null &&
@@ -645,8 +654,34 @@ public static class PublicMarketListingEndpointRouteBuilderExtensions
             new PublishedListingSearchCriteria(
                 TransactionIntents: transactionIntents,
                 Price: price,
-                Property: property);
+                Property: property)
+            {
+                MapArea = mapArea,
+            };
 
+        return true;
+    }
+
+    /// <summary>Parses <c>bbox=south,west,north,east</c> in decimal degrees.</summary>
+    internal static bool TryParseMapArea(string? value, out PublishedMapArea? area)
+    {
+        area = null;
+        string[] parts = (value ?? string.Empty).Split(',');
+        if (parts.Length != 4)
+            return false;
+
+        var numbers = new double[4];
+        for (int index = 0; index < 4; index++)
+        {
+            if (!double.TryParse(parts[index], System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture, out numbers[index]))
+                return false;
+        }
+
+        var candidate = new PublishedMapArea(numbers[0], numbers[1], numbers[2], numbers[3]);
+        if (!candidate.IsValid)
+            return false;
+
+        area = candidate;
         return true;
     }
     private static bool TryParseOptionalInteger(

@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Map-area search: `bbox=south,west,north,east` on public search (matched on the snapped grid
+  so it cannot locate a building) and "ابحث في هذه المنطقة" on the search map (ADR-0069).
 - Real-estate agency pages: agency profile at `/my/agency`, public `/agencies/{id}` with the
   agency's listings, moderator verification with a ✓ badge on the agency page and its listings;
   renaming removes verification (ADR-0068).

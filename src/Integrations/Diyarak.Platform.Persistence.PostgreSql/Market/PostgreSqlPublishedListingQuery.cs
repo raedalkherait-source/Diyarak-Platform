@@ -69,6 +69,26 @@ internal sealed class PostgreSqlPublishedListingQuery
                         listing.Status ==
                         (int)ListingStatus.Published);
 
+        if (criteria?.MapArea is { } area)
+        {
+            const double grid = PublishedMapArea.GridDegrees;
+            double south = area.South, west = area.West, north = area.North, east = area.East;
+
+            query =
+                query.Where(
+                    listing =>
+                        listing.SubjectType == MarketListingSubjectTypes.Property &&
+                        _context.MarketProperties.Any(
+                            property =>
+                                property.Id == listing.SubjectId &&
+                                property.Latitude.HasValue &&
+                                property.Longitude.HasValue &&
+                                Math.Round(property.Latitude.Value / grid) * grid >= south &&
+                                Math.Round(property.Latitude.Value / grid) * grid <= north &&
+                                Math.Round(property.Longitude.Value / grid) * grid >= west &&
+                                Math.Round(property.Longitude.Value / grid) * grid <= east));
+        }
+
         if (criteria?.PublisherUserId is { } publisherUserId)
             query = query.Where(listing => listing.PublisherUserId == publisherUserId);
 

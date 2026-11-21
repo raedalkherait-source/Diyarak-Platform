@@ -337,3 +337,4 @@ img { max-width: 100%; display: block; }
 .agency-avatar { flex: none; width: 56px; height: 56px; border-radius: 14px; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 1.6rem; font-weight: 800; }
 .agency-description { white-space: pre-line; margin: 8px 0 0; }
 .section-subtitle { font-size: 1.15rem; margin: 8px 0 12px; }
+.map-actions { margin-block-start: 10px; align-items: center; }
