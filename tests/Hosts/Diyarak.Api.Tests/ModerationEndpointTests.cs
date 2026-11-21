@@ -196,6 +196,8 @@ public sealed class ModerationEndpointTests
                 services.AddSingleton<IMarketPropertyRepository>(new AnyProperty());
                 services.RemoveAll<Diyarak.Market.Application.Photos.IListingPhotoRepository>();
                 services.AddSingleton<Diyarak.Market.Application.Photos.IListingPhotoRepository>(new EmptyListingPhotoRepository());
+                services.RemoveAll<Diyarak.Market.Application.Agencies.IAgencyRepository>();
+                services.AddSingleton<Diyarak.Market.Application.Agencies.IAgencyRepository>(new EmptyAgencyRepository());
                 services.RemoveAll<IListingReportRepository>();
                 services.AddSingleton<IListingReportRepository>(_reports);
                 services.RemoveAll<IListingModerationQuery>();

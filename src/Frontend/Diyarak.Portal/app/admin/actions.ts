@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { publicListingsTag } from "@/lib/api";
 import { isListingId } from "@/lib/contact";
 import { managementFetch } from "@/lib/managementApi";
 
@@ -20,4 +21,24 @@ export async function moderate(listingId: string, form: FormData): Promise<void>
 
   revalidatePath("/admin");
   revalidatePath(`/listings/${listingId}`);
+}
+
+const agencyDecisions = new Set(["verify", "reject"]);
+
+export async function decideAgency(agencyId: string, form: FormData): Promise<void> {
+  const decision = String(form.get("decision") ?? "");
+  const note = String(form.get("note") ?? "").trim();
+  if (!/^[0-9a-f-]{36}$/i.test(agencyId) || !agencyDecisions.has(decision)) return;
+  if (decision === "reject" && (note.length === 0 || note.length > 500)) return;
+
+  await managementFetch(`/api/moderation/agencies/${agencyId}/${decision}`, {
+    method: "POST",
+    json: decision === "reject" ? { note } : {},
+    allowForbidden: true,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath(`/agencies/${agencyId}`);
+  // The badge appears on every listing of the agency.
+  revalidateTag(publicListingsTag);
 }
