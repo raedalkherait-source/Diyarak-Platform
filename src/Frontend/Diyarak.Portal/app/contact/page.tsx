@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { breadcrumbStructuredData } from "@/lib/seo";
 import { jsonForScript } from "@/lib/site";
 
@@ -14,6 +15,11 @@ export default function ContactPage() {
         { name: "الرئيسية", href: "/" },
         { name: "تواصل معنا" },
       ])) }} />
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        <span>تواصل معنا</span>
+      </nav>
       <h1>تواصل معنا</h1>
       <p>يسعدنا تلقي ملاحظاتكم واستفساراتكم. يمكنكم التواصل معنا عبر الطرق التالية:</p>
 
@@ -36,7 +42,7 @@ export default function ContactPage() {
         </section>
       </div>
 
-      <section className="panel" style={{ marginBlockStart: 24 }}>
+      <section className="panel contact-form-section">
         <h2>نموذج التواصل</h2>
         <ContactForm />
       </section>

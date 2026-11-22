@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { breadcrumbStructuredData } from "@/lib/seo";
 import { jsonForScript } from "@/lib/site";
 
@@ -70,6 +71,11 @@ export default function FaqPage() {
         { name: "الرئيسية", href: "/" },
         { name: "الأسئلة الشائعة" },
       ])) }} />
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        <span>الأسئلة الشائعة</span>
+      </nav>
       <h1>الأسئلة الشائعة</h1>
       <div className="faq-list">
         {faqs.map((item, i) => (
