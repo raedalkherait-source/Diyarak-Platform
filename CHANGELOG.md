@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Real-estate tools hub (`/tools`): mortgage payment calculator with sliders for
+  principal, term and interest rate; property value estimator using live price
+  report data per governorate and category. Footer link and sitemap entries.
 - SEO structured data: BreadcrumbList JSON-LD on listing detail, contractors,
   projects, prices, FAQ and contact pages; WebSite JSON-LD with SearchAction
   for sitelinks search box; Organization JSON-LD on the home page.
