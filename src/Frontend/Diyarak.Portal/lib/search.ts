@@ -15,8 +15,16 @@ export const forwardedSearchKeys = [
   "finishingLevel",
   "propertyFeature",
   "bbox",
+  "sort",
   "page",
 ] as const;
+
+export const sortOptions: Record<string, string> = {
+  newest: "الأحدث",
+  price_asc: "السعر: من الأقل",
+  price_desc: "السعر: من الأعلى",
+  area_desc: "المساحة: من الأكبر",
+};
 
 const repeatableKeys = new Set(["transactionIntent", "propertyCategory", "governorate", "legalTitleType", "finishingLevel", "propertyFeature"]);
 const numericKeys = new Set(["priceMin", "priceMax", "livingAreaMin", "livingAreaMax", "bedroomCountMin", "page"]);
