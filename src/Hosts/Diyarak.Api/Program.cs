@@ -155,6 +155,10 @@ builder.Services.AddScoped<Diyarak.Market.Application.Contractors.ToggleContract
 builder.Services.AddScoped<Diyarak.Market.Application.Contractors.DeleteContractorUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Contractors.GetMyContractorUseCase>();
 builder.Services.AddScoped<Diyarak.Market.Application.Contractors.ListPublicContractorsUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Reviews.CreateReviewUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Reviews.DeleteReviewUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Reviews.ListSubjectReviewsUseCase>();
+builder.Services.AddScoped<Diyarak.Market.Application.Reviews.GetSubjectRatingUseCase>();
 builder.Services.AddModeration(builder.Configuration);
 builder.Services.AddPayments();
 // After phone authentication, which registers the SMS gateway the alerts reuse.
@@ -358,6 +362,7 @@ if (phoneAuthentication.Enabled ||
     app.MapMarketOffPlanProjectEndpoints();
     app.MapMarketPriceReportEndpoints();
     app.MapMarketContractorEndpoints();
+    app.MapMarketReviewEndpoints();
     app.MapPaymentEndpoints();
     app.MapModerationEndpoints();
 }

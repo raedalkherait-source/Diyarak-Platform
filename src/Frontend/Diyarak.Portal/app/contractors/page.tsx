@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { listContractors } from "@/lib/api";
+import { listContractors, getSubjectRating } from "@/lib/api";
 import { governorateLabels, contractorSpecialtyLabels, label } from "@/lib/labels";
 
 export const metadata: Metadata = {
@@ -21,6 +21,11 @@ export default async function ContractorsPage({
   const data = await listContractors(page, governorate, specialty);
   const items = data?.items ?? [];
   const hasMore = data?.hasMore ?? false;
+
+  const ratings = await Promise.all(
+    items.map((c) => getSubjectRating(c.id).then((r) => [c.id, r] as const)),
+  );
+  const ratingMap = Object.fromEntries(ratings);
 
   return (
     <div className="container" style={{ paddingBlock: "2rem" }}>
@@ -78,6 +83,12 @@ export default async function ContractorsPage({
               }}
             >
               <h2 style={{ fontSize: "1.125rem", marginBottom: "0.25rem" }}>{c.name}</h2>
+              {ratingMap[c.id] != null && ratingMap[c.id]!.count > 0 && (
+                <p style={{ fontSize: "0.875rem", marginBottom: "0.25rem" }}>
+                  {"★".repeat(Math.round(ratingMap[c.id]!.average))}{"☆".repeat(5 - Math.round(ratingMap[c.id]!.average))}
+                  {" "}{ratingMap[c.id]!.average.toFixed(1)} ({ratingMap[c.id]!.count})
+                </p>
+              )}
               <p style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
                 {label(contractorSpecialtyLabels, c.specialty)} · {label(governorateLabels, c.governorate)}
                 {c.district ? ` — ${c.district}` : ""}

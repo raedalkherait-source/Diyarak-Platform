@@ -128,3 +128,29 @@ export function getPriceReport(governorate?: string): Promise<PriceReportRespons
     : "/api/market/public/price-reports";
   return getJson<PriceReportResponse>(path);
 }
+
+export interface PublicReview {
+  id: string;
+  authorUserId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+}
+
+export interface PublicReviewsPage {
+  items: PublicReview[];
+  hasMore: boolean;
+}
+
+export interface SubjectRating {
+  average: number;
+  count: number;
+}
+
+export function listReviews(subjectId: string, page = 1): Promise<PublicReviewsPage | null> {
+  return getJson<PublicReviewsPage>(`/api/market/public/reviews?subjectId=${subjectId}&page=${page}`);
+}
+
+export function getSubjectRating(subjectId: string): Promise<SubjectRating | null> {
+  return getJson<SubjectRating>(`/api/market/public/reviews/rating?subjectId=${subjectId}`);
+}

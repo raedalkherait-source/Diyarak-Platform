@@ -56,6 +56,9 @@ public sealed class PlatformDbContext(
     internal DbSet<MarketContractorRecord> MarketContractors =>
         Set<MarketContractorRecord>();
 
+    internal DbSet<MarketReviewRecord> MarketReviews =>
+        Set<MarketReviewRecord>();
+
     internal DbSet<MarketPropertyRecord> MarketProperties =>
         Set<MarketPropertyRecord>();
 
@@ -113,5 +116,8 @@ public sealed class PlatformDbContext(
 
         modelBuilder.ApplyConfiguration(
             new MarketContractorRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new MarketReviewRecordConfiguration());
     }
 }
