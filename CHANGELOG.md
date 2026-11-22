@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Private listing notes: collapsible per-listing notepad on detail pages, stored
+  in localStorage, never shared; indicator dot when a note exists.
+- Neighborhood info section on listing detail pages: governorate description,
+  contextual links to similar listings, area prices and the value estimator.
 - Real-estate tools hub (`/tools`): mortgage payment calculator with sliders for
   principal, term and interest rate; property value estimator using live price
   report data per governorate and category. Footer link and sitemap entries.

@@ -11,6 +11,8 @@ import { ReportListing } from "@/components/ReportListing";
 import { CompareToggle } from "@/components/CompareListings";
 import { ShareButtons } from "@/components/ShareButtons";
 import { RecentlyViewedRecorder, RecentlyViewedList } from "@/components/RecentlyViewed";
+import { ListingNotes } from "@/components/ListingNotes";
+import { NeighborhoodInfo } from "@/components/NeighborhoodInfo";
 import { getListing } from "@/lib/api";
 import { breadcrumbStructuredData, listingStructuredData } from "@/lib/seo";
 import { jsonForScript, siteUrl } from "@/lib/site";
@@ -139,6 +141,15 @@ export default async function ListingPage({ params }: Props) {
               </ul>
             </section>
           ) : null}
+
+          <ListingNotes listingId={listing.listingId} />
+
+          <NeighborhoodInfo
+            governorate={property.location.governorate}
+            district={property.location.district}
+            transactionIntent={listing.context.transactionIntent}
+            propertyCategory={property.category}
+          />
 
           <RecentlyViewedList excludeId={listing.listingId} />
         </div>
