@@ -127,7 +127,12 @@ export default function ComparePage() {
   ];
 
   return (
-    <div className="container">
+    <div className="container section">
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        <span>مقارنة الإعلانات</span>
+      </nav>
       <h1>مقارنة الإعلانات</h1>
       <div className="compare-table-wrapper">
         <table className="compare-table">

@@ -8,6 +8,8 @@ import { getSessionToken } from "@/lib/session";
 import { mapConfig } from "@/lib/map";
 import { Options } from "@/components/Options";
 import { ApiUnavailableError, searchListings } from "@/lib/api";
+import { breadcrumbStructuredData } from "@/lib/seo";
+import { jsonForScript } from "@/lib/site";
 import {
   categoryLabels,
   finishingLevelLabels,
@@ -67,6 +69,15 @@ export default async function SearchPage({ searchParams }: Props) {
 
   return (
     <div className="container search-layout">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
+        { name: "الرئيسية", href: "/" },
+        { name: "البحث" },
+      ])) }} />
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        <span>البحث</span>
+      </nav>
       {activeFilters > 0 && <SearchRecorder query={searchQuery} label={describe(params)} />}
       <FiltersDisclosure activeCount={activeFilters}>
       <form className="filters" action="/search" method="get" aria-label="تصفية النتائج">
