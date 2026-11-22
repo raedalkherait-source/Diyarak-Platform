@@ -8,9 +8,11 @@ import { ApproximateAreaMap } from "@/components/ListingMaps";
 import { mapConfig } from "@/lib/map";
 import { Gallery } from "@/components/Gallery";
 import { ReportListing } from "@/components/ReportListing";
+import { ShareButtons } from "@/components/ShareButtons";
+import { RecentlyViewedRecorder, RecentlyViewedList } from "@/components/RecentlyViewed";
 import { getListing } from "@/lib/api";
 import { listingStructuredData } from "@/lib/seo";
-import { jsonForScript } from "@/lib/site";
+import { jsonForScript, siteUrl } from "@/lib/site";
 import type { PublicListing } from "@/lib/types";
 import { formatArea, formatFloor, formatLocation, formatNumber, formatPrice, photoSrc } from "@/lib/format";
 import {
@@ -94,6 +96,7 @@ export default async function ListingPage({ params }: Props) {
           </div>
           <FavoriteButton listingId={listing.listingId} />
           <ViewBeacon listingId={listing.listingId} />
+          <RecentlyViewedRecorder id={listing.listingId} headline={listing.headline} price={formatPrice(listing.price)} />
 
           <div className="mobile-only" style={{ marginBlockStart: 16 }}>
             <ContactPanel listing={listing} />
@@ -115,6 +118,8 @@ export default async function ListingPage({ params }: Props) {
             <ApproximateAreaMap config={mapConfig()} area={property.location.approximate} />
           ) : null}
 
+          <ShareButtons url={`${siteUrl()}/listings/${listing.listingId}`} title={listing.headline} />
+
           <ReportListing listingId={listing.listingId} />
 
           {property.features.length > 0 ? (
@@ -127,6 +132,8 @@ export default async function ListingPage({ params }: Props) {
               </ul>
             </section>
           ) : null}
+
+          <RecentlyViewedList excludeId={listing.listingId} />
         </div>
 
         <aside className="desktop-only">
