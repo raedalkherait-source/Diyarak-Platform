@@ -416,3 +416,26 @@ img { max-width: 100%; display: block; }
 .currency-rate-editor { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .currency-rate-editor label { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
 .currency-rate-editor input { width: 100px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 0.85rem; }
+
+/* Notification center */
+.notification-center { position: relative; }
+.notification-bell { background: none; border: none; font-size: 1.3rem; cursor: pointer; position: relative; padding: 4px; }
+.notification-badge { position: absolute; top: -2px; right: -6px; background: #e53e3e; color: #fff; font-size: 0.65rem; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+.notification-dropdown { position: absolute; top: 100%; left: 0; right: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.12); width: 300px; max-height: 400px; overflow-y: auto; z-index: 200; padding: 12px; }
+[dir="rtl"] .notification-dropdown { left: auto; right: 0; }
+.notification-dropdown h3 { margin: 0 0 8px; font-size: 0.95rem; }
+.notification-empty { color: var(--muted); font-size: 0.85rem; margin: 8px 0; }
+.notification-list { list-style: none; padding: 0; margin: 0; }
+.notification-item { border-bottom: 1px solid var(--line); padding: 8px 0; }
+.notification-item:last-child { border-bottom: none; }
+.notification-item a, .notification-item > div { display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: inherit; }
+.notification-item strong { font-size: 0.85rem; }
+.notification-item span { font-size: 0.8rem; color: var(--muted); }
+.notification-item.read { opacity: 0.6; }
+
+/* Settings */
+.settings-section { margin-block: 16px; padding: 16px; }
+.settings-section h2 { margin: 0 0 12px; font-size: 1rem; }
+.checkbox-field { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; }
+.checkbox-field input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.settings-actions { display: flex; align-items: center; gap: 12px; margin-block: 16px; }

@@ -5,6 +5,7 @@ import { formatPrice } from "@/lib/format";
 import { label, transactionIntentLabels } from "@/lib/labels";
 import { managementFetch, type ManagementListing } from "@/lib/managementApi";
 import { closureReasonLabels, listingStatusLabels } from "@/lib/status";
+import { NotificationBell, type Notification } from "@/components/NotificationCenter";
 
 export const metadata: Metadata = { title: "إعلاناتي", robots: { index: false } };
 
@@ -23,10 +24,30 @@ export default async function MyListingsPage({ searchParams }: Props) {
   const quotaResult = await managementFetch<QuotaInfo>("/api/market/quota");
   const quota = quotaResult.ok ? quotaResult.value : null;
 
+  const savedSearches = await managementFetch<{ items: Array<{ savedSearchId: string; name: string; newCount: number }> }>(
+    "/api/market/saved-searches",
+  );
+  const notifications: Notification[] = [];
+  if (savedSearches.ok) {
+    for (const s of savedSearches.value.items) {
+      if (s.newCount > 0) {
+        notifications.push({
+          id: `ss-${s.savedSearchId}`,
+          type: "saved-search",
+          title: s.name,
+          message: `${s.newCount} إعلان جديد`,
+          href: "/my/searches",
+          time: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
   return (
     <div className="container section">
       <div className="section-title">
         <h1>إعلاناتي</h1>
+        <NotificationBell notifications={notifications} />
         <div className="toolbar">
           <Link className="button" href="/my/new">+ إعلان جديد</Link>
           <Link className="button secondary" href="/my/favorites">المفضلة</Link>
@@ -35,6 +56,7 @@ export default async function MyListingsPage({ searchParams }: Props) {
           <Link className="button secondary" href="/my/import">استيراد CSV</Link>
           <Link className="button secondary" href="/my/projects">مشاريع على المخطط</Link>
           <Link className="button secondary" href="/my/contractor">ملف المقاول</Link>
+          <Link className="button secondary" href="/my/settings">⚙ الإعدادات</Link>
           <form action={logout}>
             <button className="button secondary" type="submit">تسجيل الخروج</button>
           </form>

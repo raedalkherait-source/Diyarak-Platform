@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Notification center: bell icon on the dashboard showing new listings from saved
+  searches; read/unread tracking in localStorage.
+- User settings page (`/my/settings`): preferred currency, exchange rate, default
+  governorate and notification preferences, all persisted in localStorage.
 - Listing comparison: select up to 4 listings to compare side-by-side in a table
   with all property details; persistent sticky bar and compare toggle on listing pages.
 - Multi-currency price display: USD/SYP toggle on search results with user-editable
