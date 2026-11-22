@@ -55,6 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="container footer-content">
             <span>© ديارك — منصة العقارات في سوريا</span>
             <nav className="footer-links" aria-label="روابط إضافية">
+              <Link href="/tools">أدوات عقارية</Link>
               <Link href="/faq">الأسئلة الشائعة</Link>
               <Link href="/contact">تواصل معنا</Link>
             </nav>
