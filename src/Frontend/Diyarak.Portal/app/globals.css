@@ -347,3 +347,15 @@ img { max-width: 100%; display: block; }
 /* Share buttons */
 .share-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-block: 1rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; }
 .share-btn { font-size: 0.8rem !important; padding: 4px 10px !important; }
+
+/* Quick links */
+.quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.quick-link-card { display: flex; flex-direction: column; gap: 0.25rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+.quick-link-card:hover { border-color: var(--brand); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.quick-link-card strong { font-size: 1.05rem; }
+.quick-link-card span { font-size: 0.85rem; color: var(--muted); }
+
+/* Search history */
+.search-history { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-block-start: 0.75rem; }
+.search-history-chip { font-size: 0.8rem; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; text-decoration: none; color: inherit; background: var(--bg); }
+.search-history-chip:hover { border-color: var(--brand); }

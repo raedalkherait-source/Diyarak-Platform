@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Home page quick links: shortcuts to contractors directory, off-plan projects and price reports.
+- Search history: recent searches saved locally and shown as chips on the home page.
 - Share buttons on listing detail pages (WhatsApp, Telegram, copy link, native share).
 - Recently viewed listings sidebar on listing detail page (client-side, localStorage).
 - SEO: expanded sitemap with contractors, projects, prices and specialty filter pages;
