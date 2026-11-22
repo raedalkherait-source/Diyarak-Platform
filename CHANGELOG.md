@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Dashboard stats cards: total listings, published count, 30-day views and
+  contact reveals shown as prominent cards at the top of `/my`.
 - Home page: featured listings section showing paid featured listings above latest,
   platform stats counters (governorates, property types, free tools).
 - Photo lightbox: click gallery image to open fullscreen overlay with keyboard
