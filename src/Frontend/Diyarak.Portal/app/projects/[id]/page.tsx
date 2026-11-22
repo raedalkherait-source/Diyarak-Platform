@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOffPlanProject } from "@/lib/api";
 import { governorateLabels, constructionStatusLabels } from "@/lib/labels";
+import { jsonForScript, siteUrl } from "@/lib/site";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -10,9 +11,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const project = await getOffPlanProject(id);
   if (!project) return { title: "مشروع غير موجود" };
+  const desc = `${project.name} — ${constructionStatusLabels[project.constructionStatus] ?? project.constructionStatus} في ${governorateLabels[project.governorate] ?? project.governorate}`;
   return {
     title: project.name,
-    description: `${project.name} — ${constructionStatusLabels[project.constructionStatus] ?? project.constructionStatus} في ${governorateLabels[project.governorate] ?? project.governorate}`,
+    description: desc,
+    openGraph: { title: project.name, description: desc },
   };
 }
 
@@ -29,8 +32,24 @@ export default async function ProjectDetailPage({ params }: Props) {
   const project = await getOffPlanProject(id);
   if (!project) notFound();
 
+  const structured = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateProject" as string,
+    name: project.name,
+    url: `${siteUrl()}/projects/${project.id}`,
+    description: project.description ?? undefined,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: project.district,
+      addressRegion: governorateLabels[project.governorate] ?? project.governorate,
+      addressCountry: "SY",
+    },
+    numberOfUnits: project.totalUnits,
+  };
+
   return (
     <div className="container section">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(structured) }} />
       <Link href="/projects" style={{ display: "inline-block", marginBottom: "1rem" }}>
         &rarr; جميع المشاريع
       </Link>

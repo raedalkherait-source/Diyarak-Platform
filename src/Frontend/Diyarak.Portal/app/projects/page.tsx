@@ -6,6 +6,10 @@ import { governorateLabels, constructionStatusLabels } from "@/lib/labels";
 export const metadata: Metadata = {
   title: "مشاريع على المخطط",
   description: "تصفح المشاريع العقارية قيد الإنشاء في سوريا — احجز وحدتك قبل الانتهاء.",
+  openGraph: {
+    title: "مشاريع على المخطط — ديارك",
+    description: "تصفح المشاريع العقارية قيد الإنشاء في سوريا.",
+  },
 };
 
 function formatPrice(min: number | null, max: number | null): string {

@@ -6,6 +6,10 @@ import { governorateLabels, categoryLabels, transactionIntentLabels, label } fro
 export const metadata: Metadata = {
   title: "أسعار العقارات في سوريا",
   description: "متوسط أسعار العقارات حسب المحافظة والمنطقة في سوريا — شقق، بيوت، أراضي ومحلات تجارية.",
+  openGraph: {
+    title: "أسعار العقارات في سوريا — ديارك",
+    description: "متوسط أسعار العقارات حسب المحافظة والمنطقة في سوريا.",
+  },
 };
 
 const fmt = new Intl.NumberFormat("ar-SY-u-nu-latn", { maximumFractionDigits: 0 });

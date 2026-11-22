@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- SEO: expanded sitemap with contractors, projects, prices and specialty filter pages;
+  OpenGraph metadata on contractors, projects, prices and agency detail pages;
+  JSON-LD structured data on project detail pages.
 - User reviews: authenticated users rate contractors and agencies (1–5 stars with optional comment);
   one review per user per subject; public review list and average rating at
   `/api/market/public/reviews`; review form on contractor cards; authors can delete their own
