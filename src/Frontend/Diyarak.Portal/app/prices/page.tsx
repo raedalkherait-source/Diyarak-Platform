@@ -8,6 +8,7 @@ import { jsonForScript } from "@/lib/site";
 export const metadata: Metadata = {
   title: "أسعار العقارات في سوريا",
   description: "متوسط أسعار العقارات حسب المحافظة والمنطقة في سوريا — شقق، بيوت، أراضي ومحلات تجارية.",
+  alternates: { canonical: "/prices" },
   openGraph: {
     title: "أسعار العقارات في سوريا — ديارك",
     description: "متوسط أسعار العقارات حسب المحافظة والمنطقة في سوريا.",

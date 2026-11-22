@@ -8,6 +8,7 @@ import { jsonForScript } from "@/lib/site";
 export const metadata: Metadata = {
   title: "مشاريع على المخطط",
   description: "تصفح المشاريع العقارية قيد الإنشاء في سوريا — احجز وحدتك قبل الانتهاء.",
+  alternates: { canonical: "/projects" },
   openGraph: {
     title: "مشاريع على المخطط — ديارك",
     description: "تصفح المشاريع العقارية قيد الإنشاء في سوريا.",

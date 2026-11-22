@@ -6,6 +6,7 @@ import { jsonForScript } from "@/lib/site";
 export const metadata: Metadata = {
   title: "الأسئلة الشائعة",
   description: "إجابات على أكثر الأسئلة شيوعاً حول منصة ديارك للعقارات.",
+  alternates: { canonical: "/faq" },
   openGraph: {
     title: "الأسئلة الشائعة — ديارك",
     description: "إجابات على أكثر الأسئلة شيوعاً حول منصة ديارك للعقارات.",

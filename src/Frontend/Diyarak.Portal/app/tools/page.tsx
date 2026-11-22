@@ -6,6 +6,7 @@ import { jsonForScript } from "@/lib/site";
 export const metadata: Metadata = {
   title: "أدوات عقارية",
   description: "حاسبة الأقساط الشهرية وتقدير قيمة العقار — أدوات مجانية من ديارك.",
+  alternates: { canonical: "/tools" },
   openGraph: {
     title: "أدوات عقارية — ديارك",
     description: "حاسبة الأقساط الشهرية وتقدير قيمة العقار — أدوات مجانية من ديارك.",
