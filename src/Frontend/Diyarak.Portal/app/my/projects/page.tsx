@@ -50,17 +50,17 @@ export default function MyProjectsPage() {
 
   return (
     <div className="container section">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+      <div className="section-title">
         <h1>مشاريعي على المخطط</h1>
         <Link className="button secondary" href="/my">العودة</Link>
       </div>
 
-      <button className="button" onClick={() => setShowForm(!showForm)} style={{ marginBottom: "1rem" }}>
+      <button className="button toggle-form-btn" onClick={() => setShowForm(!showForm)}>
         {showForm ? "إخفاء النموذج" : "مشروع جديد"}
       </button>
 
       {showForm && (
-        <form action={createAction} className="form-stack" style={{ marginBottom: "2rem" }}>
+        <form action={createAction} className="form-stack">
           <ProjectFormFields />
           <button className="button" type="submit" disabled={createPending}>
             {createPending ? "جاري الحفظ..." : "إنشاء المشروع"}
@@ -88,7 +88,7 @@ export default function MyProjectsPage() {
               <p className="card-meta">
                 {project.isPublished ? "منشور" : "مسودة"}
               </p>
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+              <div className="card-actions">
                 <button
                   className={`button small ${project.isPublished ? "secondary" : ""}`}
                   onClick={() => toggleOffPlanPublish(project.id, project.version, !project.isPublished)}

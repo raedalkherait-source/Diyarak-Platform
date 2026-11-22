@@ -636,6 +636,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Project description */
 .project-description { margin-top: 2rem; white-space: pre-wrap; line-height: 1.8; }
 
+/* Utilities */
+.spaced-top { margin-block-start: 1.25rem; }
+.toggle-form-btn { margin-bottom: 1rem; }
+.price-hero { font-size: 1.7rem; }
+.card-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+
+/* Import page */
+.code-block { display: block; direction: ltr; text-align: left; padding: 0.5rem; background: var(--surface-alt, #e8e4dd); border-radius: 4px; font-size: 0.85rem; overflow-x: auto; }
+.import-form { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+.import-result { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+.error-list { direction: ltr; text-align: left; font-size: 0.85rem; }
+
 /* Disclaimer */
 .disclaimer { margin-top: 0.75rem; font-size: 0.8rem; }
 
