@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- SEO structured data: BreadcrumbList JSON-LD on listing detail, contractors,
+  projects, prices, FAQ and contact pages; WebSite JSON-LD with SearchAction
+  for sitelinks search box; Organization JSON-LD on the home page.
 - Accessibility: skip-to-content link, `focus-visible` outlines on all interactive
   elements, gallery keyboard navigation (arrow keys) with prev/next buttons and
   counter overlay, `alt` text on listing card images.

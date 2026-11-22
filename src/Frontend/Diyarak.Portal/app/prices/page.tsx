@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getPriceReport, type PriceReportEntry } from "@/lib/api";
 import { governorateLabels, categoryLabels, transactionIntentLabels, label } from "@/lib/labels";
+import { breadcrumbStructuredData } from "@/lib/seo";
+import { jsonForScript } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "أسعار العقارات في سوريا",
@@ -38,6 +40,10 @@ export default async function PricesPage({
 
   return (
     <div className="container" style={{ paddingBlock: "2rem" }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
+        { name: "الرئيسية", href: "/" },
+        { name: "أسعار العقارات" },
+      ])) }} />
       <h1 style={{ marginBottom: "0.5rem" }}>
         {isDistrict
           ? `أسعار العقارات في ${label(governorateLabels, governorate)}`

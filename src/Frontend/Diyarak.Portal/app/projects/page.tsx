@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listOffPlanProjects } from "@/lib/api";
 import { governorateLabels, constructionStatusLabels } from "@/lib/labels";
+import { breadcrumbStructuredData } from "@/lib/seo";
+import { jsonForScript } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "مشاريع على المخطط",
@@ -31,6 +33,10 @@ export default async function ProjectsPage({
 
   return (
     <div className="container section">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
+        { name: "الرئيسية", href: "/" },
+        { name: "مشاريع على المخطط" },
+      ])) }} />
       <h1>مشاريع على المخطط</h1>
       <p style={{ marginBottom: "1.5rem", color: "var(--muted)" }}>
         مشاريع عقارية قيد الإنشاء — احجز وحدتك مبكراً

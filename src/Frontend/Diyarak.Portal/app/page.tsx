@@ -5,6 +5,8 @@ import { SearchHistory } from "@/components/SearchHistory";
 import { ApiUnavailableError, searchListings } from "@/lib/api";
 import { categoryLabels, governorateLabels } from "@/lib/labels";
 import { toApiQuery } from "@/lib/search";
+import { organizationStructuredData, websiteStructuredData } from "@/lib/seo";
+import { jsonForScript } from "@/lib/site";
 import type { PublicListing } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +25,8 @@ export default async function HomePage() {
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(websiteStructuredData()) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(organizationStructuredData()) }} />
       <section className="hero">
         <div className="container">
           <h1>ابحث عن بيتك في سوريا</h1>

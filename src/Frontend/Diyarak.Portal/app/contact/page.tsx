@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { breadcrumbStructuredData } from "@/lib/seo";
+import { jsonForScript } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "تواصل معنا",
@@ -8,6 +10,10 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="container section">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
+        { name: "الرئيسية", href: "/" },
+        { name: "تواصل معنا" },
+      ])) }} />
       <h1>تواصل معنا</h1>
       <p>يسعدنا تلقي ملاحظاتكم واستفساراتكم. يمكنكم التواصل معنا عبر الطرق التالية:</p>
 

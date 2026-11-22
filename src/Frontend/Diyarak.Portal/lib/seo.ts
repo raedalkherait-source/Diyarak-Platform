@@ -18,6 +18,50 @@ export function isIndexableSearch(params: Record<string, string | string[] | und
   return true;
 }
 
+/** schema.org BreadcrumbList for structured navigation. */
+export function breadcrumbStructuredData(items: Array<{ name: string; href?: string }>): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      ...(item.href ? { item: `${siteUrl()}${item.href}` } : {}),
+    })),
+  };
+}
+
+/** schema.org WebSite with SearchAction for sitelinks search box. */
+export function websiteStructuredData(): Record<string, unknown> {
+  const base = siteUrl();
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "ديارك",
+    url: base,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: { "@type": "EntryPoint", urlTemplate: `${base}/search?district={search_term_string}` },
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+/** schema.org Organization for the site. */
+export function organizationStructuredData(): Record<string, unknown> {
+  const base = siteUrl();
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "ديارك",
+    url: base,
+    logo: `${base}/icon-192.png`,
+    description: "منصة العقارات في سوريا — شقق وبيوت ومحلات للبيع والإيجار.",
+    areaServed: { "@type": "Country", name: "سوريا" },
+  };
+}
+
 /** schema.org RealEstateListing for a public listing page. */
 export function listingStructuredData(listing: PublicListing): Record<string, unknown> {
   const url = `${siteUrl()}/listings/${listing.listingId}`;

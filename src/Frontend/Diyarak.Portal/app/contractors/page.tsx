@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listContractors, getSubjectRating } from "@/lib/api";
 import { governorateLabels, contractorSpecialtyLabels, label } from "@/lib/labels";
+import { breadcrumbStructuredData } from "@/lib/seo";
+import { jsonForScript } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "دليل المقاولين في سوريا",
@@ -33,6 +35,10 @@ export default async function ContractorsPage({
 
   return (
     <div className="container" style={{ paddingBlock: "2rem" }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
+        { name: "الرئيسية", href: "/" },
+        { name: "دليل المقاولين" },
+      ])) }} />
       <h1 style={{ marginBottom: "0.5rem" }}>دليل المقاولين</h1>
       <p style={{ color: "var(--muted)", marginBottom: "1.5rem" }}>
         تصفح مقاولين ومتعهدين في جميع المحافظات السورية.
