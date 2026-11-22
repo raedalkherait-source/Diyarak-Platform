@@ -18,6 +18,7 @@ import {
 } from "@/lib/labels";
 import { isIndexableSearch } from "@/lib/seo";
 import { firstValue, pageHref, parseBbox, savedSearchHref, savedSearchQuery, toApiQuery, type RawSearchParams } from "@/lib/search";
+import { SearchRecorder } from "@/components/SearchHistory";
 import type { PublicListingPage } from "@/lib/types";
 
 type Props = { searchParams: Promise<RawSearchParams> };
@@ -59,8 +60,13 @@ export default async function SearchPage({ searchParams }: Props) {
     (key) => !["page", "pageSize", "priceCurrency", "livingAreaUnit"].includes(key),
   ).length;
 
+  const searchQuery = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+  ).toString();
+
   return (
     <div className="container search-layout">
+      {activeFilters > 0 && <SearchRecorder query={searchQuery} label={describe(params)} />}
       <FiltersDisclosure activeCount={activeFilters}>
       <form className="filters" action="/search" method="get" aria-label="تصفية النتائج">
         <h2>تصفية النتائج</h2>

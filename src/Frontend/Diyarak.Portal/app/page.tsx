@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ListingCard } from "@/components/ListingCard";
 import { Options } from "@/components/Options";
+import { SearchHistory } from "@/components/SearchHistory";
 import { ApiUnavailableError, searchListings } from "@/lib/api";
 import { categoryLabels, governorateLabels } from "@/lib/labels";
 import { toApiQuery } from "@/lib/search";
@@ -55,6 +56,26 @@ export default async function HomePage() {
             </label>
             <button className="button" type="submit">ابحث</button>
           </form>
+          <SearchHistory />
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="quick-links">
+            <Link href="/contractors" className="quick-link-card">
+              <strong>دليل المقاولين</strong>
+              <span>ابحث عن مقاولين ومتعهدين في سوريا</span>
+            </Link>
+            <Link href="/projects" className="quick-link-card">
+              <strong>مشاريع على المخطط</strong>
+              <span>مشاريع قيد الإنشاء — احجز وحدتك</span>
+            </Link>
+            <Link href="/prices" className="quick-link-card">
+              <strong>أسعار العقارات</strong>
+              <span>متوسط الأسعار حسب المحافظة والمنطقة</span>
+            </Link>
+          </div>
         </div>
       </section>
 
