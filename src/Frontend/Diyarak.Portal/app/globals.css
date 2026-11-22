@@ -490,6 +490,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .calculator-summary dt { color: var(--muted); font-size: 0.9rem; }
 .calculator-summary dd { font-weight: 600; margin: 0; }
 
+/* Listing notes */
+.listing-notes { margin-block: 16px; }
+.notes-toggle { background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; color: var(--text); padding: 0; display: flex; align-items: center; gap: 6px; }
+.notes-indicator { color: var(--accent); font-size: 0.6rem; }
+.notes-body { margin-top: 10px; }
+.notes-body textarea { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px; font-size: 0.9rem; resize: vertical; font-family: inherit; }
+.notes-actions { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+
+/* Neighborhood info */
+.neighborhood-info { margin-block: 16px; }
+.neighborhood-info h2 { margin: 0 0 8px; font-size: 1rem; }
+.neighborhood-info p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin: 0 0 12px; }
+.neighborhood-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.neighborhood-links a { font-size: 0.85rem; color: var(--accent); text-decoration: none; padding: 4px 10px; border: 1px solid var(--line); border-radius: 16px; }
+.neighborhood-links a:hover { background: var(--bg); }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
