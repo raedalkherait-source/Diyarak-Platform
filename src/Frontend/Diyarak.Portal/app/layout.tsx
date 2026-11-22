@@ -30,6 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
+        <a href="#main-content" className="skip-link">تخطي إلى المحتوى</a>
         <header className="site-header">
           <div className="container">
             <Link href="/" className="logo">ديارك</Link>
@@ -49,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </header>
         <ServiceWorkerRegistration />
         <CompareBar />
-        <main>{children}</main>
+        <main id="main-content">{children}</main>
         <footer className="site-footer">
           <div className="container footer-content">
             <span>© ديارك — منصة العقارات في سوريا</span>

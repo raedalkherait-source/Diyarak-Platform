@@ -5,6 +5,11 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Accessibility: skip-to-content link, `focus-visible` outlines on all interactive
+  elements, gallery keyboard navigation (arrow keys) with prev/next buttons and
+  counter overlay, `alt` text on listing card images.
+- Performance: lazy loading for below-fold listing card images, `prefers-reduced-motion`
+  media query disabling animations and transitions.
 - Contact page (`/contact`) with email, WhatsApp and a structured inquiry form.
 - FAQ page (`/faq`) with 12 collapsible questions covering registration, publishing,
   payments, search, verification, privacy, reviews, comparison and currency.

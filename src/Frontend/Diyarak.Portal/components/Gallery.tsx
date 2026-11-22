@@ -13,9 +13,14 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
     return <div className="gallery-main empty">لا توجد صور لهذا الإعلان</div>;
   }
 
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "ArrowLeft") setIndex((i) => (i + 1) % photos.length);
+    else if (e.key === "ArrowRight") setIndex((i) => (i - 1 + photos.length) % photos.length);
+  }
+
   return (
-    <div>
-      <div className="gallery-main">
+    <div onKeyDown={handleKeyDown}>
+      <div className="gallery-main" tabIndex={0} role="img" aria-label={`${title} — صورة ${index + 1} من ${photos.length}`}>
         <Image
           src={photoSrc(listingId, current.photoId)}
           alt={`${title} — صورة ${index + 1} من ${photos.length}`}
@@ -24,6 +29,13 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
           sizes="(max-width: 900px) 100vw, 800px"
           quality={75}
         />
+        {photos.length > 1 ? (
+          <div className="gallery-nav">
+            <button type="button" onClick={() => setIndex((i) => (i - 1 + photos.length) % photos.length)} aria-label="الصورة السابقة">→</button>
+            <span>{index + 1} / {photos.length}</span>
+            <button type="button" onClick={() => setIndex((i) => (i + 1) % photos.length)} aria-label="الصورة التالية">←</button>
+          </div>
+        ) : null}
       </div>
       {photos.length > 1 ? (
         <div className="gallery-thumbs" role="list">
