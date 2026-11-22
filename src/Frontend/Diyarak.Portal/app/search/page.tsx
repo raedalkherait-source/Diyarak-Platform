@@ -195,6 +195,17 @@ export default async function SearchPage({ searchParams }: Props) {
             </div>
             <nav className="pagination" aria-label="الصفحات">
               {page > 1 ? <Link className="button secondary" href={pageHref(params, page - 1)}>→ السابق</Link> : null}
+              {Array.from({ length: Math.min(page + (result.hasMore ? 2 : 0), 5) }, (_, i) => {
+                const start = Math.max(1, page - 2);
+                const p = start + i;
+                if (p > page && !result.hasMore) return null;
+                if (p > page + 1) return null;
+                return (
+                  <Link key={p} className={`button ${p === page ? "" : "secondary"} pagination-num`} href={pageHref(params, p)} aria-current={p === page ? "page" : undefined}>
+                    {p}
+                  </Link>
+                );
+              })}
               {result.hasMore ? <Link className="button secondary" href={pageHref(params, page + 1)}>التالي ←</Link> : null}
             </nav>
           </>

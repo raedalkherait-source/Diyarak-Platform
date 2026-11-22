@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Back-to-top button: floating button appears after scrolling 400px, smooth
+  scrolls to top; hidden in print.
+- Search pagination: page number links alongside prev/next buttons with
+  current page highlighted.
 - Dashboard stats cards: total listings, published count, 30-day views and
   contact reveals shown as prominent cards at the top of `/my`.
 - Home page: featured listings section showing paid featured listings above latest,

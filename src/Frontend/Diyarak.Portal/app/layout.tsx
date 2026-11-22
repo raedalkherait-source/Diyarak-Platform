@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompareBar } from "@/components/CompareListings";
+import { BackToTop } from "@/components/BackToTop";
 import { getSessionToken } from "@/lib/session";
 import "./globals.css";
 
@@ -51,6 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ServiceWorkerRegistration />
         <CompareBar />
         <main id="main-content">{children}</main>
+        <BackToTop />
         <footer className="site-footer">
           <div className="container footer-content">
             <span>© ديارك — منصة العقارات في سوريا</span>
