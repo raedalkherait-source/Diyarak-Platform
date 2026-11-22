@@ -12,6 +12,18 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - FAQPage structured data (JSON-LD) on /faq — enables Google FAQ rich
   results with expandable Q&A in search.
 - Global error boundary (global-error.tsx) for root layout crashes.
+- HSTS header (2-year max-age, includeSubDomains, preload) and
+  X-DNS-Prefetch-Control for faster external resource resolution.
+- Mobile hamburger navigation: slide-in panel on screens ≤768px with
+  overlay backdrop, body scroll lock, and auto-close on route change.
+- Enhanced footer: three-column responsive grid with browse, services,
+  and about sections; dynamic copyright year.
+- Noindex on all private pages: /my/* layout and /offline layout prevent
+  search engine indexing of authenticated and utility pages.
+- Route-specific loading skeletons for listing detail, contractors,
+  projects, prices, and agency detail pages.
+- Enhanced service worker (v2): cache-first for Next.js static assets
+  and listing photos, pre-cached PWA icons, old cache cleanup.
 - Portal-wide inline style sweep: replaced virtually all inline styles with
   CSS classes across pages and components (ReviewSection, RecentlyViewed,
   Gallery, ShareButtons, SearchHistory, import, my/projects, listing detail,
