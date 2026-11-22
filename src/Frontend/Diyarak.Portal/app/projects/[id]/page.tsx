@@ -50,9 +50,13 @@ export default async function ProjectDetailPage({ params }: Props) {
   return (
     <div className="container section">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(structured) }} />
-      <Link href="/projects" style={{ display: "inline-block", marginBottom: "1rem" }}>
-        &rarr; جميع المشاريع
-      </Link>
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        <Link href="/projects">مشاريع على المخطط</Link>
+        <span>›</span>
+        <span>{project.name}</span>
+      </nav>
 
       <h1>{project.name}</h1>
 
@@ -90,7 +94,7 @@ export default async function ProjectDetailPage({ params }: Props) {
       </dl>
 
       {project.description && (
-        <div style={{ marginTop: "2rem", whiteSpace: "pre-wrap", lineHeight: 1.8 }}>
+        <div className="project-description">
           {project.description}
         </div>
       )}

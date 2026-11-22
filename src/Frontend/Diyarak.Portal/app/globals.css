@@ -625,6 +625,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Contact form section */
 .contact-form-section { margin-block-start: 1.5rem; }
 
+/* Form feedback */
+.form-error { color: crimson; }
+.form-success { color: green; }
+.narrow-form { max-width: 600px; }
+
+/* Offline page */
+.offline-page { text-align: center; padding-top: 4rem; }
+
+/* Project description */
+.project-description { margin-top: 2rem; white-space: pre-wrap; line-height: 1.8; }
+
 /* Disclaimer */
 .disclaimer { margin-top: 0.75rem; font-size: 0.8rem; }
 
