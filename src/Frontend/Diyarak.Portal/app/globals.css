@@ -622,6 +622,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .price-table tbody tr:hover { background: var(--surface-alt, rgba(0,0,0,0.02)); }
 .price-avg { font-weight: 600; color: var(--accent); }
 
+/* Disclaimer */
+.disclaimer { margin-top: 0.75rem; font-size: 0.8rem; }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }

@@ -27,7 +27,7 @@ export default function MortgagePage() {
         <span>حاسبة الأقساط</span>
       </nav>
       <h1>حاسبة الأقساط الشهرية</h1>
-      <p style={{ color: "var(--muted)", marginBottom: 20 }}>
+      <p className="notice">
         احسب القسط الشهري لقرض عقاري. الحساب تقديري وقد يختلف حسب شروط البنك.
       </p>
 

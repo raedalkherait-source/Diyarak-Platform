@@ -55,7 +55,7 @@ export default function EstimatorPage() {
         <span>تقدير قيمة العقار</span>
       </nav>
       <h1>تقدير قيمة العقار</h1>
-      <p style={{ color: "var(--muted)", marginBottom: 20 }}>
+      <p className="notice">
         تقدير تقريبي بناءً على متوسط أسعار المتر المربع في منطقتك. القيمة الفعلية تعتمد على عوامل كثيرة.
       </p>
 
@@ -106,7 +106,7 @@ export default function EstimatorPage() {
               </div>
             </dl>
           )}
-          <p className="notice" style={{ marginTop: 12, fontSize: "0.8rem" }}>
+          <p className="notice disclaimer">
             هذا تقدير تقريبي فقط ولا يُعتبر تقييماً رسمياً. تعتمد القيمة الفعلية على الموقع الدقيق والإكساء والطابق وعوامل أخرى.
           </p>
         </div>

@@ -15,8 +15,13 @@ export default function ToolsPage() {
         { name: "الرئيسية", href: "/" },
         { name: "أدوات عقارية" },
       ])) }} />
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        <span>أدوات عقارية</span>
+      </nav>
       <h1>أدوات عقارية</h1>
-      <p style={{ color: "var(--muted)", marginBottom: 24 }}>أدوات مجانية تساعدك في اتخاذ قرارات عقارية أفضل.</p>
+      <p className="notice">أدوات مجانية تساعدك في اتخاذ قرارات عقارية أفضل.</p>
       <div className="tools-grid">
         <Link href="/tools/mortgage" className="panel tool-card">
           <strong>حاسبة الأقساط</strong>
