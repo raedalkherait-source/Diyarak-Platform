@@ -610,6 +610,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 640px) { .project-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 400px) { .project-grid { grid-template-columns: 1fr; } }
 
+/* Prices page */
+.back-link { margin-bottom: 1.25rem; }
+.price-section { margin-bottom: 2rem; }
+.price-area-title { font-size: 1.25rem; margin-bottom: 0.75rem; }
+.table-wrap { overflow-x: auto; }
+.price-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.price-table th, .price-table td { text-align: right; padding: 0.5rem; }
+.price-table thead tr { border-bottom: 2px solid var(--border); }
+.price-table tbody tr { border-bottom: 1px solid var(--border); }
+.price-table tbody tr:hover { background: var(--surface-alt, rgba(0,0,0,0.02)); }
+.price-avg { font-weight: 600; color: var(--accent); }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
