@@ -554,6 +554,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .back-to-top:hover { background: var(--accent); color: #fff; }
 @media print { .back-to-top { display: none; } }
 
+/* Agency rating */
+.agency-rating { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.stars { display: inline-flex; gap: 1px; }
+.star { color: var(--line); font-size: 1rem; }
+.star.filled { color: #f5a623; }
+.rating-text { font-size: 0.85rem; color: var(--muted); }
+
 /* Pagination numbers */
 .pagination-num { min-width: 40px; text-align: center; }
 
