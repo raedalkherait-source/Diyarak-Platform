@@ -4,6 +4,7 @@ import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistratio
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompareBar } from "@/components/CompareListings";
 import { BackToTop } from "@/components/BackToTop";
+import { MobileNav } from "@/components/MobileNav";
 import { getSessionToken } from "@/lib/session";
 import "./globals.css";
 
@@ -44,9 +45,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/contractors">مقاولون</Link>
             </nav>
             <ThemeToggle />
-            <Link className="button header-cta" href={signedIn ? "/my" : "/login"}>
+            <Link className="button header-cta desktop-only" href={signedIn ? "/my" : "/login"}>
               {signedIn ? "إعلاناتي" : "أضف إعلانك"}
             </Link>
+            <MobileNav signedIn={signedIn} />
           </div>
         </header>
         <ServiceWorkerRegistration />
