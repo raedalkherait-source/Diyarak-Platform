@@ -47,7 +47,7 @@ export function SearchHistory() {
 
   return (
     <div className="search-history">
-      <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>بحثت مؤخراً:</span>
+      <span className="search-history-label">بحثت مؤخراً:</span>
       {items.map((item) => (
         <Link key={item.query} href={`/search?${item.query}`} className="search-history-chip">
           {item.label}
