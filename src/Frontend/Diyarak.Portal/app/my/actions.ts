@@ -491,3 +491,54 @@ export async function deleteContractor(contractorId: string): Promise<void> {
   revalidatePath("/my/contractor");
   redirect("/my/contractor?notice=deleted");
 }
+
+// --- Reviews ---
+
+export interface ReviewFormState {
+  formError?: string;
+  success?: boolean;
+}
+
+export async function submitReview(
+  _state: ReviewFormState,
+  form: FormData,
+): Promise<ReviewFormState> {
+  const subjectId = form.get("subjectId") as string;
+  const subjectType = form.get("subjectType") as string;
+  const rating = parseInt(form.get("rating") as string, 10);
+  const comment = (form.get("comment") as string)?.trim() || null;
+
+  if (!subjectId || !subjectType || !rating || rating < 1 || rating > 5) {
+    return { formError: "يرجى تعبئة جميع الحقول المطلوبة." };
+  }
+
+  const result = await managementFetch("/api/market/reviews", {
+    method: "POST",
+    json: { subjectId, subjectType, rating, comment },
+  });
+
+  if (!result.ok) {
+    const messages: Record<string, string> = {
+      "market.review.already_reviewed": "لقد قمت بتقييم هذا المقاول/المكتب مسبقاً.",
+      "market.review.cannot_review_own": "لا يمكنك تقييم ملفك الشخصي.",
+      "market.review.subject_not_found": "لم يتم العثور على الملف المطلوب.",
+    };
+    return { formError: messages[result.code ?? ""] ?? "حدث خطأ أثناء إرسال التقييم." };
+  }
+
+  revalidateTag(publicListingsTag);
+  return { success: true };
+}
+
+export async function deleteReview(reviewId: string): Promise<{ ok: boolean; error?: string }> {
+  const result = await managementFetch(`/api/market/reviews/${reviewId}`, {
+    method: "DELETE",
+  });
+
+  if (!result.ok) {
+    return { ok: false, error: "حدث خطأ أثناء حذف التقييم." };
+  }
+
+  revalidateTag(publicListingsTag);
+  return { ok: true };
+}

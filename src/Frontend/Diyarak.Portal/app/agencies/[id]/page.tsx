@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ListingCard } from "@/components/ListingCard";
-import { getAgency } from "@/lib/api";
+import { ReviewSection } from "@/components/ReviewSection";
+import { getAgency, listReviews, getSubjectRating } from "@/lib/api";
 import { governorateLabels, label } from "@/lib/labels";
+import { getSessionToken } from "@/lib/session";
 import { jsonForScript, siteUrl } from "@/lib/site";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> };
@@ -35,6 +37,13 @@ export default async function AgencyPage({ params, searchParams }: Props) {
   if (!data) notFound();
 
   const { agency, items, hasMore } = data;
+
+  const [reviewsData, ratingData, token] = await Promise.all([
+    listReviews(agency.agencyId),
+    getSubjectRating(agency.agencyId),
+    getSessionToken(),
+  ]);
+
   const structured = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
@@ -75,6 +84,16 @@ export default async function AgencyPage({ params, searchParams }: Props) {
           </nav>
         </>
       )}
+
+      <ReviewSection
+        subjectId={agency.agencyId}
+        subjectType="Agency"
+        reviews={reviewsData?.items ?? []}
+        average={ratingData?.average ?? 0}
+        count={ratingData?.count ?? 0}
+        hasMore={reviewsData?.hasMore ?? false}
+        signedIn={token !== null}
+      />
     </div>
   );
 }

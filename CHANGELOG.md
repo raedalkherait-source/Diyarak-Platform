@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- User reviews: authenticated users rate contractors and agencies (1–5 stars with optional comment);
+  one review per user per subject; public review list and average rating at
+  `/api/market/public/reviews`; review form on contractor cards; authors can delete their own
+  reviews; review section on agency detail page (ADR-0078).
 - Contractors directory: users create a contractor profile with specialty, governorate and phone;
   public browsing at `/contractors` with governorate and specialty filters, management at
   `/my/contractor`; navigation link in header (ADR-0077).
