@@ -39,80 +39,89 @@ export default async function PricesPage({
   const governorates = Object.keys(governorateLabels);
 
   return (
-    <div className="container" style={{ paddingBlock: "2rem" }}>
+    <div className="container section">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
         { name: "الرئيسية", href: "/" },
         { name: "أسعار العقارات" },
       ])) }} />
-      <h1 style={{ marginBottom: "0.5rem" }}>
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        {isDistrict ? (
+          <>
+            <Link href="/prices">أسعار العقارات</Link>
+            <span>›</span>
+            <span>{label(governorateLabels, governorate)}</span>
+          </>
+        ) : (
+          <span>أسعار العقارات</span>
+        )}
+      </nav>
+
+      <h1>
         {isDistrict
           ? `أسعار العقارات في ${label(governorateLabels, governorate)}`
           : "أسعار العقارات حسب المحافظة"}
       </h1>
-      <p style={{ color: "var(--muted)", marginBottom: "1.5rem" }}>
+      <p className="notice">
         {isDistrict
           ? "متوسط الأسعار حسب المنطقة — بناءً على الإعلانات المنشورة حالياً."
           : "متوسط الأسعار حسب المحافظة — بناءً على الإعلانات المنشورة حالياً. اضغط على المحافظة لعرض التفاصيل حسب المنطقة."}
       </p>
 
       {isDistrict && (
-        <p style={{ marginBottom: "1.5rem" }}>
+        <p className="back-link">
           <Link href="/prices">← جميع المحافظات</Link>
         </p>
       )}
 
       {!isDistrict && (
-        <nav style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem" }}>
+        <div className="filter-chips">
           {governorates.map((g) => (
-            <Link
-              key={g}
-              href={`/prices?governorate=${g}`}
-              className="button"
-              style={{ fontSize: "0.875rem" }}
-            >
+            <Link key={g} href={`/prices?governorate=${g}`} className="chip">
               {label(governorateLabels, g)}
             </Link>
           ))}
-        </nav>
+        </div>
       )}
 
       {entries.length === 0 ? (
-        <p style={{ textAlign: "center", padding: "3rem 0", color: "var(--muted)" }}>
+        <div className="empty">
           لا تتوفر بيانات كافية لعرض الأسعار حالياً. يلزم 3 إعلانات على الأقل لكل فئة.
-        </p>
+        </div>
       ) : (
         [...grouped.entries()].map(([area, areaEntries]) => (
-          <section key={area} style={{ marginBottom: "2rem" }}>
-            <h2 style={{ fontSize: "1.25rem", marginBottom: "0.75rem" }}>
+          <section key={area} className="price-section">
+            <h2 className="price-area-title">
               {isDistrict ? area : (
                 <Link href={`/prices?governorate=${area}`}>
                   {label(governorateLabels, area)}
                 </Link>
               )}
             </h2>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+            <div className="table-wrap">
+              <table className="price-table">
                 <thead>
-                  <tr style={{ borderBottom: "2px solid var(--border)" }}>
-                    <th style={{ textAlign: "right", padding: "0.5rem" }}>نوع العقار</th>
-                    <th style={{ textAlign: "right", padding: "0.5rem" }}>نوع المعاملة</th>
-                    <th style={{ textAlign: "right", padding: "0.5rem" }}>عدد الإعلانات</th>
-                    <th style={{ textAlign: "right", padding: "0.5rem" }}>متوسط السعر</th>
-                    <th style={{ textAlign: "right", padding: "0.5rem" }}>أقل سعر</th>
-                    <th style={{ textAlign: "right", padding: "0.5rem" }}>أعلى سعر</th>
-                    <th style={{ textAlign: "right", padding: "0.5rem" }}>العملة</th>
+                  <tr>
+                    <th>نوع العقار</th>
+                    <th>نوع المعاملة</th>
+                    <th>عدد الإعلانات</th>
+                    <th>متوسط السعر</th>
+                    <th>أقل سعر</th>
+                    <th>أعلى سعر</th>
+                    <th>العملة</th>
                   </tr>
                 </thead>
                 <tbody>
                   {areaEntries.map((e, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: "0.5rem" }}>{label(categoryLabels, e.propertyCategory)}</td>
-                      <td style={{ padding: "0.5rem" }}>{label(transactionIntentLabels, e.transactionIntent)}</td>
-                      <td style={{ padding: "0.5rem" }}>{fmt.format(e.listingCount)}</td>
-                      <td style={{ padding: "0.5rem" }}>{fmt.format(e.averagePrice)}</td>
-                      <td style={{ padding: "0.5rem" }}>{fmt.format(e.minPrice)}</td>
-                      <td style={{ padding: "0.5rem" }}>{fmt.format(e.maxPrice)}</td>
-                      <td style={{ padding: "0.5rem" }}>{e.currency}</td>
+                    <tr key={i}>
+                      <td>{label(categoryLabels, e.propertyCategory)}</td>
+                      <td>{label(transactionIntentLabels, e.transactionIntent)}</td>
+                      <td>{fmt.format(e.listingCount)}</td>
+                      <td className="price-avg">{fmt.format(e.averagePrice)}</td>
+                      <td>{fmt.format(e.minPrice)}</td>
+                      <td>{fmt.format(e.maxPrice)}</td>
+                      <td>{e.currency}</td>
                     </tr>
                   ))}
                 </tbody>
