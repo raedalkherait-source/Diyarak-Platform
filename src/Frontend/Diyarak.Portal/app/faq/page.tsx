@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { breadcrumbStructuredData } from "@/lib/seo";
+import { jsonForScript } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "الأسئلة الشائعة",
@@ -64,6 +66,10 @@ const faqs: FaqItem[] = [
 export default function FaqPage() {
   return (
     <div className="container section">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
+        { name: "الرئيسية", href: "/" },
+        { name: "الأسئلة الشائعة" },
+      ])) }} />
       <h1>الأسئلة الشائعة</h1>
       <div className="faq-list">
         {faqs.map((item, i) => (

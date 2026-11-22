@@ -12,7 +12,7 @@ import { CompareToggle } from "@/components/CompareListings";
 import { ShareButtons } from "@/components/ShareButtons";
 import { RecentlyViewedRecorder, RecentlyViewedList } from "@/components/RecentlyViewed";
 import { getListing } from "@/lib/api";
-import { listingStructuredData } from "@/lib/seo";
+import { breadcrumbStructuredData, listingStructuredData } from "@/lib/seo";
 import { jsonForScript, siteUrl } from "@/lib/site";
 import type { PublicListing } from "@/lib/types";
 import { formatArea, formatFloor, formatLocation, formatNumber, formatPrice, photoSrc } from "@/lib/format";
@@ -74,6 +74,11 @@ export default async function ListingPage({ params }: Props) {
   return (
     <div className="container">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(listingStructuredData(listing)) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
+        { name: "الرئيسية", href: "/" },
+        ...(property.location.governorate ? [{ name: governorate, href: `/search?governorate=${encodeURIComponent(property.location.governorate)}` }] : []),
+        { name: listing.headline },
+      ])) }} />
       <nav className="breadcrumbs" aria-label="مسار التنقل">
         <Link href="/">الرئيسية</Link>
         <span>›</span>
