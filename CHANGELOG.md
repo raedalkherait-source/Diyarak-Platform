@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Custom error pages: styled 404 page with error code and action buttons,
+  client error boundary with retry, skeleton loading states for general
+  pages and search results with shimmer animation.
 - Search UX: sort selector (newest, price ascending/descending, largest area),
   living area range filters (min/max m²), and result count display.
 - Related listings section on listing detail pages: server-rendered grid of up
