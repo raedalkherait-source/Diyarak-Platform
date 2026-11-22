@@ -5,6 +5,13 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- OpenGraph metadata on all public pages: tools, FAQ, contact, search
+  (dynamic title/description from filters).
+- Canonical URLs on all public pages: tools, FAQ, contact, contractors,
+  projects (hub and detail), prices, search — consolidates link equity.
+- FAQPage structured data (JSON-LD) on /faq — enables Google FAQ rich
+  results with expandable Q&A in search.
+- Global error boundary (global-error.tsx) for root layout crashes.
 - Portal-wide inline style sweep: replaced virtually all inline styles with
   CSS classes across pages and components (ReviewSection, RecentlyViewed,
   Gallery, ShareButtons, SearchHistory, import, my/projects, listing detail,
