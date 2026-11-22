@@ -51,7 +51,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <CompareBar />
         <main>{children}</main>
         <footer className="site-footer">
-          <div className="container">© ديارك — منصة العقارات في سوريا</div>
+          <div className="container footer-content">
+            <span>© ديارك — منصة العقارات في سوريا</span>
+            <nav className="footer-links" aria-label="روابط إضافية">
+              <Link href="/faq">الأسئلة الشائعة</Link>
+              <Link href="/contact">تواصل معنا</Link>
+            </nav>
+          </div>
         </footer>
       </body>
     </html>

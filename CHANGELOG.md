@@ -5,6 +5,11 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Contact page (`/contact`) with email, WhatsApp and a structured inquiry form.
+- FAQ page (`/faq`) with 12 collapsible questions covering registration, publishing,
+  payments, search, verification, privacy, reviews, comparison and currency.
+- Footer navigation links to FAQ and contact pages.
+- Sitemap expanded with `/faq` and `/contact`.
 - Notification center: bell icon on the dashboard showing new listings from saved
   searches; read/unread tracking in localStorage.
 - User settings page (`/my/settings`): preferred currency, exchange rate, default
