@@ -37,12 +37,11 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
   return (
     <div onKeyDown={handleKeyDown}>
       <div
-        className="gallery-main"
+        className="gallery-main clickable"
         tabIndex={0}
         role="img"
         aria-label={`${title} — صورة ${index + 1} من ${photos.length}`}
         onClick={() => setLightbox(true)}
-        style={{ cursor: "pointer" }}
       >
         <Image
           src={photoSrc(listingId, current.photoId)}

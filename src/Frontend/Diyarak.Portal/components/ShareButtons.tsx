@@ -27,7 +27,7 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
 
   return (
     <div className="share-buttons">
-      <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>مشاركة:</span>
+      <span className="share-label">مشاركة:</span>
       <a
         href={`https://wa.me/?text=${encodedTitle}%20${encoded}`}
         target="_blank"

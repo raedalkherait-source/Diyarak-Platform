@@ -50,17 +50,13 @@ export function RecentlyViewedList({ excludeId }: { excludeId?: string }) {
   if (items.length === 0) return null;
 
   return (
-    <section className="panel" style={{ marginBlockStart: "1.5rem" }}>
+    <section className="panel recently-viewed">
       <h2>شاهدت مؤخراً</h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <div className="recently-viewed-list">
         {items.map((item) => (
-          <Link
-            key={item.id}
-            href={`/listings/${item.id}`}
-            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", textDecoration: "none", color: "inherit" }}
-          >
-            <span style={{ fontSize: "0.875rem" }}>{item.headline}</span>
-            <span style={{ fontSize: "0.8rem", color: "var(--muted)", whiteSpace: "nowrap" }}>{item.price}</span>
+          <Link key={item.id} href={`/listings/${item.id}`} className="recently-viewed-item">
+            <span className="recently-viewed-title">{item.headline}</span>
+            <span className="recently-viewed-price">{item.price}</span>
           </Link>
         ))}
       </div>

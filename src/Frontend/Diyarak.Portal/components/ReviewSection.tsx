@@ -9,13 +9,12 @@ function StarRating({ value, onChange }: { value: number; onChange?: (v: number)
       {[1, 2, 3, 4, 5].map((star) => (
         <span
           key={star}
-          className={star <= value ? "star filled" : "star"}
+          className={`star ${star <= value ? "filled" : ""} ${onChange ? "interactive" : ""}`}
           onClick={() => onChange?.(star)}
           onKeyDown={(e) => e.key === "Enter" && onChange?.(star)}
           role={onChange ? "radio" : undefined}
           aria-checked={onChange ? star === value : undefined}
           tabIndex={onChange ? 0 : undefined}
-          style={{ cursor: onChange ? "pointer" : "default", fontSize: "1.5rem" }}
         >
           {star <= value ? "★" : "☆"}
         </span>
@@ -47,51 +46,48 @@ export function ReviewSection({ subjectId, subjectType, reviews, average, count,
   const [rating, setRating] = useState(0);
 
   return (
-    <section style={{ marginTop: "2rem" }}>
-      <h2 style={{ marginBottom: "0.5rem" }}>التقييمات ({count})</h2>
+    <section className="reviews-section">
+      <h2>التقييمات ({count})</h2>
       {count > 0 && (
-        <p style={{ marginBottom: "1rem", color: "var(--muted)" }}>
+        <p className="reviews-average">
           <StarRating value={Math.round(average)} /> {average.toFixed(1)} من 5
         </p>
       )}
 
       {signedIn && !state.success && (
-        <form action={action} style={{ marginBottom: "1.5rem", padding: "1rem", border: "1px solid var(--border)", borderRadius: "8px" }}>
+        <form action={action} className="review-form">
           <input type="hidden" name="subjectId" value={subjectId} />
           <input type="hidden" name="subjectType" value={subjectType} />
           <input type="hidden" name="rating" value={rating} />
-          <div style={{ marginBottom: "0.75rem" }}>
-            <label style={{ display: "block", marginBottom: "0.25rem", fontWeight: 600 }}>تقييمك:</label>
+          <div className="review-field">
+            <label className="review-label">تقييمك:</label>
             <StarRating value={rating} onChange={setRating} />
           </div>
-          <div style={{ marginBottom: "0.75rem" }}>
-            <label htmlFor="review-comment" style={{ display: "block", marginBottom: "0.25rem" }}>تعليق (اختياري):</label>
-            <textarea id="review-comment" name="comment" maxLength={1000} rows={3} style={{ width: "100%" }} />
+          <div className="review-field">
+            <label htmlFor="review-comment">تعليق (اختياري):</label>
+            <textarea id="review-comment" name="comment" maxLength={1000} rows={3} />
           </div>
-          {state.formError && <p style={{ color: "var(--error, #c00)", marginBottom: "0.5rem" }}>{state.formError}</p>}
+          {state.formError && <p className="form-error">{state.formError}</p>}
           <button type="submit" className="button" disabled={pending || rating === 0}>
             {pending ? "جارٍ الإرسال..." : "أرسل التقييم"}
           </button>
         </form>
       )}
       {state.success && (
-        <p style={{ color: "var(--success, #060)", marginBottom: "1rem", fontWeight: 600 }}>تم إرسال تقييمك بنجاح!</p>
+        <p className="form-success review-success">تم إرسال تقييمك بنجاح!</p>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      <div className="reviews-list">
         {reviews.map((review) => (
-          <div
-            key={review.id}
-            style={{ padding: "0.75rem", border: "1px solid var(--border)", borderRadius: "8px" }}
-          >
+          <div key={review.id} className="review-card">
             <StarRating value={review.rating} />
-            {review.comment && <p style={{ marginTop: "0.25rem", whiteSpace: "pre-line" }}>{review.comment}</p>}
-            <time style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+            {review.comment && <p className="review-comment">{review.comment}</p>}
+            <time className="review-time">
               {new Date(review.createdAt).toLocaleDateString("ar-SY-u-nu-latn")}
             </time>
           </div>
         ))}
-        {reviews.length === 0 && <p style={{ color: "var(--muted)" }}>لا توجد تقييمات بعد.</p>}
+        {reviews.length === 0 && <p className="notice">لا توجد تقييمات بعد.</p>}
       </div>
     </section>
   );

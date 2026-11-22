@@ -636,6 +636,35 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Project description */
 .project-description { margin-top: 2rem; white-space: pre-wrap; line-height: 1.8; }
 
+/* Reviews */
+.reviews-section { margin-top: 2rem; }
+.reviews-section h2 { margin-bottom: 0.5rem; }
+.reviews-average { margin-bottom: 1rem; color: var(--muted); }
+.review-form { margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 0.75rem; }
+.review-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.review-label { font-weight: 600; }
+.review-form textarea { width: 100%; }
+.review-success { font-weight: 600; margin-bottom: 1rem; }
+.reviews-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.review-card { padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; }
+.review-comment { margin-top: 0.25rem; white-space: pre-line; }
+.review-time { font-size: 0.75rem; color: var(--muted); }
+.star.interactive { cursor: pointer; font-size: 1.5rem; }
+
+/* Recently viewed */
+.recently-viewed { margin-block-start: 1.5rem; }
+.recently-viewed-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.recently-viewed-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; text-decoration: none; color: inherit; }
+.recently-viewed-title { font-size: 0.875rem; }
+.recently-viewed-price { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+
+/* Share & search history labels */
+.share-label { font-weight: 600; font-size: 0.875rem; }
+.search-history-label { font-size: 0.8rem; color: var(--muted); }
+
+/* Gallery clickable */
+.clickable { cursor: pointer; }
+
 /* Utilities */
 .spaced-top { margin-block-start: 1.25rem; }
 .toggle-form-btn { margin-bottom: 1rem; }
