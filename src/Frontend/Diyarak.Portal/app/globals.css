@@ -561,6 +561,21 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .star.filled { color: #f5a623; }
 .rating-text { font-size: 0.85rem; color: var(--muted); }
 
+/* Filter chips */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip { font-size: 0.8rem; padding: 4px 12px; border: 1px solid var(--line); border-radius: 16px; color: var(--text); text-decoration: none; white-space: nowrap; }
+.chip:hover { background: var(--bg); }
+.chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Contractor cards */
+.contractor-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.contractor-card { padding: 16px; }
+.contractor-name { font-size: 1.05rem; margin: 0 0 4px; }
+.contractor-meta { font-size: 0.85rem; color: var(--muted); margin: 4px 0 8px; }
+.contractor-desc { font-size: 0.85rem; white-space: pre-line; margin: 0 0 8px; }
+.contractor-phone { font-size: 0.9rem; margin: 0; }
+.contractor-phone a { color: var(--accent); text-decoration: none; }
+
 /* Pagination numbers */
 .pagination-num { min-width: 40px; text-align: center; }
 
