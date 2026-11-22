@@ -506,6 +506,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .neighborhood-links a { font-size: 0.85rem; color: var(--accent); text-decoration: none; padding: 4px 10px; border: 1px solid var(--line); border-radius: 16px; }
 .neighborhood-links a:hover { background: var(--bg); }
 
+/* Results count */
+.results-count { font-size: 0.85rem; color: var(--muted); }
+
 /* Related listings */
 .related-listings { margin-block: 16px; }
 .related-listings h2 { margin: 0 0 12px; font-size: 1rem; }

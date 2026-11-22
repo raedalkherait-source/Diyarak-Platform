@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Search UX: sort selector (newest, price ascending/descending, largest area),
+  living area range filters (min/max m²), and result count display.
 - Related listings section on listing detail pages: server-rendered grid of up
   to 4 similar listings matching governorate, category and transaction intent.
 - Enhanced sharing preview: richer OpenGraph and Twitter Card meta tags on

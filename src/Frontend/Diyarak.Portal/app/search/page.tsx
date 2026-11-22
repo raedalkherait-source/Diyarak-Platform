@@ -17,7 +17,7 @@ import {
   transactionIntentLabels,
 } from "@/lib/labels";
 import { isIndexableSearch } from "@/lib/seo";
-import { firstValue, pageHref, parseBbox, savedSearchHref, savedSearchQuery, toApiQuery, type RawSearchParams } from "@/lib/search";
+import { firstValue, pageHref, parseBbox, savedSearchHref, savedSearchQuery, sortOptions, toApiQuery, type RawSearchParams } from "@/lib/search";
 import { SearchRecorder } from "@/components/SearchHistory";
 import { CurrencyToggle } from "@/components/CurrencyToggle";
 import type { PublicListingPage } from "@/lib/types";
@@ -126,6 +126,24 @@ export default async function SearchPage({ searchParams }: Props) {
           غرف النوم (على الأقل)
           <input name="bedroomCountMin" inputMode="numeric" defaultValue={value("bedroomCountMin")} />
         </label>
+        <div className="row">
+          <label className="field">
+            المساحة من (م²)
+            <input name="livingAreaMin" inputMode="numeric" defaultValue={value("livingAreaMin")} />
+          </label>
+          <label className="field">
+            إلى
+            <input name="livingAreaMax" inputMode="numeric" defaultValue={value("livingAreaMax")} />
+          </label>
+        </div>
+        <label className="field">
+          الترتيب
+          <select name="sort" defaultValue={value("sort")}>
+            {Object.entries(sortOptions).map(([k, v]) => (
+              <option key={k} value={k}>{v}</option>
+            ))}
+          </select>
+        </label>
         <button className="button" type="submit">تطبيق</button>
         <Link className="button secondary" href="/search">مسح الفلاتر</Link>
       </form>
@@ -135,7 +153,12 @@ export default async function SearchPage({ searchParams }: Props) {
         <div className="results-header">
           <h1>{describe(params)}</h1>
           <CurrencyToggle />
-          {page > 1 ? <span className="notice">الصفحة {page}</span> : null}
+          {result && result.items.length > 0 ? (
+            <span className="results-count">
+              {page > 1 ? `الصفحة ${page} — ` : ""}
+              {result.items.length}{result.hasMore ? "+" : ""} نتيجة
+            </span>
+          ) : page > 1 ? <span className="notice">الصفحة {page}</span> : null}
           <SaveSearchButton
             query={savedSearchQuery(params)}
             name={describe(params)}
