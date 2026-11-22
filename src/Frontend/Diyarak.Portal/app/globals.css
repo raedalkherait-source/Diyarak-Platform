@@ -441,10 +441,12 @@ img { max-width: 100%; display: block; }
 .settings-actions { display: flex; align-items: center; gap: 12px; margin-block: 16px; }
 
 /* Footer links */
-.footer-content { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-.footer-links { display: flex; gap: 16px; }
-.footer-links a { color: inherit; opacity: 0.8; text-decoration: none; font-size: 0.85rem; }
-.footer-links a:hover { opacity: 1; text-decoration: underline; }
+.footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 24px; padding-bottom: 20px; }
+.footer-col { display: flex; flex-direction: column; gap: 8px; }
+.footer-heading { font-size: 0.9rem; font-weight: 700; color: var(--fg); margin: 0 0 4px; }
+.footer-col a { color: inherit; opacity: 0.8; text-decoration: none; font-size: 0.85rem; }
+.footer-col a:hover { opacity: 1; text-decoration: underline; }
+.footer-bottom { border-top: 1px solid var(--line); padding-top: 16px; font-size: 0.85rem; opacity: 0.7; }
 
 /* Contact page */
 .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-block: 20px; }

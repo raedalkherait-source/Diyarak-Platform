@@ -56,13 +56,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main id="main-content">{children}</main>
         <BackToTop />
         <footer className="site-footer">
-          <div className="container footer-content">
-            <span>© ديارك — منصة العقارات في سوريا</span>
-            <nav className="footer-links" aria-label="روابط إضافية">
+          <div className="container footer-grid">
+            <div className="footer-col">
+              <h3 className="footer-heading">تصفح العقارات</h3>
+              <Link href="/search?transactionIntent=Sell">شراء</Link>
+              <Link href="/search?transactionIntent=Rent">إيجار</Link>
+              <Link href="/search?propertyCategory=CommercialProperty">عقارات تجارية</Link>
+              <Link href="/projects">مشاريع على المخطط</Link>
+            </div>
+            <div className="footer-col">
+              <h3 className="footer-heading">خدمات</h3>
+              <Link href="/prices">أسعار العقارات</Link>
+              <Link href="/contractors">دليل المقاولين</Link>
               <Link href="/tools">أدوات عقارية</Link>
+              <Link href="/compare">مقارنة الإعلانات</Link>
+            </div>
+            <div className="footer-col">
+              <h3 className="footer-heading">ديارك</h3>
               <Link href="/faq">الأسئلة الشائعة</Link>
               <Link href="/contact">تواصل معنا</Link>
-            </nav>
+            </div>
+          </div>
+          <div className="container footer-bottom">
+            <span>© {new Date().getFullYear()} ديارك — منصة العقارات في سوريا</span>
           </div>
         </footer>
       </body>
