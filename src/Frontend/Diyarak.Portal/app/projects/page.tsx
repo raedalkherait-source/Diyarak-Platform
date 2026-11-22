@@ -37,78 +37,67 @@ export default async function ProjectsPage({
         { name: "الرئيسية", href: "/" },
         { name: "مشاريع على المخطط" },
       ])) }} />
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        <span>مشاريع على المخطط</span>
+      </nav>
+
       <h1>مشاريع على المخطط</h1>
-      <p style={{ marginBottom: "1.5rem", color: "var(--muted)" }}>
+      <p className="notice">
         مشاريع عقارية قيد الإنشاء — احجز وحدتك مبكراً
       </p>
 
-      <nav style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-        <Link
-          href="/projects"
-          className={`button small ${!params.governorate ? "" : "secondary"}`}
-        >
-          الكل
-        </Link>
-        {Object.entries(governorateLabels).map(([key, label]) => (
-          <Link
-            key={key}
-            href={`/projects?governorate=${key}`}
-            className={`button small ${params.governorate === key ? "" : "secondary"}`}
-          >
-            {label}
+      <div className="filter-chips">
+        <Link href="/projects" className={`chip ${!params.governorate ? "active" : ""}`}>الكل</Link>
+        {Object.entries(governorateLabels).map(([key, lbl]) => (
+          <Link key={key} href={`/projects?governorate=${key}`} className={`chip ${params.governorate === key ? "active" : ""}`}>
+            {lbl}
           </Link>
         ))}
-      </nav>
+      </div>
 
       {!data || data.items.length === 0 ? (
-        <p>لا توجد مشاريع حالياً.</p>
+        <div className="empty">لا توجد مشاريع حالياً.</div>
       ) : (
         <>
-          <div className="card-grid">
+          <div className="project-grid">
             {data.items.map((project) => (
-              <Link
-                key={project.id}
-                href={`/projects/${project.id}`}
-                className="card"
-              >
-                <h3>{project.name}</h3>
-                <p className="card-meta">
-                  {governorateLabels[project.governorate] ?? project.governorate}
-                  {" — "}
-                  {project.district}
+              <Link key={project.id} href={`/projects/${project.id}`} className="panel project-card">
+                <div className="project-header">
+                  <h3 className="project-name">{project.name}</h3>
+                  <span className={`status-badge status-${project.constructionStatus.toLowerCase()}`}>
+                    {constructionStatusLabels[project.constructionStatus] ?? project.constructionStatus}
+                  </span>
+                </div>
+                <p className="project-location">
+                  {governorateLabels[project.governorate] ?? project.governorate} — {project.district}
                 </p>
-                <p className="card-meta">
-                  {constructionStatusLabels[project.constructionStatus] ?? project.constructionStatus}
-                  {" · "}
-                  {project.totalUnits} وحدة
-                </p>
-                <p className="card-price">{formatPrice(project.minPriceUsd, project.maxPriceUsd)}</p>
-                <p className="card-agency">
+                <p className="project-units">{project.totalUnits} وحدة</p>
+                <p className="project-price">{formatPrice(project.minPriceUsd, project.maxPriceUsd)}</p>
+                <p className="project-agency">
                   {project.agency.name}
-                  {project.agency.isVerified && " ✓"}
+                  {project.agency.isVerified && <span className="verified-badge"> ✓</span>}
                 </p>
+                {project.expectedCompletion ? (
+                  <p className="project-completion">التسليم المتوقع: {project.expectedCompletion}</p>
+                ) : null}
               </Link>
             ))}
           </div>
 
-          <div className="pagination">
+          <nav className="pagination" aria-label="الصفحات">
             {page > 1 && (
-              <Link
-                className="button secondary"
-                href={`/projects?page=${page - 1}${params.governorate ? `&governorate=${params.governorate}` : ""}`}
-              >
-                الصفحة السابقة
+              <Link className="button secondary" href={`/projects?page=${page - 1}${params.governorate ? `&governorate=${params.governorate}` : ""}`}>
+                → السابق
               </Link>
             )}
             {data.hasMore && (
-              <Link
-                className="button secondary"
-                href={`/projects?page=${page + 1}${params.governorate ? `&governorate=${params.governorate}` : ""}`}
-              >
-                الصفحة التالية
+              <Link className="button secondary" href={`/projects?page=${page + 1}${params.governorate ? `&governorate=${params.governorate}` : ""}`}>
+                التالي ←
               </Link>
             )}
-          </div>
+          </nav>
         </>
       )}
     </div>
