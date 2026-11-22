@@ -6,6 +6,10 @@ import { jsonForScript } from "@/lib/site";
 export const metadata: Metadata = {
   title: "الأسئلة الشائعة",
   description: "إجابات على أكثر الأسئلة شيوعاً حول منصة ديارك للعقارات.",
+  openGraph: {
+    title: "الأسئلة الشائعة — ديارك",
+    description: "إجابات على أكثر الأسئلة شيوعاً حول منصة ديارك للعقارات.",
+  },
 };
 
 interface FaqItem {
