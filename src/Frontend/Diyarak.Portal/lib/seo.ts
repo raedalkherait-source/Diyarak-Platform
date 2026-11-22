@@ -62,6 +62,19 @@ export function organizationStructuredData(): Record<string, unknown> {
   };
 }
 
+/** schema.org FAQPage for the FAQ page — enables Google rich results. */
+export function faqStructuredData(items: Array<{ question: string; answer: string }>): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}
+
 /** schema.org RealEstateListing for a public listing page. */
 export function listingStructuredData(listing: PublicListing): Record<string, unknown> {
   const url = `${siteUrl()}/listings/${listing.listingId}`;

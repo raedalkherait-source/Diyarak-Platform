@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { breadcrumbStructuredData } from "@/lib/seo";
+import { breadcrumbStructuredData, faqStructuredData } from "@/lib/seo";
 import { jsonForScript } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -76,6 +76,7 @@ export default function FaqPage() {
         { name: "الرئيسية", href: "/" },
         { name: "الأسئلة الشائعة" },
       ])) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(faqStructuredData(faqs)) }} />
       <nav className="breadcrumbs" aria-label="مسار التنقل">
         <Link href="/">الرئيسية</Link>
         <span>›</span>
