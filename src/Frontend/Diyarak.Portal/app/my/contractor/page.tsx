@@ -34,43 +34,43 @@ function ContractorForm({ existing }: { existing: ContractorData | null }) {
   const [state, formAction, pending] = useActionState<ContractorFormState, FormData>(action, {});
 
   return (
-    <form action={formAction}>
-      {state.status === "error" && <p style={{ color: "crimson" }}>{state.message}</p>}
-      {state.status === "saved" && <p style={{ color: "green" }}>{state.message}</p>}
+    <form action={formAction} className="form-stack">
+      {state.status === "error" && <p className="form-error">{state.message}</p>}
+      {state.status === "saved" && <p className="form-success">{state.message}</p>}
 
-      <label style={{ display: "block", marginBottom: "0.75rem" }}>
+      <label className="field">
         الاسم
-        <input name="name" required minLength={2} maxLength={100} defaultValue={existing?.name ?? ""} style={{ display: "block", width: "100%" }} />
+        <input name="name" required minLength={2} maxLength={100} defaultValue={existing?.name ?? ""} />
       </label>
 
-      <label style={{ display: "block", marginBottom: "0.75rem" }}>
+      <label className="field">
         الوصف
-        <textarea name="description" maxLength={2000} rows={3} defaultValue={existing?.description ?? ""} style={{ display: "block", width: "100%" }} />
+        <textarea name="description" maxLength={2000} rows={3} defaultValue={existing?.description ?? ""} />
       </label>
 
-      <label style={{ display: "block", marginBottom: "0.75rem" }}>
+      <label className="field">
         المحافظة
-        <select name="governorate" required defaultValue={existing?.governorate ?? ""} style={{ display: "block", width: "100%" }}>
+        <select name="governorate" required defaultValue={existing?.governorate ?? ""}>
           <option value="">اختر</option>
           {governorates.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
       </label>
 
-      <label style={{ display: "block", marginBottom: "0.75rem" }}>
+      <label className="field">
         المنطقة
-        <input name="district" maxLength={100} defaultValue={existing?.district ?? ""} style={{ display: "block", width: "100%" }} />
+        <input name="district" maxLength={100} defaultValue={existing?.district ?? ""} />
       </label>
 
-      <label style={{ display: "block", marginBottom: "0.75rem" }}>
+      <label className="field">
         التخصص
-        <select name="specialty" required defaultValue={existing?.specialty ?? "GeneralConstruction"} style={{ display: "block", width: "100%" }}>
+        <select name="specialty" required defaultValue={existing?.specialty ?? "GeneralConstruction"}>
           {specialties.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
       </label>
 
-      <label style={{ display: "block", marginBottom: "0.75rem" }}>
+      <label className="field">
         رقم الهاتف
-        <input name="phone" required maxLength={20} defaultValue={existing?.phone ?? ""} dir="ltr" style={{ display: "block", width: "100%" }} />
+        <input name="phone" required maxLength={20} defaultValue={existing?.phone ?? ""} dir="ltr" />
       </label>
 
       <button type="submit" className="button" disabled={pending}>
@@ -81,14 +81,10 @@ function ContractorForm({ existing }: { existing: ContractorData | null }) {
 }
 
 export default function ContractorManagementPage() {
-  // This is a client component that fetches data via useEffect.
-  // For simplicity, we render a form shell and fetch existing data client-side.
-  // In a real scenario, we'd use a server component wrapper.
-  // For the MVP, the page shows the create form; editing requires server-side data.
   return (
-    <div className="container" style={{ paddingBlock: "2rem", maxWidth: "600px" }}>
-      <h1 style={{ marginBottom: "1rem" }}>ملف المقاول</h1>
-      <p style={{ color: "var(--muted)", marginBottom: "1.5rem" }}>
+    <div className="container section narrow-form">
+      <h1>ملف المقاول</h1>
+      <p className="notice">
         أنشئ ملفك كمقاول أو متعهد ليظهر في دليل المقاولين.
       </p>
       <ContractorForm existing={null} />

@@ -46,7 +46,7 @@ export default async function ContractorsPage({
       </nav>
 
       <h1>دليل المقاولين</h1>
-      <p className="notice" style={{ marginBottom: 16 }}>
+      <p className="notice">
         تصفح مقاولين ومتعهدين في جميع المحافظات السورية.
       </p>
 
