@@ -36,8 +36,10 @@ function describe(params: RawSearchParams): string {
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = await searchParams;
+  const title = describe(params);
   return {
-    title: describe(params),
+    title,
+    openGraph: { title: `${title} — ديارك`, description: "ابحث عن عقارات للبيع والإيجار في جميع المحافظات السورية." },
     // Only simple landing combinations are indexed; deep filter combinations stay crawlable but unindexed.
     robots: isIndexableSearch(params) ? undefined : { index: false, follow: true },
   };

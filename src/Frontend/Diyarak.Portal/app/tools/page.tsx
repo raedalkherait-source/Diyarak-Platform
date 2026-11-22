@@ -6,6 +6,10 @@ import { jsonForScript } from "@/lib/site";
 export const metadata: Metadata = {
   title: "أدوات عقارية",
   description: "حاسبة الأقساط الشهرية وتقدير قيمة العقار — أدوات مجانية من ديارك.",
+  openGraph: {
+    title: "أدوات عقارية — ديارك",
+    description: "حاسبة الأقساط الشهرية وتقدير قيمة العقار — أدوات مجانية من ديارك.",
+  },
 };
 
 export default function ToolsPage() {
