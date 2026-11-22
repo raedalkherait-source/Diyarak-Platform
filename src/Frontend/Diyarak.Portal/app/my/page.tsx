@@ -66,6 +66,20 @@ export default async function MyListingsPage({ searchParams }: Props) {
         </div>
       </div>
 
+      {listings.length > 0 ? (() => {
+        const published = listings.filter((l) => l.status === "Published").length;
+        const totalViews = listings.reduce((sum, l) => sum + (totalsById.get(l.listingId)?.views ?? 0), 0);
+        const totalReveals = listings.reduce((sum, l) => sum + (totalsById.get(l.listingId)?.contactReveals ?? 0), 0);
+        return (
+          <div className="dashboard-stats">
+            <div className="dash-stat"><span className="dash-stat-number">{listings.length}</span><span className="dash-stat-label">إجمالي الإعلانات</span></div>
+            <div className="dash-stat"><span className="dash-stat-number">{published}</span><span className="dash-stat-label">منشور</span></div>
+            <div className="dash-stat"><span className="dash-stat-number">{totalViews}</span><span className="dash-stat-label">مشاهدة (30 يوم)</span></div>
+            <div className="dash-stat"><span className="dash-stat-number">{totalReveals}</span><span className="dash-stat-label">إظهار رقم (30 يوم)</span></div>
+          </div>
+        );
+      })() : null}
+
       {quota ? (
         <div className="panel quota-bar">
           <span>الإعلانات النشطة: <strong>{quota.activeListings}</strong> / {quota.quota}</span>
