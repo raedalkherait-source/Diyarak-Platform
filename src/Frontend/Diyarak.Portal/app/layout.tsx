@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CompareBar } from "@/components/CompareListings";
 import { getSessionToken } from "@/lib/session";
 import "./globals.css";
 
@@ -47,6 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         </header>
         <ServiceWorkerRegistration />
+        <CompareBar />
         <main>{children}</main>
         <footer className="site-footer">
           <div className="container">© ديارك — منصة العقارات في سوريا</div>

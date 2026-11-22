@@ -8,6 +8,7 @@ import { ApproximateAreaMap } from "@/components/ListingMaps";
 import { mapConfig } from "@/lib/map";
 import { Gallery } from "@/components/Gallery";
 import { ReportListing } from "@/components/ReportListing";
+import { CompareToggle } from "@/components/CompareListings";
 import { ShareButtons } from "@/components/ShareButtons";
 import { RecentlyViewedRecorder, RecentlyViewedList } from "@/components/RecentlyViewed";
 import { getListing } from "@/lib/api";
@@ -95,6 +96,7 @@ export default async function ListingPage({ params }: Props) {
               .join(" — ")}
           </div>
           <FavoriteButton listingId={listing.listingId} />
+          <CompareToggle id={listing.listingId} headline={listing.headline} price={formatPrice(listing.price)} />
           <ViewBeacon listingId={listing.listingId} />
           <RecentlyViewedRecorder id={listing.listingId} headline={listing.headline} price={formatPrice(listing.price)} />
 

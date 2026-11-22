@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Listing comparison: select up to 4 listings to compare side-by-side in a table
+  with all property details; persistent sticky bar and compare toggle on listing pages.
+- Multi-currency price display: USD/SYP toggle on search results with user-editable
+  exchange rate stored in localStorage; compare page respects the chosen currency.
 - Theme toggle: manual light/dark/system switch in the header; respects
   `prefers-color-scheme` and persists choice in localStorage.
 - Print styles: clean print layout for listing detail pages, hides navigation
