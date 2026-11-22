@@ -20,8 +20,17 @@ async function latestListings(): Promise<PublicListing[] | null> {
   }
 }
 
+async function featuredListings(): Promise<PublicListing[] | null> {
+  try {
+    const result = await searchListings(toApiQuery({ sort: "newest" }, 12));
+    return (result?.items ?? []).filter((l) => l.featured).slice(0, 4);
+  } catch {
+    return null;
+  }
+}
+
 export default async function HomePage() {
-  const listings = await latestListings();
+  const [listings, featured] = await Promise.all([latestListings(), featuredListings()]);
 
   return (
     <>
@@ -79,6 +88,41 @@ export default async function HomePage() {
               <strong>أسعار العقارات</strong>
               <span>متوسط الأسعار حسب المحافظة والمنطقة</span>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {featured && featured.length > 0 ? (
+        <section className="section">
+          <div className="container">
+            <div className="section-title">
+              <h2>★ إعلانات مميزة</h2>
+              <Link href="/search">عرض الكل ←</Link>
+            </div>
+            <div className="grid">
+              {featured.map((listing) => (
+                <ListingCard key={listing.listingId} listing={listing} priority />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="section">
+        <div className="container">
+          <div className="stats-bar">
+            <div className="stat-item">
+              <span className="stat-number">14</span>
+              <span className="stat-label">محافظة</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">6</span>
+              <span className="stat-label">أنواع عقارات</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">3</span>
+              <span className="stat-label">أدوات مجانية</span>
+            </div>
           </div>
         </div>
       </section>

@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Home page: featured listings section showing paid featured listings above latest,
+  platform stats counters (governorates, property types, free tools).
 - Photo lightbox: click gallery image to open fullscreen overlay with keyboard
   navigation (arrows, Escape), prev/next buttons and counter; body scroll locked.
 - Custom error pages: styled 404 page with error code and action buttons,
