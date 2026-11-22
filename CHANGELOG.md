@@ -5,6 +5,15 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- DNS prefetch and preconnect hints for OpenStreetMap tile server.
+- Metadata (title, description, canonical, OpenGraph) on compare, mortgage
+  calculator and value estimator pages via layout.tsx files.
+- Compare page added to sitemap.xml.
+- PWA manifest: `id`, `categories` and keyboard shortcuts (search, prices,
+  my listings).
+- Unit tests for `errorMessage` (known codes, status fallbacks) and
+  `jsonForScript` (XSS escaping, line separators, round-trip fidelity).
+- Unit tests for `breadcrumbStructuredData` and `faqStructuredData` helpers.
 - OpenGraph metadata on all public pages: tools, FAQ, contact, search
   (dynamic title/description from filters).
 - Canonical URLs on all public pages: tools, FAQ, contact, contractors,
