@@ -4,7 +4,7 @@ import { formatArea, formatFloor, formatLocation, formatPrice, photoSrc } from "
 import { categoryLabels, label, transactionIntentLabels } from "@/lib/labels";
 import type { PublicListing } from "@/lib/types";
 
-export function ListingCard({ listing }: { listing: PublicListing }) {
+export function ListingCard({ listing, priority = false }: { listing: PublicListing; priority?: boolean }) {
   const cover = listing.photos[0];
   const property = listing.property;
   const facts = [
@@ -21,8 +21,9 @@ export function ListingCard({ listing }: { listing: PublicListing }) {
           {cover ? (
             <Image
               src={photoSrc(listing.listingId, cover.photoId)}
-              alt=""
+              alt={listing.headline}
               fill
+              loading={priority ? "eager" : "lazy"}
               sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 300px"
               quality={70}
             />
