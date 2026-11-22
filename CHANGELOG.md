@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Related listings section on listing detail pages: server-rendered grid of up
+  to 4 similar listings matching governorate, category and transaction intent.
+- Enhanced sharing preview: richer OpenGraph and Twitter Card meta tags on
+  listing pages with area, room count, site name, locale and large image card.
 - Private listing notes: collapsible per-listing notepad on detail pages, stored
   in localStorage, never shared; indicator dot when a note exists.
 - Neighborhood info section on listing detail pages: governorate description,
