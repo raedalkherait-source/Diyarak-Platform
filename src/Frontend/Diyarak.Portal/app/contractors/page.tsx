@@ -6,6 +6,10 @@ import { governorateLabels, contractorSpecialtyLabels, label } from "@/lib/label
 export const metadata: Metadata = {
   title: "دليل المقاولين في سوريا",
   description: "ابحث عن مقاولين ومتعهدين في جميع المحافظات السورية — بناء، كهرباء، سباكة، تصميم داخلي وأكثر.",
+  openGraph: {
+    title: "دليل المقاولين في سوريا — ديارك",
+    description: "ابحث عن مقاولين ومتعهدين في جميع المحافظات السورية.",
+  },
 };
 
 const specialties = Object.keys(contractorSpecialtyLabels);

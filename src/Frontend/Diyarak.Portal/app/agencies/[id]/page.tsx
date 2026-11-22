@@ -21,11 +21,13 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   if (!data) return { title: "مكتب غير موجود", robots: { index: false } };
 
   const place = [data.agency.city, label(governorateLabels, data.agency.governorate)].filter(Boolean).join("، ");
+  const title = `${data.agency.name} — مكتب عقاري في ${place}`;
+  const desc = data.agency.description?.slice(0, 160) ?? `عقارات ${data.agency.name} للبيع والإيجار في ${place} على ديارك.`;
   return {
-    title: `${data.agency.name} — مكتب عقاري في ${place}`,
-    description: data.agency.description?.slice(0, 160) ?? `عقارات ${data.agency.name} للبيع والإيجار في ${place} على ديارك.`,
+    title,
+    description: desc,
     alternates: { canonical: `/agencies/${data.agency.agencyId}` },
-    // Unverified agencies stay crawlable but out of the index until reviewed.
+    openGraph: { title, description: desc },
     robots: data.agency.verified ? undefined : { index: false, follow: true },
   };
 }
