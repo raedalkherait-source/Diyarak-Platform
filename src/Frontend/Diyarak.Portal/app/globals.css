@@ -590,6 +590,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 640px) { .related-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 400px) { .related-grid { grid-template-columns: 1fr; } }
 
+/* Projects page */
+.project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+.project-card { display: flex; flex-direction: column; gap: 0.35rem; text-decoration: none; color: inherit; transition: box-shadow 0.15s ease; }
+.project-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.project-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.project-name { font-size: 1.1rem; margin: 0; }
+.project-location { color: var(--muted); font-size: 0.9rem; margin: 0; }
+.project-units { color: var(--muted); font-size: 0.85rem; margin: 0; }
+.project-price { font-weight: 600; color: var(--accent); margin: 0; }
+.project-agency { font-size: 0.85rem; color: var(--muted); margin: 0; }
+.project-completion { font-size: 0.8rem; color: var(--muted); margin: 0.25rem 0 0; }
+.verified-badge { color: var(--accent); }
+.status-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; background: var(--surface-alt, #e8e4dd); color: var(--text); }
+.status-badge.status-planned { background: #e3f0ff; color: #1a5eb8; }
+.status-badge.status-underconstruction { background: #fff4e0; color: #a46b00; }
+.status-badge.status-completed { background: #e3f9e5; color: #1a7f2b; }
+.empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+@media (max-width: 640px) { .project-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 400px) { .project-grid { grid-template-columns: 1fr; } }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
