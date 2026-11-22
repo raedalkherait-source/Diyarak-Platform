@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Agency page polish: star rating display and review count in header,
+  listing count, breadcrumb navigation with structured data.
 - Back-to-top button: floating button appears after scrolling 400px, smooth
   scrolls to top; hidden in print.
 - Search pagination: page number links alongside prev/next buttons with

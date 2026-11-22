@@ -6,6 +6,7 @@ import { ReviewSection } from "@/components/ReviewSection";
 import { getAgency, listReviews, getSubjectRating } from "@/lib/api";
 import { governorateLabels, label } from "@/lib/labels";
 import { getSessionToken } from "@/lib/session";
+import { breadcrumbStructuredData } from "@/lib/seo";
 import { jsonForScript, siteUrl } from "@/lib/site";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> };
@@ -55,9 +56,23 @@ export default async function AgencyPage({ params, searchParams }: Props) {
     description: agency.description ?? undefined,
   };
 
+  const place = [agency.city, label(governorateLabels, agency.governorate)].filter(Boolean).join("، ");
+  const avgRating = ratingData?.average ?? 0;
+  const reviewCount = ratingData?.count ?? 0;
+
   return (
     <div className="container section">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(structured) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonForScript(breadcrumbStructuredData([
+        { name: "الرئيسية", href: "/" },
+        { name: agency.name },
+      ])) }} />
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
+        <Link href="/">الرئيسية</Link>
+        <span>›</span>
+        <span>{agency.name}</span>
+      </nav>
+
       <header className="panel agency-header">
         <div className="agency-avatar" aria-hidden="true">{agency.name.trim().charAt(0)}</div>
         <div>
@@ -65,7 +80,16 @@ export default async function AgencyPage({ params, searchParams }: Props) {
             {agency.name}
             {agency.verified ? <span className="verified-badge" title="مكتب موثّق من ديارك"> ✓ موثّق</span> : null}
           </h1>
-          <p className="notice">مكتب عقاري · {[agency.city, label(governorateLabels, agency.governorate)].filter(Boolean).join("، ")}</p>
+          <p className="notice">مكتب عقاري · {place}</p>
+          {reviewCount > 0 ? (
+            <p className="agency-rating">
+              <span className="stars" aria-label={`${avgRating.toFixed(1)} من 5`}>
+                {Array.from({ length: 5 }, (_, i) => <span key={i} className={i < Math.round(avgRating) ? "star filled" : "star"}>★</span>)}
+              </span>
+              <span className="rating-text">{avgRating.toFixed(1)} ({reviewCount} تقييم)</span>
+            </p>
+          ) : null}
+          <p className="notice">{items.length}{hasMore ? "+" : ""} إعلان منشور</p>
           {agency.description ? <p className="agency-description">{agency.description}</p> : null}
         </div>
       </header>
