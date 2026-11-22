@@ -123,11 +123,11 @@ export default async function ListingPage({ params }: Props) {
           <ViewBeacon listingId={listing.listingId} />
           <RecentlyViewedRecorder id={listing.listingId} headline={listing.headline} price={formatPrice(listing.price)} />
 
-          <div className="mobile-only" style={{ marginBlockStart: 16 }}>
+          <div className="mobile-only spaced-top">
             <ContactPanel listing={listing} />
           </div>
 
-          <section className="panel" style={{ marginBlockStart: 20 }}>
+          <section className="panel spaced-top">
             <h2>تفاصيل العقار</h2>
             <dl className="facts-table">
               {facts.map(([name, value]) => (
@@ -189,7 +189,7 @@ function ContactPanel({ listing }: { listing: PublicListing }) {
   return (
     <div className="panel">
       <div className="notice">{label(transactionIntentLabels, listing.context.transactionIntent)}</div>
-      <div className="price" style={{ fontSize: "1.7rem" }}>{formatPrice(listing.price)}</div>
+      <div className="price price-hero">{formatPrice(listing.price)}</div>
       {listing.agency ? (
         <p className="notice">
           المعلن:{" "}

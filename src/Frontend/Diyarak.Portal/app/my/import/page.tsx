@@ -21,7 +21,7 @@ export default function ImportPage() {
         <details>
           <summary>تنسيق الملف المطلوب</summary>
           <p>الأعمدة المطلوبة:</p>
-          <code style={{ display: "block", direction: "ltr", textAlign: "left", padding: "0.5rem", background: "var(--color-surface-alt)", borderRadius: "4px", fontSize: "0.85rem", overflowX: "auto" }}>
+          <code className="code-block">
             category,city,headline,publishingRole,transactionIntent,price,currency,isOnRequest,allowCalls,allowWhatsApp
           </code>
           <p>أعمدة اختيارية: <code>governorate</code>، <code>district</code></p>
@@ -36,30 +36,30 @@ export default function ImportPage() {
           </ul>
         </details>
 
-        <form action={action} style={{ marginTop: "1rem" }}>
+        <form action={action} className="import-form">
           <label htmlFor="csv">ملف CSV</label>
           <input type="file" id="csv" name="csv" accept=".csv,text/csv" required />
-          <button className="button" type="submit" disabled={pending} style={{ marginTop: "0.5rem" }}>
+          <button className="button" type="submit" disabled={pending}>
             {pending ? "جارٍ الاستيراد..." : "استيراد"}
           </button>
         </form>
 
         {state.status === "error" ? (
-          <p className="warning" role="alert" style={{ marginTop: "1rem" }}>{state.message}</p>
+          <p className="form-error" role="alert">{state.message}</p>
         ) : null}
 
         {state.status === "success" ? (
-          <div style={{ marginTop: "1rem" }}>
-            <p className="success" role="status">{state.message}</p>
+          <div className="import-result">
+            <p className="form-success" role="status">{state.message}</p>
             {state.failed && state.failed > 0 ? (
               <details>
                 <summary>{state.failed} صف فشل في الاستيراد</summary>
-                <ul style={{ direction: "ltr", textAlign: "left", fontSize: "0.85rem" }}>
+                <ul className="error-list">
                   {state.errors?.map((err, i) => <li key={i}>{err}</li>)}
                 </ul>
               </details>
             ) : null}
-            <Link className="button" href="/my" style={{ marginTop: "0.5rem", display: "inline-block" }}>عرض إعلاناتي</Link>
+            <Link className="button" href="/my">عرض إعلاناتي</Link>
           </div>
         ) : null}
       </div>
