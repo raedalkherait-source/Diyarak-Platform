@@ -8,13 +8,14 @@
   --brand-strong: #0a5145;
   --brand-soft: #e3f1ee;
   --accent: #c2772b;
+  --border: var(--line);
   --radius: 14px;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 20px rgb(0 0 0 / 0.05);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #12171a;
     --surface: #1b2226;
     --text: #e8ecee;
@@ -27,6 +28,20 @@
     --shadow: none;
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #12171a;
+  --surface: #1b2226;
+  --text: #e8ecee;
+  --muted: #9aa7ae;
+  --line: #2b353a;
+  --brand: #3fb59f;
+  --brand-strong: #6cd0bc;
+  --brand-soft: #173a34;
+  --accent: #e0a060;
+  --shadow: none;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -359,3 +374,20 @@ img { max-width: 100%; display: block; }
 .search-history { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-block-start: 0.75rem; }
 .search-history-chip { font-size: 0.8rem; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; text-decoration: none; color: inherit; background: var(--bg); }
 .search-history-chip:hover { border-color: var(--brand); }
+
+/* Theme toggle */
+.theme-toggle { background: none; border: 1px solid var(--line); border-radius: 50%; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; }
+.theme-toggle:hover { border-color: var(--brand); }
+
+/* Print */
+@media print {
+  .site-header, .site-footer, .share-buttons, .search-history, .quick-links,
+  .favorite-button, .report-listing, .contact-button, .pagination,
+  .breadcrumbs, .mobile-only, .desktop-only aside { display: none !important; }
+  body { background: #fff; color: #000; }
+  .container { width: 100%; max-width: none; padding: 0; }
+  .detail { display: block; }
+  .panel { border: 1px solid #ccc; break-inside: avoid; }
+  a { color: inherit; text-decoration: underline; }
+  a[href^="tel:"]::after, a[href^="https://wa.me"]::after { content: " (" attr(href) ")"; font-size: 0.8em; }
+}

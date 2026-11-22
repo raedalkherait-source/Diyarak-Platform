@@ -5,6 +5,12 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Theme toggle: manual light/dark/system switch in the header; respects
+  `prefers-color-scheme` and persists choice in localStorage.
+- Print styles: clean print layout for listing detail pages, hides navigation
+  and interactive elements.
+- CSS fix: added `--border` alias for `--line` so inline styles render borders
+  correctly in both themes.
 - Home page quick links: shortcuts to contractors directory, off-plan projects and price reports.
 - Search history: recent searches saved locally and shown as chips on the home page.
 - Share buttons on listing detail pages (WhatsApp, Telegram, copy link, native share).
