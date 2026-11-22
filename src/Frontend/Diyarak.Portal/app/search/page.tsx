@@ -19,6 +19,7 @@ import {
 import { isIndexableSearch } from "@/lib/seo";
 import { firstValue, pageHref, parseBbox, savedSearchHref, savedSearchQuery, toApiQuery, type RawSearchParams } from "@/lib/search";
 import { SearchRecorder } from "@/components/SearchHistory";
+import { CurrencyToggle } from "@/components/CurrencyToggle";
 import type { PublicListingPage } from "@/lib/types";
 
 type Props = { searchParams: Promise<RawSearchParams> };
@@ -133,6 +134,7 @@ export default async function SearchPage({ searchParams }: Props) {
       <section aria-live="polite">
         <div className="results-header">
           <h1>{describe(params)}</h1>
+          <CurrencyToggle />
           {page > 1 ? <span className="notice">الصفحة {page}</span> : null}
           <SaveSearchButton
             query={savedSearchQuery(params)}
