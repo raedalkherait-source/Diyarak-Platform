@@ -13,6 +13,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { RecentlyViewedRecorder, RecentlyViewedList } from "@/components/RecentlyViewed";
 import { ListingNotes } from "@/components/ListingNotes";
 import { NeighborhoodInfo } from "@/components/NeighborhoodInfo";
+import { RelatedListings } from "@/components/RelatedListings";
 import { getListing } from "@/lib/api";
 import { breadcrumbStructuredData, listingStructuredData } from "@/lib/seo";
 import { jsonForScript, siteUrl } from "@/lib/site";
@@ -37,13 +38,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!listing) return { title: "الإعلان غير موجود" };
 
   const cover = listing.photos[0];
-  const description = `${formatPrice(listing.price)} — ${formatLocation(listing.property.location)}`;
+  const loc = listing.property.location;
+  const area = listing.property.livingArea ? formatArea(listing.property.livingArea) : "";
+  const rooms = listing.property.bedroomCount !== null ? `${listing.property.bedroomCount} غرف نوم` : "";
+  const parts = [formatPrice(listing.price), formatLocation(loc), area, rooms].filter(Boolean);
+  const description = parts.join(" — ");
+  const pageUrl = `${siteUrl()}/listings/${listing.listingId}`;
 
   return {
     title: listing.headline,
     description,
     alternates: { canonical: `/listings/${listing.listingId}` },
     openGraph: {
+      title: `${listing.headline} | ديارك`,
+      description,
+      url: pageUrl,
+      siteName: "ديارك",
+      locale: "ar_SY",
+      type: "article",
+      images: cover ? [{ url: photoSrc(listing.listingId, cover.photoId), alt: listing.headline }] : [],
+    },
+    twitter: {
+      card: cover ? "summary_large_image" : "summary",
       title: listing.headline,
       description,
       images: cover ? [photoSrc(listing.listingId, cover.photoId)] : [],
@@ -149,6 +165,13 @@ export default async function ListingPage({ params }: Props) {
             district={property.location.district}
             transactionIntent={listing.context.transactionIntent}
             propertyCategory={property.category}
+          />
+
+          <RelatedListings
+            listingId={listing.listingId}
+            governorate={property.location.governorate}
+            category={property.category}
+            transactionIntent={listing.context.transactionIntent}
           />
 
           <RecentlyViewedList excludeId={listing.listingId} />
