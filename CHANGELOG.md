@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Share buttons on listing detail pages (WhatsApp, Telegram, copy link, native share).
+- Recently viewed listings sidebar on listing detail page (client-side, localStorage).
 - SEO: expanded sitemap with contractors, projects, prices and specialty filter pages;
   OpenGraph metadata on contractors, projects, prices and agency detail pages;
   JSON-LD structured data on project detail pages.
