@@ -549,6 +549,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .dash-stat-number { display: block; font-size: 1.8rem; font-weight: 800; color: var(--accent); line-height: 1.2; }
 .dash-stat-label { font-size: 0.8rem; color: var(--muted); }
 
+/* Back to top */
+.back-to-top { position: fixed; bottom: 24px; left: 24px; z-index: 100; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 1.3rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; }
+.back-to-top:hover { background: var(--accent); color: #fff; }
+@media print { .back-to-top { display: none; } }
+
+/* Pagination numbers */
+.pagination-num { min-width: 40px; text-align: center; }
+
 /* Results count */
 .results-count { font-size: 0.85rem; color: var(--muted); }
 
