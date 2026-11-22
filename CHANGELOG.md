@@ -5,6 +5,23 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Portal-wide inline style sweep: replaced virtually all inline styles with
+  CSS classes across pages and components (ReviewSection, RecentlyViewed,
+  Gallery, ShareButtons, SearchHistory, import, my/projects, listing detail,
+  offline, contractor form). Only Next.js Image `objectFit` remains.
+- Breadcrumb navigation added to search, compare, tools hub, FAQ, contact,
+  projects (hub and detail), and prices (with drill-down level) pages.
+- Projects page polish: filter chips, construction status badges with color
+  coding (planned=blue, under construction=amber, completed=green), styled
+  project cards with grid layout.
+- Prices page polish: styled price table with hover rows and highlighted
+  averages, governorate filter chips, back-link for drill-down.
+- Tools pages polish: breadcrumb on hub, CSS classes on mortgage calculator
+  and value estimator.
+- Review section CSS: form, cards, star rating, time display all use classes.
+- Recently viewed sidebar CSS: item cards with headline/price layout.
+- Utility CSS classes: form-error, form-success, narrow-form, code-block,
+  card-actions, spaced-top, price-hero, disclaimer, clickable, offline-page.
 - Contractors page polish: replaced inline styles with CSS classes, added
   breadcrumb navigation, filter chips with active state, styled contractor
   cards with consistent rating stars.
