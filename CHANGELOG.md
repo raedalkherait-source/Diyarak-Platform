@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Contractors page polish: replaced inline styles with CSS classes, added
+  breadcrumb navigation, filter chips with active state, styled contractor
+  cards with consistent rating stars.
 - Agency page polish: star rating display and review count in header,
   listing count, breadcrumb navigation with structured data.
 - Back-to-top button: floating button appears after scrolling 400px, smooth
