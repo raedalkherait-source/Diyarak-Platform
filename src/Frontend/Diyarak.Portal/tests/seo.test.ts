@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isIndexableSearch, listingStructuredData } from "@/lib/seo";
+import { isIndexableSearch, listingStructuredData, breadcrumbStructuredData, faqStructuredData } from "@/lib/seo";
 import { jsonForScript } from "@/lib/site";
 import type { PublicListing } from "@/lib/types";
 
@@ -48,5 +48,34 @@ describe("seo", () => {
     expect(embedded).not.toContain("</script>");
     expect(embedded).not.toContain("<");
     expect(JSON.parse(embedded).name).toBe(listing.headline);
+  });
+
+  it("builds BreadcrumbList with positions and URLs", () => {
+    const data = breadcrumbStructuredData([
+      { name: "الرئيسية", href: "/" },
+      { name: "الأسئلة الشائعة" },
+    ]);
+    expect(data["@type"]).toBe("BreadcrumbList");
+    const items = data.itemListElement as Array<{ position: number; name: string; item?: string }>;
+    expect(items).toHaveLength(2);
+    expect(items[0].position).toBe(1);
+    expect(items[0].item).toContain("/");
+    expect(items[1].position).toBe(2);
+    expect(items[1].item).toBeUndefined();
+  });
+
+  it("builds FAQPage with questions and answers", () => {
+    const faqs = [
+      { question: "ما هي ديارك؟", answer: "منصة عقارية سورية." },
+      { question: "هل النشر مجاني؟", answer: "نعم." },
+    ];
+    const data = faqStructuredData(faqs);
+    expect(data["@type"]).toBe("FAQPage");
+    const entities = data.mainEntity as Array<{ "@type": string; name: string; acceptedAnswer: { text: string } }>;
+    expect(entities).toHaveLength(2);
+    expect(entities[0]["@type"]).toBe("Question");
+    expect(entities[0].name).toBe("ما هي ديارك؟");
+    expect(entities[0].acceptedAnswer.text).toBe("منصة عقارية سورية.");
+    expect(entities[1].acceptedAnswer["@type"]).toBe("Answer");
   });
 });
