@@ -3,11 +3,13 @@
   "short_name": "ديارك",
   "description": "ابحث عن شقق وبيوت ومحلات للبيع والإيجار في جميع المحافظات السورية.",
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0f6b5c",
   "dir": "rtl",
   "lang": "ar",
+  "categories": ["business", "lifestyle"],
   "icons": [
     {
       "src": "/icon.svg",
@@ -24,6 +26,26 @@
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "بحث عن عقارات",
+      "short_name": "بحث",
+      "url": "/search",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "أسعار العقارات",
+      "short_name": "أسعار",
+      "url": "/prices",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "إعلاناتي",
+      "short_name": "إعلاناتي",
+      "url": "/my",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
