@@ -6,6 +6,7 @@ import { jsonForScript } from "@/lib/site";
 export const metadata: Metadata = {
   title: "تواصل معنا",
   description: "تواصل مع فريق ديارك للاستفسارات والملاحظات.",
+  alternates: { canonical: "/contact" },
   openGraph: {
     title: "تواصل معنا — ديارك",
     description: "تواصل مع فريق ديارك للاستفسارات والملاحظات.",
