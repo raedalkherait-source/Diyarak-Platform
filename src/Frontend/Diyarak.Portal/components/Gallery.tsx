@@ -1,26 +1,49 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { photoSrc } from "@/lib/format";
 import type { PublicListingPhoto } from "@/lib/types";
 
 export function Gallery({ listingId, photos, title }: { listingId: string; photos: PublicListingPhoto[]; title: string }) {
   const [index, setIndex] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
   const current = photos[index];
+
+  const prev = useCallback(() => setIndex((i) => (i - 1 + photos.length) % photos.length), [photos.length]);
+  const next = useCallback(() => setIndex((i) => (i + 1) % photos.length), [photos.length]);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightbox(false);
+      else if (e.key === "ArrowLeft") next();
+      else if (e.key === "ArrowRight") prev();
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [lightbox, prev, next]);
 
   if (!current) {
     return <div className="gallery-main empty">لا توجد صور لهذا الإعلان</div>;
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "ArrowLeft") setIndex((i) => (i + 1) % photos.length);
-    else if (e.key === "ArrowRight") setIndex((i) => (i - 1 + photos.length) % photos.length);
+    if (e.key === "ArrowLeft") next();
+    else if (e.key === "ArrowRight") prev();
   }
 
   return (
     <div onKeyDown={handleKeyDown}>
-      <div className="gallery-main" tabIndex={0} role="img" aria-label={`${title} — صورة ${index + 1} من ${photos.length}`}>
+      <div
+        className="gallery-main"
+        tabIndex={0}
+        role="img"
+        aria-label={`${title} — صورة ${index + 1} من ${photos.length}`}
+        onClick={() => setLightbox(true)}
+        style={{ cursor: "pointer" }}
+      >
         <Image
           src={photoSrc(listingId, current.photoId)}
           alt={`${title} — صورة ${index + 1} من ${photos.length}`}
@@ -31,9 +54,9 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
         />
         {photos.length > 1 ? (
           <div className="gallery-nav">
-            <button type="button" onClick={() => setIndex((i) => (i - 1 + photos.length) % photos.length)} aria-label="الصورة السابقة">→</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); prev(); }} aria-label="الصورة السابقة">→</button>
             <span>{index + 1} / {photos.length}</span>
-            <button type="button" onClick={() => setIndex((i) => (i + 1) % photos.length)} aria-label="الصورة التالية">←</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); next(); }} aria-label="الصورة التالية">←</button>
           </div>
         ) : null}
       </div>
@@ -51,6 +74,29 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
               <Image src={photoSrc(listingId, photo.photoId)} alt="" width={96} height={64} sizes="96px" quality={60} />
             </button>
           ))}
+        </div>
+      ) : null}
+
+      {lightbox ? (
+        <div className="lightbox" onClick={() => setLightbox(false)} role="dialog" aria-label="عرض الصورة">
+          <button type="button" className="lightbox-close" onClick={() => setLightbox(false)} aria-label="إغلاق">✕</button>
+          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={photoSrc(listingId, current.photoId)}
+              alt={`${title} — صورة ${index + 1} من ${photos.length}`}
+              fill
+              sizes="100vw"
+              quality={85}
+              style={{ objectFit: "contain" }}
+            />
+          </div>
+          {photos.length > 1 ? (
+            <>
+              <button type="button" className="lightbox-prev" onClick={(e) => { e.stopPropagation(); prev(); }} aria-label="السابقة">→</button>
+              <button type="button" className="lightbox-next" onClick={(e) => { e.stopPropagation(); next(); }} aria-label="التالية">←</button>
+              <div className="lightbox-counter">{index + 1} / {photos.length}</div>
+            </>
+          ) : null}
         </div>
       ) : null}
     </div>

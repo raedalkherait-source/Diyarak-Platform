@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Photo lightbox: click gallery image to open fullscreen overlay with keyboard
+  navigation (arrows, Escape), prev/next buttons and counter; body scroll locked.
 - Custom error pages: styled 404 page with error code and action buttons,
   client error boundary with retry, skeleton loading states for general
   pages and search results with shimmer animation.
