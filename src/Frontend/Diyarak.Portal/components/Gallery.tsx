@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { photoSrc } from "@/lib/format";
 import type { PublicListingPhoto } from "@/lib/types";
 
@@ -9,16 +9,26 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const current = photos[index];
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
 
   const prev = useCallback(() => setIndex((i) => (i - 1 + photos.length) % photos.length), [photos.length]);
   const next = useCallback(() => setIndex((i) => (i + 1) % photos.length), [photos.length]);
 
   useEffect(() => {
     if (!lightbox) return;
+    closeRef.current?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setLightbox(false);
-      else if (e.key === "ArrowLeft") next();
-      else if (e.key === "ArrowRight") prev();
+      if (e.key === "Escape") { setLightbox(false); return; }
+      if (e.key === "ArrowLeft") { next(); return; }
+      if (e.key === "ArrowRight") { prev(); return; }
+      if (e.key !== "Tab" || !lightboxRef.current) return;
+      const focusable = lightboxRef.current.querySelectorAll<HTMLElement>("button");
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -77,8 +87,8 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
       ) : null}
 
       {lightbox ? (
-        <div className="lightbox" onClick={() => setLightbox(false)} role="dialog" aria-label="عرض الصورة">
-          <button type="button" className="lightbox-close" onClick={() => setLightbox(false)} aria-label="إغلاق">✕</button>
+        <div ref={lightboxRef} className="lightbox" onClick={() => setLightbox(false)} role="dialog" aria-modal="true" aria-label={`${title} — صورة ${index + 1} من ${photos.length}`}>
+          <button ref={closeRef} type="button" className="lightbox-close" onClick={() => setLightbox(false)} aria-label="إغلاق">✕</button>
           <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
             <Image
               src={photoSrc(listingId, current.photoId)}
