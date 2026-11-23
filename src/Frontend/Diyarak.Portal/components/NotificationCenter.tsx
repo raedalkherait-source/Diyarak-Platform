@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
 export interface Notification {
@@ -36,18 +36,32 @@ export function NotificationBell({ notifications }: { notifications: Notificatio
   const [open, setOpen] = useState(false);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setReadIds(getReadIds());
   }, []);
 
+  const close = useCallback(() => {
+    setOpen(false);
+    bellRef.current?.focus();
+  }, []);
+
   useEffect(() => {
+    if (!open) return;
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    if (open) document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, [open]);
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") close();
+    }
+    document.addEventListener("click", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open, close]);
 
   const unread = notifications.filter((n) => !readIds.has(n.id)).length;
 
@@ -61,12 +75,12 @@ export function NotificationBell({ notifications }: { notifications: Notificatio
 
   return (
     <div className="notification-center" ref={ref}>
-      <button type="button" onClick={handleOpen} className="notification-bell" aria-label="الإشعارات">
+      <button ref={bellRef} type="button" onClick={handleOpen} className="notification-bell" aria-expanded={open} aria-haspopup="true" aria-label={unread > 0 ? `الإشعارات (${unread} جديدة)` : "الإشعارات"}>
         🔔
         {unread > 0 ? <span className="notification-badge">{unread}</span> : null}
       </button>
       {open ? (
-        <div className="notification-dropdown">
+        <div className="notification-dropdown" role="region" aria-label="الإشعارات">
           <h3>الإشعارات</h3>
           {notifications.length === 0 ? (
             <p className="notification-empty">لا توجد إشعارات جديدة</p>
