@@ -45,7 +45,7 @@ export function Gallery({ listingId, photos, title }: { listingId: string; photo
   }
 
   return (
-    <div onKeyDown={handleKeyDown}>
+    <div onKeyDown={handleKeyDown} role="region" aria-roledescription="معرض صور" aria-label={title}>
       <div
         className="gallery-main clickable"
         tabIndex={0}

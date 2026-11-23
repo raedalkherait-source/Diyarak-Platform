@@ -5,6 +5,12 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Gallery lightbox accessibility: focus trap, auto-focus close button,
+  `aria-modal` and descriptive aria-label with photo index;
+  `aria-roledescription="معرض صور"` on the gallery container.
+- Mobile navigation keyboard accessibility: Escape key closes the panel,
+  Tab focus is trapped within the overlay, and focus returns to the
+  hamburger button on close.
 - Default OpenGraph image (1200×630 edge-rendered PNG) for branded social
   sharing previews on WhatsApp, Facebook, Telegram and Twitter/X.
 - Twitter Card metadata (summary_large_image) and twitter-image on all pages.
