@@ -15,6 +15,15 @@ export const metadata: Metadata = {
   description: "ابحث عن شقق وبيوت ومحلات للبيع والإيجار في جميع المحافظات السورية.",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "ديارك" },
+  openGraph: {
+    type: "website",
+    siteName: "ديارك",
+    locale: "ar_SY",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@diyarak_app",
+  },
 };
 
 export const viewport: Viewport = {
