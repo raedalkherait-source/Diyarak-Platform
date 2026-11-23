@@ -5,6 +5,18 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Default OpenGraph image (1200×630 edge-rendered PNG) for branded social
+  sharing previews on WhatsApp, Facebook, Telegram and Twitter/X.
+- Twitter Card metadata (summary_large_image) and twitter-image on all pages.
+- OpenGraph defaults (type, siteName, locale) in root layout.
+- Compare page added to sitemap.xml.
+- Loading skeleton for project detail page (`/projects/[id]`).
+- Cross-Origin-Opener-Policy and X-Permitted-Cross-Domain-Policies
+  security headers.
+- Footer columns wrapped in `<nav>` landmarks with aria-label for
+  screen reader navigation.
+- Unit tests for `safeNextPath` open-redirect prevention, `errorMessage`
+  error code mapper, and `jsonForScript` XSS-safe serialiser.
 - DNS prefetch and preconnect hints for OpenStreetMap tile server.
 - Metadata (title, description, canonical, OpenGraph) on compare, mortgage
   calculator and value estimator pages via layout.tsx files.
