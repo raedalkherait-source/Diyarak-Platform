@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Search results count announced by screen readers via `aria-live="polite"`.
+- Skip-to-content link now moves focus into `<main>` with `tabIndex={-1}`.
 - `viewport-fit: cover` and `env(safe-area-inset-*)` padding on header
   and footer for notched iPhones in PWA mode.
 - Active navigation indicator: `NavLink` component sets
