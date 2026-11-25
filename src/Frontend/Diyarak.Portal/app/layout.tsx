@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { NavLink } from "@/components/NavLink";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompareBar } from "@/components/CompareListings";
@@ -52,9 +53,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/search?transactionIntent=Sell">شراء</Link>
               <Link href="/search?transactionIntent=Rent">إيجار</Link>
               <Link href="/search?propertyCategory=CommercialProperty">تجاري</Link>
-              <Link href="/projects">مشاريع</Link>
-              <Link href="/prices">أسعار</Link>
-              <Link href="/contractors">مقاولون</Link>
+              <NavLink href="/projects">مشاريع</NavLink>
+              <NavLink href="/prices">أسعار</NavLink>
+              <NavLink href="/contractors">مقاولون</NavLink>
             </nav>
             <ThemeToggle />
             <Link className="button header-cta desktop-only" href={signedIn ? "/my" : "/login"}>
@@ -74,19 +75,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/search?transactionIntent=Sell">شراء</Link>
               <Link href="/search?transactionIntent=Rent">إيجار</Link>
               <Link href="/search?propertyCategory=CommercialProperty">عقارات تجارية</Link>
-              <Link href="/projects">مشاريع على المخطط</Link>
+              <NavLink href="/projects">مشاريع على المخطط</NavLink>
             </nav>
             <nav className="footer-col" aria-label="خدمات">
               <h3 className="footer-heading">خدمات</h3>
-              <Link href="/prices">أسعار العقارات</Link>
-              <Link href="/contractors">دليل المقاولين</Link>
-              <Link href="/tools">أدوات عقارية</Link>
-              <Link href="/compare">مقارنة الإعلانات</Link>
+              <NavLink href="/prices">أسعار العقارات</NavLink>
+              <NavLink href="/contractors">دليل المقاولين</NavLink>
+              <NavLink href="/tools">أدوات عقارية</NavLink>
+              <NavLink href="/compare">مقارنة الإعلانات</NavLink>
             </nav>
             <nav className="footer-col" aria-label="ديارك">
               <h3 className="footer-heading">ديارك</h3>
-              <Link href="/faq">الأسئلة الشائعة</Link>
-              <Link href="/contact">تواصل معنا</Link>
+              <NavLink href="/faq">الأسئلة الشائعة</NavLink>
+              <NavLink href="/contact">تواصل معنا</NavLink>
             </nav>
           </div>
           <div className="container footer-bottom">
