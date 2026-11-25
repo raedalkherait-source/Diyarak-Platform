@@ -76,6 +76,7 @@ img { max-width: 100%; display: block; }
 
 .nav { display: flex; gap: 20px; color: var(--muted); font-weight: 600; }
 .nav a:hover { color: var(--brand); }
+.nav a[aria-current="page"] { color: var(--brand); border-bottom: 2px solid var(--brand); padding-bottom: 2px; }
 
 .hero {
   background: linear-gradient(135deg, var(--brand-strong), var(--brand));
