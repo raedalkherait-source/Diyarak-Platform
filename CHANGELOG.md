@@ -5,6 +5,12 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Service worker v3: bounded photo cache (100 entries max), pre-cached
+  `icon.svg` and `manifest.json`.
+- AI scraper protection: robots.txt blocks GPTBot, ChatGPT-User, CCBot,
+  Google-Extended, anthropic-ai, ClaudeBot, Bytespider and Amazonbot.
+- Content-Security-Policy header: `frame-ancestors 'none'`,
+  `base-uri 'self'`, `form-action 'self'`.
 - PWA manifest: `scope`, `orientation`, `prefer_related_applications`
   for a richer install experience.
 - Currency toggle accessibility: `aria-expanded` on rate editor,
