@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Middleware matcher refined to skip `manifest.json`, `sw.js` and icon
+  files, avoiding unnecessary token-renewal on static PWA requests.
 - Unit tests for `convertPrice` currency conversion (7 tests); function
   extracted to `lib/currency.ts` for testability.
 - Offline page auto-reconnect: listens for browser `online` event and
