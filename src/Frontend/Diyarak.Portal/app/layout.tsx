@@ -67,7 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </header>
         <ServiceWorkerRegistration />
         <CompareBar />
-        <main id="main-content">{children}</main>
+        <main id="main-content" tabIndex={-1}>{children}</main>
         <BackToTop />
         <footer className="site-footer">
           <div className="container footer-grid">
