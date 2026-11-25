@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `viewport-fit: cover` and `env(safe-area-inset-*)` padding on header
+  and footer for notched iPhones in PWA mode.
 - Active navigation indicator: `NavLink` component sets
   `aria-current="page"` on the current section's link, with a brand-colour
   underline so users see where they are.
