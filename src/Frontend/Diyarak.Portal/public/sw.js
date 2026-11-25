@@ -1,6 +1,15 @@
-const CACHE_NAME = "diyarak-v2";
+const CACHE_NAME = "diyarak-v3";
 const OFFLINE_URL = "/offline";
-const STATIC_ASSETS = [OFFLINE_URL, "/icon-192.png", "/icon-512.png"];
+const STATIC_ASSETS = [OFFLINE_URL, "/icon-192.png", "/icon-512.png", "/icon.svg", "/manifest.json"];
+const PHOTO_CACHE_LIMIT = 100;
+
+async function trimCache(cacheName, maxItems) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length > maxItems) {
+    await Promise.all(keys.slice(0, keys.length - maxItems).map((k) => cache.delete(k)));
+  }
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -46,13 +55,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Listing photos: cache-first (immutable URLs)
+  // Listing photos: cache-first (immutable URLs), bounded to PHOTO_CACHE_LIMIT
   if (url.pathname.startsWith("/media/listings/")) {
     event.respondWith(
       caches.match(request).then((cached) => cached || fetch(request).then((response) => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, clone);
+            trimCache(CACHE_NAME, PHOTO_CACHE_LIMIT + STATIC_ASSETS.length + 50);
+          });
         }
         return response;
       }))
