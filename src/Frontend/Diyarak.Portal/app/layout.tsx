@@ -43,6 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://tile.openstreetmap.org" crossOrigin="anonymous" />
       </head>
       <body>
+        <noscript><div className="noscript-banner">يُرجى تفعيل JavaScript لاستخدام جميع ميزات ديارك.</div></noscript>
         <a href="#main-content" className="skip-link">تخطي إلى المحتوى</a>
         <header className="site-header">
           <div className="container">
