@@ -5,6 +5,15 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- PWA manifest: `scope`, `orientation`, `prefer_related_applications`
+  for a richer install experience.
+- Currency toggle accessibility: `aria-expanded` on rate editor,
+  `aria-label` with current currency, Escape key cancels editing.
+- Listing notes `aria-expanded` toggle and indicator dot `aria-label`.
+- Share button copy feedback: visual "تم النسخ ✓" confirmation and
+  `aria-live` region for screen readers. `.sr-only` utility class.
+- Notification center keyboard: Escape to close, focus return to bell,
+  `aria-expanded`, `aria-haspopup`, dynamic unread count label.
 - Gallery lightbox accessibility: focus trap, auto-focus close button,
   `aria-modal` and descriptive aria-label with photo index;
   `aria-roledescription="معرض صور"` on the gallery container.

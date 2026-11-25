@@ -4,12 +4,15 @@
   "description": "ابحث عن شقق وبيوت ومحلات للبيع والإيجار في جميع المحافظات السورية.",
   "start_url": "/",
   "id": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#0f6b5c",
   "dir": "rtl",
   "lang": "ar",
   "categories": ["business", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon.svg",
