@@ -5,6 +5,12 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `Cross-Origin-Embedder-Policy: credentialless` header for cross-origin
+  isolation alongside the existing COOP header.
+- `<noscript>` fallback banner in the root layout for visitors with
+  JavaScript disabled.
+- Expanded `Permissions-Policy` to block payment, USB, Bluetooth,
+  magnetometer, gyroscope and accelerometer browser APIs.
 - Middleware matcher refined to skip `manifest.json`, `sw.js` and icon
   files, avoiding unnecessary token-renewal on static PWA requests.
 - Unit tests for `convertPrice` currency conversion (7 tests); function
