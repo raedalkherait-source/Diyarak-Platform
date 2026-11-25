@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Currency } from "@/lib/currency";
+export { convertPrice } from "@/lib/currency";
 
 const STORAGE_KEY = "diyarak_currency";
 const RATE_KEY = "diyarak_usd_syp_rate";
 const DEFAULT_RATE = 14500;
-
-type Currency = "USD" | "SYP";
 
 function getStoredCurrency(): Currency {
   try {
@@ -106,15 +106,3 @@ export function useCurrency(): { currency: Currency; rate: number } {
   return { currency, rate };
 }
 
-export function convertPrice(
-  amount: number | null,
-  fromCurrency: string | null,
-  toCurrency: Currency,
-  rate: number,
-): { amount: number | null; currency: string } {
-  if (amount === null) return { amount: null, currency: toCurrency };
-  if (!fromCurrency || fromCurrency === toCurrency) return { amount, currency: toCurrency };
-  if (fromCurrency === "USD" && toCurrency === "SYP") return { amount: Math.round(amount * rate), currency: "SYP" };
-  if (fromCurrency === "SYP" && toCurrency === "USD") return { amount: Math.round((amount / rate) * 100) / 100, currency: "USD" };
-  return { amount, currency: fromCurrency };
-}
