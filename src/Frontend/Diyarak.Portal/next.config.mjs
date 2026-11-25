@@ -50,6 +50,7 @@ const nextConfig = {
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
           { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'" },
+          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
         ],
       },
     ];
