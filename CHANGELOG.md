@@ -5,6 +5,12 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Unit tests for `convertPrice` currency conversion (7 tests); function
+  extracted to `lib/currency.ts` for testability.
+- Offline page auto-reconnect: listens for browser `online` event and
+  reloads automatically when connectivity returns.
+- `Cross-Origin-Resource-Policy: same-origin` and `Cache-Control: immutable`
+  on listing photo routes.
 - Service worker v3: bounded photo cache (100 entries max), pre-cached
   `icon.svg` and `manifest.json`.
 - AI scraper protection: robots.txt blocks GPTBot, ChatGPT-User, CCBot,
