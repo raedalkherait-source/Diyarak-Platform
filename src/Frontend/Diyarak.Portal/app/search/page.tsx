@@ -168,7 +168,7 @@ export default async function SearchPage({ searchParams }: Props) {
           <h1>{describe(params)}</h1>
           <CurrencyToggle />
           {result && result.items.length > 0 ? (
-            <span className="results-count">
+            <span className="results-count" role="status" aria-live="polite">
               {page > 1 ? `الصفحة ${page} — ` : ""}
               {result.items.length}{result.hasMore ? "+" : ""} نتيجة
             </span>
