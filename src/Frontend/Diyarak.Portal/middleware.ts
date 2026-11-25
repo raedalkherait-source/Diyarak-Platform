@@ -102,5 +102,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // Pages only: skip static assets, optimized images, proxied photos and machine endpoints.
-  matcher: ["/((?!_next/|media/|api/health|robots.txt|sitemap.xml|favicon.ico).*)"],
+  matcher: ["/((?!_next/|media/|api/health|robots\\.txt|sitemap\\.xml|manifest\\.json|sw\\.js|favicon\\.ico|icon[^/]*).*)"],
 };
