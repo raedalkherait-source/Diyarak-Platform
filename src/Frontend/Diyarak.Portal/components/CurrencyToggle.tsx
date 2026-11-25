@@ -57,14 +57,15 @@ export function CurrencyToggle() {
 
   return (
     <div className="currency-toggle">
-      <button type="button" onClick={toggle} className="currency-toggle-btn" title="تبديل العملة">
+      <button type="button" onClick={toggle} className="currency-toggle-btn" aria-label={`العملة: ${currency === "USD" ? "دولار" : "ليرة سورية"} — اضغط للتبديل`}>
         {currency === "USD" ? "$ دولار" : "ل.س ليرة"}
       </button>
       <button
         type="button"
         onClick={() => { setDraft(String(rate)); setEditing(!editing); }}
         className="currency-rate-btn"
-        title="تعديل سعر الصرف"
+        aria-expanded={editing}
+        aria-label="تعديل سعر الصرف"
       >
         ⇄ {new Intl.NumberFormat("ar-SY-u-nu-latn").format(rate)}
       </button>
@@ -77,7 +78,7 @@ export function CurrencyToggle() {
               inputMode="numeric"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") saveRate(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") saveRate(); if (e.key === "Escape") setEditing(false); }}
               autoFocus
             />
           </label>
