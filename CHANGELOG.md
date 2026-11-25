@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Active navigation indicator: `NavLink` component sets
+  `aria-current="page"` on the current section's link, with a brand-colour
+  underline so users see where they are.
 - `Cross-Origin-Embedder-Policy: credentialless` header for cross-origin
   isolation alongside the existing COOP header.
 - `<noscript>` fallback banner in the root layout for visitors with
