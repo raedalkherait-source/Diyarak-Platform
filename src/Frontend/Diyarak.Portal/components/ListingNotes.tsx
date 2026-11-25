@@ -58,9 +58,9 @@ export function ListingNotes({ listingId }: { listingId: string }) {
 
   return (
     <section className="panel listing-notes">
-      <button type="button" className="notes-toggle" onClick={() => setOpen(!open)}>
+      <button type="button" className="notes-toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
         {open ? "▾" : "▸"} ملاحظاتي الخاصة
-        {!open && note ? <span className="notes-indicator">●</span> : null}
+        {!open && note ? <span className="notes-indicator" aria-label="يوجد ملاحظات محفوظة">●</span> : null}
       </button>
       {open ? (
         <div className="notes-body">

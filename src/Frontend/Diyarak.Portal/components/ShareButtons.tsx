@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface ShareButtonsProps {
   url: string;
   title: string;
@@ -8,6 +10,7 @@ interface ShareButtonsProps {
 export function ShareButtons({ url, title }: ShareButtonsProps) {
   const encoded = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
+  const [copied, setCopied] = useState(false);
 
   async function handleNativeShare() {
     try {
@@ -20,6 +23,8 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback: ignored
     }
@@ -47,8 +52,9 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
         تلغرام
       </a>
       <button type="button" className="button secondary share-btn" onClick={handleCopyLink} title="نسخ الرابط">
-        نسخ الرابط
+        {copied ? "تم النسخ ✓" : "نسخ الرابط"}
       </button>
+      <span role="status" aria-live="polite" className="sr-only">{copied ? "تم نسخ الرابط" : ""}</span>
       {"share" in globalThis.navigator && (
         <button type="button" className="button secondary share-btn" onClick={handleNativeShare} title="مشاركة">
           مشاركة
