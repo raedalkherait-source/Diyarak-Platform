@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `translate="no"` on displayed phone numbers, payment references and
+  registration numbers to prevent browser auto-translation corruption.
 - `spellCheck={false}` on login phone, OTP code, currency exchange rate
   and contractor phone inputs to suppress meaningless spell-check underlines.
 - `<meta name="color-scheme" content="light dark">` for native browser
