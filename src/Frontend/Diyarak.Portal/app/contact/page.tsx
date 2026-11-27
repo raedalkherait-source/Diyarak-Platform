@@ -64,7 +64,7 @@ function ContactForm() {
       </label>
       <label className="field">
         البريد الإلكتروني أو رقم الهاتف
-        <input type="text" name="contact" autoComplete="email" required maxLength={100} />
+        <input type="text" name="contact" autoComplete="email" autoCapitalize="off" spellCheck={false} required maxLength={100} />
       </label>
       <label className="field">
         الموضوع

@@ -49,6 +49,7 @@ export function LoginForm({ next }: { next: string }) {
               autoComplete="one-time-code"
               enterKeyHint="done"
               spellCheck={false}
+              autoCapitalize="off"
               pattern="[0-9٠-٩]{6}"
               maxLength={6}
               dir="ltr"

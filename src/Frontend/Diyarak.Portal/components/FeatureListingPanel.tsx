@@ -90,7 +90,7 @@ export function FeatureListingPanel({
           {instructions ? <p className="payment-instructions">{instructions}</p> : null}
           <label className="field">
             رقم العملية أو الحوالة *
-            <input name="reference" maxLength={60} required dir="ltr" />
+            <input name="reference" maxLength={60} required dir="ltr" spellCheck={false} autoCapitalize="off" />
           </label>
           <button className="button" type="submit" disabled={pending}>{pending ? "جارٍ الإرسال…" : "أرسلت المبلغ — تأكيد الطلب"}</button>
         </form>
