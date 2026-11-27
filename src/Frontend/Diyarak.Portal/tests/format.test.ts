@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatArea, formatFloor, formatLocation, formatPrice, photoSrc } from "@/lib/format";
+import { formatArea, formatFloor, formatLocation, formatNumber, formatPrice, photoSrc } from "@/lib/format";
 
 describe("format", () => {
   it("formats prices with Western digits and currency symbols", () => {
@@ -20,6 +20,20 @@ describe("format", () => {
     expect(formatArea(null)).toBe("");
     expect(formatLocation({ city: "دمشق", district: "المزة", governorate: "Damascus", postalCode: null, approximate: null })).toBe("المزة، دمشق");
     expect(formatLocation({ city: "حلب", district: null, governorate: null, postalCode: null, approximate: null })).toBe("حلب");
+  });
+
+  it("formatNumber handles zero, negatives, decimals and large values", () => {
+    expect(formatNumber(0)).toBe("0");
+    expect(formatNumber(-5)).toContain("5");
+    expect(formatNumber(-5)).toMatch(/-/);
+    expect(formatNumber(1234567)).toBe("1,234,567");
+    expect(formatNumber(0.5)).toBe("0.5");
+    expect(formatNumber(99.999)).toBe("100");
+    expect(formatNumber(1000000000)).toBe("1,000,000,000");
+  });
+
+  it("formatPrice shows unknown currency code as-is", () => {
+    expect(formatPrice({ isOnRequest: false, amount: 500, currency: "TRY" })).toBe("500 TRY");
   });
 
   it("builds same-origin photo paths with encoded segments", () => {
