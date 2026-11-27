@@ -27,6 +27,7 @@ export function LoginForm({ next }: { next: string }) {
               inputMode="tel"
               autoComplete="tel"
               enterKeyHint="send"
+              spellCheck={false}
               dir="ltr"
               placeholder="09xx xxx xxx"
               defaultValue={state.phone}
@@ -47,6 +48,7 @@ export function LoginForm({ next }: { next: string }) {
               inputMode="numeric"
               autoComplete="one-time-code"
               enterKeyHint="done"
+              spellCheck={false}
               pattern="[0-9٠-٩]{6}"
               maxLength={6}
               dir="ltr"
