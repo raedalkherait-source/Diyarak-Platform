@@ -385,7 +385,9 @@ img { max-width: 100%; display: block; }
 @media print {
   .site-header, .site-footer, .share-buttons, .search-history, .quick-links,
   .favorite-button, .report-listing, .contact-button, .pagination,
-  .breadcrumbs, .mobile-only, .desktop-only aside { display: none !important; }
+  .breadcrumbs, .mobile-only, .desktop-only aside, .skip-link,
+  .noscript-banner, .compare-bar, .currency-toggle, .theme-toggle,
+  .filters, .save-search-form, .notification-center { display: none !important; }
   body { background: #fff; color: #000; }
   .container { width: 100%; max-width: none; padding: 0; }
   .detail { display: block; }
