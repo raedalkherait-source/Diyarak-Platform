@@ -65,7 +65,7 @@ export default function MyProjectsPage() {
           <button className="button" type="submit" disabled={createPending}>
             {createPending ? "جاري الحفظ..." : "إنشاء المشروع"}
           </button>
-          {createState.status === "error" && <p className="form-error">{createState.message}</p>}
+          {createState.status === "error" && <p className="form-error" role="alert">{createState.message}</p>}
         </form>
       )}
 
