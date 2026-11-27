@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `type="tel"` and `inputMode="tel"` on contractor phone input for
+  proper mobile phone keyboard.
 - `dateTime` attribute on `<time>` elements in review dates, admin
   order/report dates and package expiry for SEO and assistive technology.
 - `aria-current="page"` on active mobile navigation links, matching
