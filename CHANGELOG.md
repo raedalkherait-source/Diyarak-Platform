@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Unit tests for contact utilities (`isListingId`, `nearestForwardedFor`,
+  `whatsAppLink`, `displayPhone`) and redirect safety (`safeNextPath`)
+  — 141 tests across 16 files.
 - `referrerPolicy="no-referrer"` on external WhatsApp and Telegram links
   in share buttons, contact button and contact page to prevent leaking
   the current page URL to third-party messaging services.
