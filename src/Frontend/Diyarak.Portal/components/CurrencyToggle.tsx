@@ -77,6 +77,7 @@ export function CurrencyToggle() {
               type="text"
               inputMode="numeric"
               enterKeyHint="done"
+              spellCheck={false}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") saveRate(); if (e.key === "Escape") setEditing(false); }}
