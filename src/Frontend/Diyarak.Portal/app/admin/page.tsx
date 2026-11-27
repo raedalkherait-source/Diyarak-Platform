@@ -61,7 +61,7 @@ export default async function AdminPage() {
                 <h3><Link href={`/listings/${order.listingId}`} target="_blank">تمييز {order.days} يوماً</Link></h3>
                 <p className="notice">
                   {order.amount.toLocaleString("en-US")} {order.currency} · {order.method} · رقم العملية <strong dir="ltr" translate="no">{order.reference}</strong> ·{" "}
-                  {dateFormat.format(new Date(order.createdAt))}
+                  <time dateTime={order.createdAt}>{dateFormat.format(new Date(order.createdAt))}</time>
                 </p>
               </div>
               <form action={decidePayment.bind(null, order.orderId)} className="toolbar">
@@ -114,7 +114,7 @@ export default async function AdminPage() {
                   {openReports.map((report) => (
                     <li key={report.reportId}>
                       <strong>{label(reportReasonLabels, report.reason)}</strong>
-                      <span className="notice"> · {dateFormat.format(new Date(report.createdAt))}</span>
+                      <span className="notice"> · <time dateTime={report.createdAt}>{dateFormat.format(new Date(report.createdAt))}</time></span>
                       {report.comment ? <p>{report.comment}</p> : null}
                     </li>
                   ))}
