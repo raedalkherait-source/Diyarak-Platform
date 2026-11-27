@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `role="alert"` on contractor form, project creation and review section
+  error messages for immediate screen reader announcement.
 - Unit tests for search utilities: `firstValue`, `parseBbox`,
   `formatBbox`, `toApiQuery`, `pageHref` and `savedSearchHref`
   (129 tests across 16 files).
