@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Expanded print styles: hide skip-link, noscript banner, compare bar,
+  currency/theme toggles, search filters, save-search form and
+  notification center for cleaner printed pages.
 - `role="alert"` on contractor form, project creation and review section
   error messages for immediate screen reader announcement.
 - Unit tests for search utilities: `firstValue`, `parseBbox`,
