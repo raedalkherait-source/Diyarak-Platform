@@ -71,11 +71,15 @@ export function MobileNav({ signedIn }: { signedIn: boolean }) {
             aria-label="القائمة الرئيسية"
             onClick={(e) => e.stopPropagation()}
           >
-            {links.map((link) => (
-              <Link key={link.href} href={link.href} className="mobile-nav-link">
-                {link.label}
-              </Link>
-            ))}
+            {links.map((link) => {
+              const target = link.href.split("?")[0]!;
+              const isCurrent = pathname === target || pathname.startsWith(`${target}/`);
+              return (
+                <Link key={link.href} href={link.href} className="mobile-nav-link" aria-current={isCurrent ? "page" : undefined}>
+                  {link.label}
+                </Link>
+              );
+            })}
             <hr className="mobile-nav-divider" />
             <Link href={signedIn ? "/my" : "/login"} className="mobile-nav-link mobile-nav-cta">
               {signedIn ? "إعلاناتي" : "أضف إعلانك"}
