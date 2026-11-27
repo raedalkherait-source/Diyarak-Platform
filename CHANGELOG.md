@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `aria-current="page"` on active mobile navigation links, matching
+  desktop NavLink behavior for screen reader parity.
 - Unit tests for contact utilities (`isListingId`, `nearestForwardedFor`,
   `whatsAppLink`, `displayPhone`) and redirect safety (`safeNextPath`)
   — 141 tests across 16 files.
