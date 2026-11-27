@@ -1,6 +1,6 @@
 export default function ProjectDetailLoading() {
   return (
-    <div className="container section">
+    <div className="container section" role="status" aria-label="جارٍ التحميل">
       <div className="skeleton-page">
         <div className="skeleton skeleton-text short" />
         <div className="skeleton skeleton-title" />
