@@ -114,7 +114,7 @@ export default async function SearchPage({ searchParams }: Props) {
           </label>
           <label className="field">
             إلى
-            <input name="priceMax" inputMode="numeric" defaultValue={value("priceMax")} />
+            <input name="priceMax" inputMode="numeric" aria-label="السعر إلى" defaultValue={value("priceMax")} />
           </label>
         </div>
         <label className="field">
@@ -147,7 +147,7 @@ export default async function SearchPage({ searchParams }: Props) {
           </label>
           <label className="field">
             إلى
-            <input name="livingAreaMax" inputMode="numeric" defaultValue={value("livingAreaMax")} />
+            <input name="livingAreaMax" inputMode="numeric" aria-label="المساحة إلى" defaultValue={value("livingAreaMax")} />
           </label>
         </div>
         <label className="field">
