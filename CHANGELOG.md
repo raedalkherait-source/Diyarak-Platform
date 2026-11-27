@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `autoCapitalize="off"` on OTP code, payment reference and contact
+  email inputs; `spellCheck={false}` on payment reference and contact
+  email to suppress mobile auto-capitalization and spell-check.
 - Explicit `aria-label` on ambiguous search range inputs (price-max
   "السعر إلى" and area-max "المساحة إلى") for screen reader clarity.
 - `translate="no"` on displayed phone numbers, payment references and
