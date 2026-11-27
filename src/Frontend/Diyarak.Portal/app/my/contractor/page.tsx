@@ -70,7 +70,7 @@ function ContractorForm({ existing }: { existing: ContractorData | null }) {
 
       <label className="field">
         رقم الهاتف
-        <input name="phone" autoComplete="tel" spellCheck={false} required maxLength={20} defaultValue={existing?.phone ?? ""} dir="ltr" />
+        <input name="phone" type="tel" inputMode="tel" autoComplete="tel" spellCheck={false} required maxLength={20} defaultValue={existing?.phone ?? ""} dir="ltr" />
       </label>
 
       <button type="submit" className="button" disabled={pending}>
