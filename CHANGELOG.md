@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `referrerPolicy="no-referrer"` on external WhatsApp and Telegram links
+  in share buttons, contact button and contact page to prevent leaking
+  the current page URL to third-party messaging services.
 - Expanded print styles: hide skip-link, noscript banner, compare bar,
   currency/theme toggles, search filters, save-search form and
   notification center for cleaner printed pages.
