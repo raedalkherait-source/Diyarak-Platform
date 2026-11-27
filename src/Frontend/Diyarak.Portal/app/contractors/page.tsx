@@ -89,7 +89,7 @@ export default async function ContractorsPage({
               </p>
               {c.description && <p className="contractor-desc">{c.description}</p>}
               <p className="contractor-phone">
-                <a href={`tel:${c.phone}`} dir="ltr">{c.phone}</a>
+                <a href={`tel:${c.phone}`} dir="ltr" translate="no">{c.phone}</a>
               </p>
             </div>
           ))}

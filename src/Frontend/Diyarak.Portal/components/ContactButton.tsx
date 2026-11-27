@@ -36,7 +36,7 @@ export function ContactButton({ listingId, headline }: { listingId: string; head
     return (
       <div className="contact-actions">
         {contact.callUrl ? (
-          <a className="button" href={contact.callUrl} dir="ltr">
+          <a className="button" href={contact.callUrl} dir="ltr" translate="no">
             📞 {displayPhone(contact.phoneNumber)}
           </a>
         ) : null}
