@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `spellCheck={false}` on login phone, OTP code, currency exchange rate
+  and contractor phone inputs to suppress meaningless spell-check underlines.
 - `<meta name="color-scheme" content="light dark">` for native browser
   dark mode on scrollbars, form controls and system UI.
 - `loading="lazy"` and `decoding="async"` on listing editor photo
