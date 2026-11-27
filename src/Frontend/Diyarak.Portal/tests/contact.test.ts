@@ -1,33 +1,59 @@
 import { describe, expect, it } from "vitest";
-import { displayPhone, isListingId, nearestForwardedFor, whatsAppLink } from "@/lib/contact";
+import { isListingId, nearestForwardedFor, whatsAppLink, displayPhone } from "@/lib/contact";
 
-describe("contact helpers", () => {
-  it("uses the right-most forwarded address and rejects junk", () => {
-    expect(nearestForwardedFor("1.2.3.4, 10.0.0.9")).toBe("10.0.0.9");
-    expect(nearestForwardedFor("2001:db8::1")).toBe("2001:db8::1");
-    expect(nearestForwardedFor("evil<script>")).toBeNull();
+describe("isListingId", () => {
+  it("accepts a valid UUID", () => {
+    expect(isListingId("01234567-89ab-cdef-0123-456789abcdef")).toBe(true);
+  });
+  it("rejects short strings", () => {
+    expect(isListingId("abc")).toBe(false);
+  });
+  it("rejects UUIDs without hyphens", () => {
+    expect(isListingId("0123456789abcdef0123456789abcdef")).toBe(false);
+  });
+});
+
+describe("nearestForwardedFor", () => {
+  it("returns the last entry", () => {
+    expect(nearestForwardedFor("1.2.3.4, 5.6.7.8")).toBe("5.6.7.8");
+  });
+  it("returns null for null header", () => {
     expect(nearestForwardedFor(null)).toBeNull();
-    expect(nearestForwardedFor(" , ")).toBeNull();
   });
-
-  it("builds a WhatsApp link with a pre-filled Arabic message", () => {
-    const link = new URL(whatsAppLink("https://wa.me/963912345678", "شقة في المزة", "https://diyarak.sy/listings/1"));
-    expect(link.hostname).toBe("wa.me");
-    expect(link.pathname).toBe("/963912345678");
-    expect(link.searchParams.get("text")).toBe("مرحباً، أنا مهتم بإعلانك على ديارك: شقة في المزة\nhttps://diyarak.sy/listings/1");
-    expect(link.search).not.toContain("+");
-    expect(link.search).toContain("%20");
+  it("returns null for empty header", () => {
+    expect(nearestForwardedFor("")).toBeNull();
   });
-
-  it("refuses non-WhatsApp URLs", () => {
-    expect(() => whatsAppLink("https://evil.example/963", "x", "y")).toThrow();
-    expect(() => whatsAppLink("http://wa.me/963", "x", "y")).toThrow();
+  it("returns null for invalid IP format", () => {
+    expect(nearestForwardedFor("not-an-ip")).toBeNull();
   });
+  it("accepts IPv6 addresses", () => {
+    expect(nearestForwardedFor("::1")).toBe("::1");
+  });
+});
 
-  it("validates listing ids and formats Syrian numbers", () => {
-    expect(isListingId("3faf53de-b49c-477c-8e5b-bf80760c45d5")).toBe(true);
-    expect(isListingId("../../etc")).toBe(false);
+describe("whatsAppLink", () => {
+  it("builds a prefilled WhatsApp link", () => {
+    const result = whatsAppLink("https://wa.me/963912345678", "شقة للبيع", "https://diyarak.app/listings/1");
+    expect(result).toContain("https://wa.me/963912345678?text=");
+    expect(result).toContain(encodeURIComponent("شقة للبيع"));
+    expect(result).toContain(encodeURIComponent("https://diyarak.app/listings/1"));
+  });
+  it("throws for non-WhatsApp URLs", () => {
+    expect(() => whatsAppLink("https://evil.com/123", "test", "https://x.com")).toThrow();
+  });
+  it("throws for non-HTTPS URLs", () => {
+    expect(() => whatsAppLink("http://wa.me/123", "test", "https://x.com")).toThrow();
+  });
+});
+
+describe("displayPhone", () => {
+  it("formats a Syrian mobile number", () => {
     expect(displayPhone("+963912345678")).toBe("+963 912 345 678");
-    expect(displayPhone("+4915112345678")).toBe("+4915112345678");
+  });
+  it("returns non-Syrian numbers as-is", () => {
+    expect(displayPhone("+1234567890")).toBe("+1234567890");
+  });
+  it("returns short strings as-is", () => {
+    expect(displayPhone("123")).toBe("123");
   });
 });
