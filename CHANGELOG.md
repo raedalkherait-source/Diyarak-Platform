@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `<meta name="color-scheme" content="light dark">` for native browser
+  dark mode on scrollbars, form controls and system UI.
+- `loading="lazy"` and `decoding="async"` on listing editor photo
+  thumbnails for off-screen rendering performance.
 - `rel="noopener noreferrer"` and `target="_blank"` on the contact page
   WhatsApp link to prevent reverse tabnapping on external navigation.
 - Direct `formatNumber` unit tests (zero, negatives, decimals, large
