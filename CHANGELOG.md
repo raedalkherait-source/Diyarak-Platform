@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `autocomplete` attributes on contact form (name, email) and contractor
+  profile form (name, tel) for browser autofill support.
 - Search results count announced by screen readers via `aria-live="polite"`.
 - Skip-to-content link now moves focus into `<main>` with `tabIndex={-1}`.
 - `viewport-fit: cover` and `env(safe-area-inset-*)` padding on header
