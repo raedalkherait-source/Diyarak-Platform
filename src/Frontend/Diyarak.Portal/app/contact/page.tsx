@@ -38,7 +38,7 @@ export default function ContactPage() {
         <section className="panel contact-card">
           <h2>واتساب</h2>
           <p>للتواصل السريع:</p>
-          <a href="https://wa.me/message" className="contact-link button secondary">مراسلة عبر واتساب</a>
+          <a href="https://wa.me/message" target="_blank" rel="noopener noreferrer" className="contact-link button secondary">مراسلة عبر واتساب</a>
         </section>
 
         <section className="panel contact-card">
