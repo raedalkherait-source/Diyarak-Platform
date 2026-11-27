@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Metadata with `robots: noindex` and proper title on the 404 not-found
+  page to prevent search engine indexing.
 - `type="tel"` and `inputMode="tel"` on contractor phone input for
   proper mobile phone keyboard.
 - `dateTime` attribute on `<time>` elements in review dates, admin
