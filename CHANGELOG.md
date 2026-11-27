@@ -5,6 +5,10 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `rel="noopener noreferrer"` and `target="_blank"` on the contact page
+  WhatsApp link to prevent reverse tabnapping on external navigation.
+- Direct `formatNumber` unit tests (zero, negatives, decimals, large
+  values) and unknown-currency fallback test for `formatPrice` (112 total).
 - `enterKeyHint` on login phone ("send"), OTP code ("done") and currency
   rate ("done") inputs for contextual mobile keyboard action labels.
 - `autocomplete` attributes on contact form (name, email) and contractor
