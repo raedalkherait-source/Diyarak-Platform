@@ -46,6 +46,7 @@ export function ContactButton({ listingId, headline }: { listingId: string; head
             href={whatsAppLink(contact.whatsAppUrl, headline, window.location.href)}
             target="_blank"
             rel="noopener noreferrer"
+            referrerPolicy="no-referrer"
           >
             مراسلة عبر واتساب
           </a>
