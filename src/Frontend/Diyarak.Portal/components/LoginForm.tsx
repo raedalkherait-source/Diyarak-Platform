@@ -39,7 +39,7 @@ export function LoginForm({ next }: { next: string }) {
       ) : (
         <>
           <p className="notice">
-            أرسلنا رمزاً من 6 أرقام إلى <span dir="ltr">{state.phone}</span>. الرمز صالح لمدة 5 دقائق.
+            أرسلنا رمزاً من 6 أرقام إلى <span dir="ltr" translate="no">{state.phone}</span>. الرمز صالح لمدة 5 دقائق.
           </p>
           <label className="field">
             رمز التحقق

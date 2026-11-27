@@ -60,7 +60,7 @@ export default async function AdminPage() {
               <div>
                 <h3><Link href={`/listings/${order.listingId}`} target="_blank">تمييز {order.days} يوماً</Link></h3>
                 <p className="notice">
-                  {order.amount.toLocaleString("en-US")} {order.currency} · {order.method} · رقم العملية <strong dir="ltr">{order.reference}</strong> ·{" "}
+                  {order.amount.toLocaleString("en-US")} {order.currency} · {order.method} · رقم العملية <strong dir="ltr" translate="no">{order.reference}</strong> ·{" "}
                   {dateFormat.format(new Date(order.createdAt))}
                 </p>
               </div>
@@ -82,7 +82,7 @@ export default async function AdminPage() {
             <li key={agency.agencyId} className="panel moderation-item">
               <div>
                 <h3><Link href={`/agencies/${agency.agencyId}`} target="_blank">{agency.name}</Link></h3>
-                <p className="notice">{agency.city} · رقم السجل/الترخيص: <strong dir="ltr">{agency.registrationNumber}</strong></p>
+                <p className="notice">{agency.city} · رقم السجل/الترخيص: <strong dir="ltr" translate="no">{agency.registrationNumber}</strong></p>
               </div>
               <form action={decideAgency.bind(null, agency.agencyId)} className="toolbar">
                 <button className="button" type="submit" name="decision" value="verify">توثيق</button>
