@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Unit tests for search utilities: `firstValue`, `parseBbox`,
+  `formatBbox`, `toApiQuery`, `pageHref` and `savedSearchHref`
+  (129 tests across 16 files).
 - `autoCapitalize="off"` on OTP code, payment reference and contact
   email inputs; `spellCheck={false}` on payment reference and contact
   email to suppress mobile auto-capitalization and spell-check.
