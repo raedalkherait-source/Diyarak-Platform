@@ -67,7 +67,7 @@ export function ReviewSection({ subjectId, subjectType, reviews, average, count,
             <label htmlFor="review-comment">تعليق (اختياري):</label>
             <textarea id="review-comment" name="comment" maxLength={1000} rows={3} />
           </div>
-          {state.formError && <p className="form-error">{state.formError}</p>}
+          {state.formError && <p className="form-error" role="alert">{state.formError}</p>}
           <button type="submit" className="button" disabled={pending || rating === 0}>
             {pending ? "جارٍ الإرسال..." : "أرسل التقييم"}
           </button>

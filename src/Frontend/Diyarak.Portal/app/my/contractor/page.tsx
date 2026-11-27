@@ -35,7 +35,7 @@ function ContractorForm({ existing }: { existing: ContractorData | null }) {
 
   return (
     <form action={formAction} className="form-stack">
-      {state.status === "error" && <p className="form-error">{state.message}</p>}
+      {state.status === "error" && <p className="form-error" role="alert">{state.message}</p>}
       {state.status === "saved" && <p className="form-success">{state.message}</p>}
 
       <label className="field">
