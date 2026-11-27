@@ -60,11 +60,11 @@ function ContactForm() {
     <form className="contact-form" action="mailto:support@diyarak.app" method="post" encType="text/plain">
       <label className="field">
         الاسم
-        <input type="text" name="name" required maxLength={100} />
+        <input type="text" name="name" autoComplete="name" required maxLength={100} />
       </label>
       <label className="field">
         البريد الإلكتروني أو رقم الهاتف
-        <input type="text" name="contact" required maxLength={100} />
+        <input type="text" name="contact" autoComplete="email" required maxLength={100} />
       </label>
       <label className="field">
         الموضوع

@@ -40,7 +40,7 @@ function ContractorForm({ existing }: { existing: ContractorData | null }) {
 
       <label className="field">
         الاسم
-        <input name="name" required minLength={2} maxLength={100} defaultValue={existing?.name ?? ""} />
+        <input name="name" autoComplete="name" required minLength={2} maxLength={100} defaultValue={existing?.name ?? ""} />
       </label>
 
       <label className="field">
@@ -70,7 +70,7 @@ function ContractorForm({ existing }: { existing: ContractorData | null }) {
 
       <label className="field">
         رقم الهاتف
-        <input name="phone" required maxLength={20} defaultValue={existing?.phone ?? ""} dir="ltr" />
+        <input name="phone" autoComplete="tel" required maxLength={20} defaultValue={existing?.phone ?? ""} dir="ltr" />
       </label>
 
       <button type="submit" className="button" disabled={pending}>
