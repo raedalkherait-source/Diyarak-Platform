@@ -170,7 +170,7 @@ export default async function ManageListingPage({ params, searchParams }: Props)
             {items.map((photo) => (
               <li key={photo.photoId}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/my/photo/${id}/${photo.photoId}`} alt={`صورة ${photo.position + 1}`} />
+                <img src={`/my/photo/${id}/${photo.photoId}`} alt={`صورة ${photo.position + 1}`} loading="lazy" decoding="async" />
                 {photo.position === 0 ? <span className="badge">الغلاف</span> : null}
                 {editable ? (
                   <form action={deletePhoto.bind(null, id, photo.photoId)}>

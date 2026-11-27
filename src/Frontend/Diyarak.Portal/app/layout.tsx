@@ -40,6 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ar" dir="rtl">
       <head>
+        <meta name="color-scheme" content="light dark" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
         <link rel="preconnect" href="https://tile.openstreetmap.org" crossOrigin="anonymous" />
