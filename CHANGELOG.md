@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Unit tests for agency ID validation (`isAgencyId`) and verification
+  status labels — 147 tests across 17 files.
 - Metadata with `robots: noindex` and proper title on the 404 not-found
   page to prevent search engine indexing.
 - `type="tel"` and `inputMode="tel"` on contractor phone input for
