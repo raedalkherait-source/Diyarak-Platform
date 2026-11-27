@@ -82,7 +82,7 @@ export function ReviewSection({ subjectId, subjectType, reviews, average, count,
           <div key={review.id} className="review-card">
             <StarRating value={review.rating} />
             {review.comment && <p className="review-comment">{review.comment}</p>}
-            <time className="review-time">
+            <time className="review-time" dateTime={review.createdAt}>
               {new Date(review.createdAt).toLocaleDateString("ar-SY-u-nu-latn")}
             </time>
           </div>

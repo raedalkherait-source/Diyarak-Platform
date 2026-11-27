@@ -85,7 +85,7 @@ export default async function MyListingsPage({ searchParams }: Props) {
           <span>الإعلانات النشطة: <strong>{quota.activeListings}</strong> / {quota.quota}</span>
           {quota.remaining === 0 ? <span className="warning">تم استنفاد الحصة</span> : null}
           {quota.activePackage ? (
-            <span className="notice">باقة {quota.activePackage.listingQuota} إعلان · تنتهي {new Date(quota.activePackage.expiresAt).toLocaleDateString("ar-SY")}</span>
+            <span className="notice">باقة {quota.activePackage.listingQuota} إعلان · تنتهي <time dateTime={quota.activePackage.expiresAt}>{new Date(quota.activePackage.expiresAt).toLocaleDateString("ar-SY")}</time></span>
           ) : (
             <span className="notice">الباقة المجانية ({quota.quota} إعلانات)</span>
           )}
