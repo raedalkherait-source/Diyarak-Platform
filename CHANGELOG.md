@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Explicit `aria-label` on ambiguous search range inputs (price-max
+  "السعر إلى" and area-max "المساحة إلى") for screen reader clarity.
 - `translate="no"` on displayed phone numbers, payment references and
   registration numbers to prevent browser auto-translation corruption.
 - `spellCheck={false}` on login phone, OTP code, currency exchange rate
