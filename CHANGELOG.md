@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `enterKeyHint` on login phone ("send"), OTP code ("done") and currency
+  rate ("done") inputs for contextual mobile keyboard action labels.
 - `autocomplete` attributes on contact form (name, email) and contractor
   profile form (name, tel) for browser autofill support.
 - Search results count announced by screen readers via `aria-live="polite"`.
