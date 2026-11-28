@@ -36,7 +36,7 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
       <a
         href={`https://wa.me/?text=${encodedTitle}%20${encoded}`}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener noreferrer nofollow"
         referrerPolicy="no-referrer"
         className="button secondary share-btn"
         title="مشاركة عبر واتساب"
@@ -46,7 +46,7 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
       <a
         href={`https://t.me/share/url?url=${encoded}&text=${encodedTitle}`}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener noreferrer nofollow"
         referrerPolicy="no-referrer"
         className="button secondary share-btn"
         title="مشاركة عبر تلغرام"

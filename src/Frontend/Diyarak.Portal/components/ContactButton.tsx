@@ -45,7 +45,7 @@ export function ContactButton({ listingId, headline }: { listingId: string; head
             className="button whatsapp"
             href={whatsAppLink(contact.whatsAppUrl, headline, window.location.href)}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer nofollow"
             referrerPolicy="no-referrer"
           >
             مراسلة عبر واتساب
