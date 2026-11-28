@@ -57,6 +57,7 @@ export function ListingStatsPanel({ stats }: { stats: ListingStatistics }) {
       <details>
         <summary>عرض الأرقام كجدول</summary>
         <table className="stats-table">
+          <caption className="sr-only">إحصائيات الإعلان اليومية</caption>
           <thead>
             <tr><th scope="col">اليوم</th><th scope="col">المشاهدات</th><th scope="col">إظهار الرقم</th></tr>
           </thead>
