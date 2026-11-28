@@ -7,6 +7,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Add `nofollow` to external WhatsApp and Telegram share/contact links
 - Add explicit `type="button"` to projects page toggle button
 - Add `maxLength` to decimal input fields (livingArea, priceAmount)
+- Add `role="list"` to styled `<ul>` elements for Safari VoiceOver accessibility
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
