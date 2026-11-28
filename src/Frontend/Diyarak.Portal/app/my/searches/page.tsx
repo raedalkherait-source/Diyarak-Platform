@@ -55,7 +55,7 @@ export default async function SavedSearchesPage({ searchParams }: Props) {
               <li key={search.searchId} className="panel saved-search">
                 <div>
                   <h2>{search.name}</h2>
-                  <p className="notice">آخر زيارة: {dateFormat.format(new Date(search.lastSeenAt))}</p>
+                  <p className="notice">آخر زيارة: <time dateTime={search.lastSeenAt}>{dateFormat.format(new Date(search.lastSeenAt))}</time></p>
                 </div>
                 {search.newListingCount > 0 ? (
                   <span className="new-count">

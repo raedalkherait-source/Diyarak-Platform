@@ -55,7 +55,7 @@ export function FeatureListingPanel({
     <section className="panel feature-panel">
       <h2>ميّز إعلانك</h2>
       {featuredUntil ? (
-        <p className="success">★ إعلانك مميز ويظهر أولاً في نتائج البحث حتى {dateFormat.format(new Date(featuredUntil))}.</p>
+        <p className="success">★ إعلانك مميز ويظهر أولاً في نتائج البحث حتى <time dateTime={featuredUntil}>{dateFormat.format(new Date(featuredUntil))}</time>.</p>
       ) : (
         <p className="notice">الإعلانات المميزة تظهر أولاً في نتائج البحث وعليها شارة «مميز».</p>
       )}
