@@ -12,6 +12,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Add width/height to photo grid images to reduce layout shift
 - Add tests for `websiteStructuredData` and `organizationStructuredData` (191 total)
 - Replace `type="number"` with `inputMode="numeric"`/`inputMode="decimal"` on project form inputs
+- Add `maxLength` to numeric inputs in search filters and project form
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
