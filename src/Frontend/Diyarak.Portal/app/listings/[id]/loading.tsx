@@ -1,6 +1,6 @@
 export default function ListingLoading() {
   return (
-    <div className="container section" role="status" aria-label="جارٍ التحميل">
+    <div className="container section" role="status" aria-busy="true" aria-label="جارٍ التحميل">
       <div className="skeleton-page">
         <div className="skeleton" style={{ height: 320, borderRadius: 10, marginBottom: 16 }} />
         <div className="skeleton skeleton-title" />

@@ -1,6 +1,6 @@
 export default function SearchLoading() {
   return (
-    <div className="container search-layout" role="status" aria-label="جارٍ التحميل">
+    <div className="container search-layout" role="status" aria-busy="true" aria-label="جارٍ التحميل">
       <div className="skeleton-page">
         <div className="skeleton skeleton-title" />
         <div className="skeleton-grid">
