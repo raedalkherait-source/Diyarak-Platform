@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   title: { default: "ديارك — عقارات سوريا للبيع والإيجار", template: "%s | ديارك" },
   description: "ابحث عن شقق وبيوت ومحلات للبيع والإيجار في جميع المحافظات السورية.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: "/icon-192.png",
+  },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "ديارك" },
   openGraph: {
     type: "website",
@@ -45,7 +52,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <meta name="color-scheme" content="light dark" />
         <meta name="format-detection" content="telephone=no" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
         <link rel="preconnect" href="https://tile.openstreetmap.org" crossOrigin="anonymous" />
       </head>
