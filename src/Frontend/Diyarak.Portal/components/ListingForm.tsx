@@ -72,7 +72,7 @@ export function ListingForm({ mapConfig }: { mapConfig: MapConfig }) {
           <div className="form-grid">
             <label className="field">
               السعر *
-              <input name="priceAmount" inputMode="decimal" defaultValue={value("priceAmount")} />
+              <input name="priceAmount" inputMode="decimal" maxLength={20} defaultValue={value("priceAmount")} />
               {error("priceAmount")}
             </label>
             <label className="field">

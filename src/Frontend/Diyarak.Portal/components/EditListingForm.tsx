@@ -62,7 +62,7 @@ export function EditListingForm({ listing }: { listing: ManagementListing }) {
         <div className="form-grid">
           <label className="field">
             السعر
-            <input name="priceAmount" inputMode="decimal" defaultValue={value("priceAmount", listing.price?.amount?.toString() ?? "")} />
+            <input name="priceAmount" inputMode="decimal" maxLength={20} defaultValue={value("priceAmount", listing.price?.amount?.toString() ?? "")} />
             {error("priceAmount")}
           </label>
           <label className="field">
