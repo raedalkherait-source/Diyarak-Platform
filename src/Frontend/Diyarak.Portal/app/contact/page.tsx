@@ -60,11 +60,11 @@ function ContactForm() {
     <form className="contact-form" action="mailto:support@diyarak.app" method="post" encType="text/plain">
       <label className="field">
         الاسم
-        <input type="text" name="name" autoComplete="name" required maxLength={100} />
+        <input type="text" name="name" autoComplete="name" enterKeyHint="next" required maxLength={100} />
       </label>
       <label className="field">
         البريد الإلكتروني أو رقم الهاتف
-        <input type="text" name="contact" autoComplete="email" autoCapitalize="off" spellCheck={false} required maxLength={100} />
+        <input type="text" name="contact" autoComplete="email" enterKeyHint="next" autoCapitalize="off" spellCheck={false} required maxLength={100} />
       </label>
       <label className="field">
         الموضوع
@@ -78,7 +78,7 @@ function ContactForm() {
       </label>
       <label className="field">
         الرسالة
-        <textarea name="message" rows={5} required maxLength={2000} />
+        <textarea name="message" rows={5} enterKeyHint="send" required maxLength={2000} />
       </label>
       <button type="submit" className="button">إرسال</button>
     </form>
