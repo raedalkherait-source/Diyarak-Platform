@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `role="status"` on form success messages in contractor profile and
+  review submission so screen readers announce successful actions.
 - `role="status"` and `aria-label` on all 8 loading skeleton pages so
   screen readers announce loading state during route transitions.
 - Unit tests for agency ID validation (`isAgencyId`) and verification
