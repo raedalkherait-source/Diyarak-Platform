@@ -166,11 +166,11 @@ export default async function ManageListingPage({ params, searchParams }: Props)
       <section className="panel">
         <h2>الصور ({items.length})</h2>
         {items.length > 0 ? (
-          <ul className="photo-grid">
+          <ul className="photo-grid" role="list">
             {items.map((photo) => (
               <li key={photo.photoId}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/my/photo/${id}/${photo.photoId}`} alt={`صورة ${photo.position + 1}`} loading="lazy" decoding="async" />
+                <img src={`/my/photo/${id}/${photo.photoId}`} alt={`صورة ${photo.position + 1}`} width={280} height={187} loading="lazy" decoding="async" />
                 {photo.position === 0 ? <span className="badge">الغلاف</span> : null}
                 {editable ? (
                   <form action={deletePhoto.bind(null, id, photo.photoId)}>
