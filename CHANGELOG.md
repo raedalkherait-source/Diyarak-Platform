@@ -3,6 +3,7 @@
 All notable changes follow Keep a Changelog conventions. Versions follow Semantic Versioning.
 
 ## [Unreleased]
+- Wrap contact page email and WhatsApp links in semantic `<address>` elements
 - Fix `ar-SY` → `ar-SY-u-nu-latn` locale for package expiry date (consistent Western numerals)
 - Remove duplicate `search-utils.test.ts` (consolidated into `search.test.ts`)
 - Fix pre-existing TS errors in format and seo tests — zero type errors across the portal
