@@ -3,6 +3,7 @@
 All notable changes follow Keep a Changelog conventions. Versions follow Semantic Versioning.
 
 ## [Unreleased]
+- Add `enterKeyHint` to form inputs (contractor, contact, agency, feature listing) for mobile keyboard UX
 - Expand search utility tests: `firstValue`, `formatBbox`, `parseBbox` edge cases (201 total tests)
 - Wrap displayed dates in semantic `<time dateTime>` elements in saved searches page and feature listing panel
 - Add `nofollow` to external WhatsApp and Telegram share/contact links
