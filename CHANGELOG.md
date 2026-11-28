@@ -9,6 +9,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Add `maxLength` to decimal input fields (livingArea, priceAmount)
 - Add `role="list"` to styled `<ul>` elements for Safari VoiceOver accessibility
 - Add `format-detection` meta tag to prevent mobile auto phone linking
+- Add width/height to photo grid images to reduce layout shift
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
