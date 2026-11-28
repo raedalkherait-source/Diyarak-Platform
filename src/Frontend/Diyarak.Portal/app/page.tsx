@@ -9,6 +9,9 @@ import { organizationStructuredData, websiteStructuredData } from "@/lib/seo";
 import { jsonForScript } from "@/lib/site";
 import type { PublicListing } from "@/lib/types";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 export const dynamic = "force-dynamic";
 
 async function latestListings(): Promise<PublicListing[] | null> {
