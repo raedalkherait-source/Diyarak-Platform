@@ -32,13 +32,13 @@ export default function ContactPage() {
         <section className="panel contact-card">
           <h2>البريد الإلكتروني</h2>
           <p>للاستفسارات العامة والدعم الفني:</p>
-          <a href="mailto:support@diyarak.app" className="contact-link">support@diyarak.app</a>
+          <address><a href="mailto:support@diyarak.app" className="contact-link">support@diyarak.app</a></address>
         </section>
 
         <section className="panel contact-card">
           <h2>واتساب</h2>
           <p>للتواصل السريع:</p>
-          <a href="https://wa.me/message" target="_blank" rel="noopener noreferrer nofollow" referrerPolicy="no-referrer" className="contact-link button secondary">مراسلة عبر واتساب</a>
+          <address><a href="https://wa.me/message" target="_blank" rel="noopener noreferrer nofollow" referrerPolicy="no-referrer" className="contact-link button secondary">مراسلة عبر واتساب</a></address>
         </section>
 
         <section className="panel contact-card">
