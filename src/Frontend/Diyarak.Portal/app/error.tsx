@@ -3,7 +3,7 @@
 export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
   return (
     <div className="container section">
-      <div className="error-page">
+      <div className="error-page" role="alert">
         <h1>حدث خطأ غير متوقع</h1>
         <p>نعتذر عن هذا الخلل. يمكنك إعادة المحاولة أو العودة إلى الصفحة الرئيسية.</p>
         <div className="error-actions">
