@@ -58,7 +58,7 @@ export function VerificationRequestForm({ agency }: { agency: OwnerAgency }) {
       {state.status === "error" ? <p className="form-error" role="alert">{state.message}</p> : null}
       <label className="field">
         رقم السجل التجاري أو ترخيص المكتب *
-        <input name="registrationNumber" maxLength={60} defaultValue={agency.registrationNumber ?? ""} required />
+        <input name="registrationNumber" maxLength={60} defaultValue={agency.registrationNumber ?? ""} required spellCheck={false} dir="ltr" autoCapitalize="off" />
       </label>
       <p className="notice">يراجع فريق ديارك الطلب وقد يتواصل معك لطلب صورة عن الترخيص. لا يظهر الرقم للزوار.</p>
       <button className="button" type="submit" disabled={pending}>{pending ? "جارٍ الإرسال…" : "طلب التوثيق"}</button>
