@@ -102,7 +102,7 @@ export default async function MyListingsPage({ searchParams }: Props) {
           <Link className="button" href="/my/new">أضف إعلانك الأول</Link>
         </div>
       ) : (
-        <ul className="my-list">
+        <ul className="my-list" role="list">
           {listings.map((listing) => (
             <li key={listing.listingId} className="panel my-item">
               <div>

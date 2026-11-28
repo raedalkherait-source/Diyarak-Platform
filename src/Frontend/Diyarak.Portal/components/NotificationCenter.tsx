@@ -85,7 +85,7 @@ export function NotificationBell({ notifications }: { notifications: Notificatio
           {notifications.length === 0 ? (
             <p className="notification-empty">لا توجد إشعارات جديدة</p>
           ) : (
-            <ul className="notification-list">
+            <ul className="notification-list" role="list">
               {notifications.map((n) => (
                 <li key={n.id} className={readIds.has(n.id) ? "notification-item read" : "notification-item"}>
                   {n.href ? (

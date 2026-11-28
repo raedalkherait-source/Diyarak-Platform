@@ -48,7 +48,7 @@ export default async function SavedSearchesPage({ searchParams }: Props) {
       ) : (
         <>
         <p className="notice">يمكنك تفعيل تنبيه برسالة SMS لكل بحث: رسالة واحدة يومياً على الأكثر تخبرك بعدد الإعلانات الجديدة.</p>
-        <ul className="saved-searches">
+        <ul className="saved-searches" role="list">
           {items.map((search) => {
             const href = savedSearchHref(search.query);
             return (
