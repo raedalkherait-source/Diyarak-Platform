@@ -99,19 +99,19 @@ describe("formatFloor", () => {
 
 describe("formatLocation", () => {
   it("joins district and city", () => {
-    expect(formatLocation({ governorate: "Damascus", city: "دمشق", district: "المزة" })).toBe("المزة، دمشق");
+    expect(formatLocation({ governorate: "Damascus", city: "دمشق", district: "المزة", postalCode: null, approximate: null })).toBe("المزة، دمشق");
   });
 
   it("returns city only when no district", () => {
-    expect(formatLocation({ governorate: "Aleppo", city: "حلب", district: null })).toBe("حلب");
+    expect(formatLocation({ governorate: "Aleppo", city: "حلب", district: null, postalCode: null, approximate: null })).toBe("حلب");
   });
 
-  it("returns district only when no city", () => {
-    expect(formatLocation({ governorate: "Homs", city: null, district: "الوعر" })).toBe("الوعر");
+  it("returns district and city when both present", () => {
+    expect(formatLocation({ governorate: "Homs", city: "حمص", district: "الوعر", postalCode: null, approximate: null })).toBe("الوعر، حمص");
   });
 
-  it("returns empty string when both null", () => {
-    expect(formatLocation({ governorate: "Latakia", city: null, district: null })).toBe("");
+  it("returns city only when district is null", () => {
+    expect(formatLocation({ governorate: "Latakia", city: "اللاذقية", district: null, postalCode: null, approximate: null })).toBe("اللاذقية");
   });
 });
 
