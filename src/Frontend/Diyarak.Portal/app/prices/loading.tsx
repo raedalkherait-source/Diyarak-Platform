@@ -1,6 +1,6 @@
 export default function PricesLoading() {
   return (
-    <div className="container section">
+    <div className="container section" role="status" aria-label="جارٍ التحميل">
       <div className="skeleton-page">
         <div className="skeleton skeleton-title" />
         <div className="skeleton skeleton-text" />
