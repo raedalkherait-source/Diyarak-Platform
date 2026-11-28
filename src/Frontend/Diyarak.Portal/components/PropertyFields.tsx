@@ -85,7 +85,7 @@ export function PropertyFields({ value, error, selectedFeatures, category, onCat
           ) : null}
           <label className="field">
             المساحة (م²)
-            <input name="livingArea" inputMode="decimal" defaultValue={value("livingArea")} />
+            <input name="livingArea" inputMode="decimal" maxLength={20} defaultValue={value("livingArea")} />
             {error("livingArea")}
           </label>
           <label className="field">
