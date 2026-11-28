@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `enterKeyHint="search"` on district text inputs in home page hero and
+  search filters so the mobile keyboard shows a search button.
 - `spellCheck={false}`, `dir="ltr"` and `autoCapitalize="off"` on the
   agency registration number input for proper code/ID entry.
 - Unit tests for format utilities (`formatNumber`, `formatPrice`,
