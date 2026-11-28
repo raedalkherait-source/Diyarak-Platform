@@ -59,7 +59,7 @@ export default async function HomePage() {
             </label>
             <label className="field">
               الحي / المنطقة
-              <input name="district" placeholder="مثال: المزة" maxLength={100} />
+              <input name="district" placeholder="مثال: المزة" maxLength={100} enterKeyHint="search" />
             </label>
             <label className="field">
               نوع العقار

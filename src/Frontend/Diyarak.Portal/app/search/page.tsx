@@ -105,7 +105,7 @@ export default async function SearchPage({ searchParams }: Props) {
         </label>
         <label className="field">
           الحي / المنطقة
-          <input name="district" defaultValue={value("district")} maxLength={100} />
+          <input name="district" defaultValue={value("district")} maxLength={100} enterKeyHint="search" />
         </label>
         <div className="row">
           <label className="field">
