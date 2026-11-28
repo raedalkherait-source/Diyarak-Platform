@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isIndexableSearch, listingStructuredData, breadcrumbStructuredData, faqStructuredData } from "@/lib/seo";
+import { isIndexableSearch, listingStructuredData, breadcrumbStructuredData, faqStructuredData, websiteStructuredData, organizationStructuredData } from "@/lib/seo";
 import { jsonForScript } from "@/lib/site";
 import type { PublicListing } from "@/lib/types";
 
@@ -62,6 +62,27 @@ describe("seo", () => {
     expect(items[0].item).toContain("/");
     expect(items[1].position).toBe(2);
     expect(items[1].item).toBeUndefined();
+  });
+
+  it("builds WebSite data with SearchAction", () => {
+    const data = websiteStructuredData();
+    expect(data["@type"]).toBe("WebSite");
+    expect(data.name).toBe("ديارك");
+    expect(data.url).toBeTruthy();
+    const action = data.potentialAction as Record<string, unknown>;
+    expect(action["@type"]).toBe("SearchAction");
+    const target = action.target as Record<string, unknown>;
+    expect(target.urlTemplate).toContain("/search?district=");
+  });
+
+  it("builds Organization data with logo and area served", () => {
+    const data = organizationStructuredData();
+    expect(data["@type"]).toBe("Organization");
+    expect(data.name).toBe("ديارك");
+    expect(data.logo).toContain("/icon-192.png");
+    const area = data.areaServed as Record<string, unknown>;
+    expect(area["@type"]).toBe("Country");
+    expect(area.name).toBe("سوريا");
   });
 
   it("builds FAQPage with questions and answers", () => {
