@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `scope="col"` on column headers and `scope="row"` on compare row
+  labels (`td` → `th`) in compare and price tables for proper screen
+  reader cell-to-header association.
 - Visually-hidden `<caption>` on all tables (compare, price report,
   listing stats) so screen readers announce table purpose.
 - `role="status"` on form success messages in contractor profile and
