@@ -3,6 +3,7 @@
 All notable changes follow Keep a Changelog conventions. Versions follow Semantic Versioning.
 
 ## [Unreleased]
+- Add favicon metadata to root layout (SVG + PNG + Apple touch icon); remove redundant manual link
 - Wrap contact page email and WhatsApp links in semantic `<address>` elements
 - Fix `ar-SY` → `ar-SY-u-nu-latn` locale for package expiry date (consistent Western numerals)
 - Remove duplicate `search-utils.test.ts` (consolidated into `search.test.ts`)
