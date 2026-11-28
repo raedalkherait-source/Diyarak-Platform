@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Unit tests for `label()` utility and all 14 label record maps
+  (labels, status, moderation) — 189 tests total.
 - `role="alert"` on the error boundary page so screen readers
   immediately announce unexpected errors.
 - `enterKeyHint="search"` on district text inputs in home page hero and
