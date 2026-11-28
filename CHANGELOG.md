@@ -3,6 +3,7 @@
 All notable changes follow Keep a Changelog conventions. Versions follow Semantic Versioning.
 
 ## [Unreleased]
+- Remove duplicate `search-utils.test.ts` (consolidated into `search.test.ts`)
 - Fix pre-existing TS errors in format and seo tests — zero type errors across the portal
 - Add `aria-busy` to all 8 loading skeleton pages for screen reader suppression during transitions
 - Add `enterKeyHint` to form inputs (contractor, contact, agency, feature listing) for mobile keyboard UX
