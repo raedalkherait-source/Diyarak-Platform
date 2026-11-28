@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Visually-hidden `<caption>` on all tables (compare, price report,
+  listing stats) so screen readers announce table purpose.
 - `role="status"` on form success messages in contractor profile and
   review submission so screen readers announce successful actions.
 - `role="status"` and `aria-label` on all 8 loading skeleton pages so
