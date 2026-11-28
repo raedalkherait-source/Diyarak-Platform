@@ -8,6 +8,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Add explicit `type="button"` to projects page toggle button
 - Add `maxLength` to decimal input fields (livingArea, priceAmount)
 - Add `role="list"` to styled `<ul>` elements for Safari VoiceOver accessibility
+- Add `format-detection` meta tag to prevent mobile auto phone linking
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
