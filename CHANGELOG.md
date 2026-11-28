@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Dark-mode `theme-color` meta tag so the mobile browser address bar
+  matches the page background in dark mode (`#12171a`).
 - `scope="col"` on column headers and `scope="row"` on compare row
   labels (`td` → `th`) in compare and price tables for proper screen
   reader cell-to-header association.
