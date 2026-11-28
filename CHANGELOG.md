@@ -5,6 +5,9 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- Unit tests for format utilities (`formatNumber`, `formatPrice`,
+  `formatArea`, `formatFloor`, `formatLocation`, `photoSrc`) — 167
+  tests across 17 files.
 - Dark-mode `theme-color` meta tag so the mobile browser address bar
   matches the page background in dark mode (`#12171a`).
 - `scope="col"` on column headers and `scope="row"` on compare row
