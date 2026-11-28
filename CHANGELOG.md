@@ -15,6 +15,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Add `maxLength` to numeric inputs in search filters and project form
 - Fix star rating keyboard accessibility (add Space key) and per-star `aria-label`
 - Expand unit tests for contact, redirects, and agency utilities (193 total)
+- Add canonical URL to home page for complete canonical coverage
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
