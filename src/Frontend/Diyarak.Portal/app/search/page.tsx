@@ -110,11 +110,11 @@ export default async function SearchPage({ searchParams }: Props) {
         <div className="row">
           <label className="field">
             السعر من
-            <input name="priceMin" inputMode="numeric" defaultValue={value("priceMin")} />
+            <input name="priceMin" inputMode="numeric" maxLength={20} defaultValue={value("priceMin")} />
           </label>
           <label className="field">
             إلى
-            <input name="priceMax" inputMode="numeric" aria-label="السعر إلى" defaultValue={value("priceMax")} />
+            <input name="priceMax" inputMode="numeric" maxLength={20} aria-label="السعر إلى" defaultValue={value("priceMax")} />
           </label>
         </div>
         <label className="field">
@@ -138,16 +138,16 @@ export default async function SearchPage({ searchParams }: Props) {
         </label>
         <label className="field">
           غرف النوم (على الأقل)
-          <input name="bedroomCountMin" inputMode="numeric" defaultValue={value("bedroomCountMin")} />
+          <input name="bedroomCountMin" inputMode="numeric" maxLength={4} defaultValue={value("bedroomCountMin")} />
         </label>
         <div className="row">
           <label className="field">
             المساحة من (م²)
-            <input name="livingAreaMin" inputMode="numeric" defaultValue={value("livingAreaMin")} />
+            <input name="livingAreaMin" inputMode="numeric" maxLength={10} defaultValue={value("livingAreaMin")} />
           </label>
           <label className="field">
             إلى
-            <input name="livingAreaMax" inputMode="numeric" aria-label="المساحة إلى" defaultValue={value("livingAreaMax")} />
+            <input name="livingAreaMax" inputMode="numeric" maxLength={10} aria-label="المساحة إلى" defaultValue={value("livingAreaMax")} />
           </label>
         </div>
         <label className="field">
