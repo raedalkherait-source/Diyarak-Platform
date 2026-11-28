@@ -136,6 +136,7 @@ export default function ComparePage() {
       <h1>مقارنة الإعلانات</h1>
       <div className="compare-table-wrapper">
         <table className="compare-table">
+          <caption className="sr-only">مقارنة الإعلانات</caption>
           <thead>
             <tr>
               <th></th>

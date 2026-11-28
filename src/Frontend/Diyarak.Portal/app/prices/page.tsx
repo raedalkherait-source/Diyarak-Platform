@@ -102,6 +102,7 @@ export default async function PricesPage({
             </h2>
             <div className="table-wrap">
               <table className="price-table">
+                <caption className="sr-only">أسعار العقارات في {isDistrict ? area : label(governorateLabels, area)}</caption>
                 <thead>
                   <tr>
                     <th>نوع العقار</th>
