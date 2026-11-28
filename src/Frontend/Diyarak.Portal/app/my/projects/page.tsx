@@ -150,15 +150,15 @@ function ProjectFormFields() {
       </label>
       <label>
         عدد الوحدات
-        <input type="number" name="totalUnits" required min={1} />
+        <input name="totalUnits" inputMode="numeric" required />
       </label>
       <label>
         الحد الأدنى للسعر (USD)
-        <input type="number" name="minPriceUsd" min={0} step="any" />
+        <input name="minPriceUsd" inputMode="decimal" />
       </label>
       <label>
         الحد الأعلى للسعر (USD)
-        <input type="number" name="maxPriceUsd" min={0} step="any" />
+        <input name="maxPriceUsd" inputMode="decimal" />
       </label>
       <label>
         تاريخ التسليم المتوقع
