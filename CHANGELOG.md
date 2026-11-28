@@ -3,6 +3,7 @@
 All notable changes follow Keep a Changelog conventions. Versions follow Semantic Versioning.
 
 ## [Unreleased]
+- Wrap displayed dates in semantic `<time dateTime>` elements in saved searches page and feature listing panel
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
