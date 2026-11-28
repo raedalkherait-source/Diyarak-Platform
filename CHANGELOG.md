@@ -16,6 +16,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Fix star rating keyboard accessibility (add Space key) and per-star `aria-label`
 - Expand unit tests for contact, redirects, and agency utilities (193 total)
 - Add canonical URL to home page for complete canonical coverage
+- Add `aria-label` to home page search form for screen reader landmark navigation
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
