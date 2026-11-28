@@ -150,7 +150,7 @@ export default async function ListingPage({ params }: Props) {
           {property.features.length > 0 ? (
             <section className="panel">
               <h2>المزايا</h2>
-              <ul className="chips">
+              <ul className="chips" role="list">
                 {property.features.map((feature) => (
                   <li key={feature}>{label(featureLabels, feature)}</li>
                 ))}

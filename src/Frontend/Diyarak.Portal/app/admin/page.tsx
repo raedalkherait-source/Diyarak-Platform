@@ -54,7 +54,7 @@ export default async function AdminPage() {
       <section>
         <h2>مدفوعات بانتظار التأكيد ({pendingPayments.length})</h2>
         {pendingPayments.length === 0 ? <div className="empty">لا توجد مدفوعات بانتظار التأكيد.</div> : null}
-        <ul className="my-list">
+        <ul className="my-list" role="list">
           {pendingPayments.map((order) => (
             <li key={order.orderId} className="panel moderation-item">
               <div>
@@ -77,7 +77,7 @@ export default async function AdminPage() {
       <section>
         <h2>طلبات توثيق المكاتب ({pendingAgencies.length})</h2>
         {pendingAgencies.length === 0 ? <div className="empty">لا توجد طلبات توثيق.</div> : null}
-        <ul className="my-list">
+        <ul className="my-list" role="list">
           {pendingAgencies.map((agency) => (
             <li key={agency.agencyId} className="panel moderation-item">
               <div>
@@ -97,7 +97,7 @@ export default async function AdminPage() {
       <section>
         <h2>البلاغات المفتوحة ({items.length})</h2>
         {items.length === 0 ? <div className="empty">لا توجد بلاغات بانتظار المراجعة.</div> : null}
-        <ul className="my-list">
+        <ul className="my-list" role="list">
           {items.map(({ listing, openReports }) => (
             <li key={listing.listingId} className="panel moderation-item">
               <div>
@@ -110,7 +110,7 @@ export default async function AdminPage() {
                   )}
                 </h3>
                 <p className="notice">{listing.price ? formatPrice(listing.price) : ""}</p>
-                <ul className="report-list">
+                <ul className="report-list" role="list">
                   {openReports.map((report) => (
                     <li key={report.reportId}>
                       <strong>{label(reportReasonLabels, report.reason)}</strong>
@@ -144,7 +144,7 @@ export default async function AdminPage() {
       <section className="section">
         <h2>الإعلانات الموقوفة ({suspendedItems.length})</h2>
         {suspendedItems.length === 0 ? <div className="empty">لا توجد إعلانات موقوفة.</div> : null}
-        <ul className="my-list">
+        <ul className="my-list" role="list">
           {suspendedItems.map((listing) => (
             <li key={listing.listingId} className="panel my-item">
               <div>
