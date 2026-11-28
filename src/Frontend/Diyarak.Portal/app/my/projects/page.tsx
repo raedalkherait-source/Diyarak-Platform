@@ -55,7 +55,7 @@ export default function MyProjectsPage() {
         <Link className="button secondary" href="/my">العودة</Link>
       </div>
 
-      <button className="button toggle-form-btn" onClick={() => setShowForm(!showForm)}>
+      <button type="button" className="button toggle-form-btn" onClick={() => setShowForm(!showForm)}>
         {showForm ? "إخفاء النموذج" : "مشروع جديد"}
       </button>
 
