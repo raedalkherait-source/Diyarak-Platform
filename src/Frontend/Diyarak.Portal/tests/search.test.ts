@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pageHref, parseBbox, savedSearchHref, savedSearchQuery, searchWithArea, toApiQuery } from "@/lib/search";
+import { firstValue, formatBbox, pageHref, parseBbox, savedSearchHref, savedSearchQuery, searchWithArea, toApiQuery } from "@/lib/search";
 
 describe("toApiQuery", () => {
   it("forwards known filters, keeps repeatable values and adds paging", () => {
@@ -66,6 +66,39 @@ describe("saved search helpers", () => {
   });
 });
 
+describe("firstValue", () => {
+  it("returns the first element of an array", () => {
+    expect(firstValue(["a", "b"])).toBe("a");
+  });
+
+  it("returns a plain string as-is", () => {
+    expect(firstValue("hello")).toBe("hello");
+  });
+
+  it("returns empty string for undefined", () => {
+    expect(firstValue(undefined)).toBe("");
+  });
+
+  it("returns empty string for an empty array", () => {
+    expect(firstValue([])).toBe("");
+  });
+});
+
+describe("formatBbox", () => {
+  it("formats bounds with up to 4 decimal places", () => {
+    expect(formatBbox({ south: 33.45, west: 36.2, north: 33.55, east: 36.35 })).toBe("33.45,36.2,33.55,36.35");
+  });
+
+  it("rounds long decimals to 4 places", () => {
+    expect(formatBbox({ south: 33.123456, west: 36.0, north: 33.5, east: 36.9999 })).toBe("33.1235,36,33.5,36.9999");
+  });
+
+  it("round-trips through parseBbox", () => {
+    const original = { south: 33.45, west: 36.2, north: 33.55, east: 36.35 };
+    expect(parseBbox(formatBbox(original))).toEqual(original);
+  });
+});
+
 describe("map area", () => {
   it("parses valid boxes and rejects malformed or oversized ones", () => {
     expect(parseBbox("33.45,36.2,33.55,36.35")).toEqual({ south: 33.45, west: 36.2, north: 33.55, east: 36.35 });
@@ -73,6 +106,12 @@ describe("map area", () => {
     expect(parseBbox("30,30,40,40")).toBeNull(); // more than 8 degrees
     expect(parseBbox("33,36,34")).toBeNull();
     expect(parseBbox("1e1,36,34,37")).toBeNull();
+    expect(parseBbox("")).toBeNull();
+    expect(parseBbox("33.45,36.2,33.55,36.35,0")).toBeNull(); // too many parts
+    expect(parseBbox("-91,36,33,37")).toBeNull(); // south below -90
+    expect(parseBbox("33,36,91,37")).toBeNull(); // north above 90
+    expect(parseBbox("33,-181,34,36")).toBeNull(); // west below -180
+    expect(parseBbox("33,36,34,181")).toBeNull(); // east above 180
   });
 
   it("forwards only a valid bbox to the API", () => {
@@ -86,5 +125,9 @@ describe("map area", () => {
       "/search?governorate=Damascus&bbox=33.4512%2C36.2%2C33.55%2C36.35",
     );
     expect(searchWithArea(query, null)).toBe("/search?governorate=Damascus");
+  });
+
+  it("returns /search for empty query with null bounds", () => {
+    expect(searchWithArea("", null)).toBe("/search");
   });
 });
