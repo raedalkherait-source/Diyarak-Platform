@@ -6,6 +6,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Wrap displayed dates in semantic `<time dateTime>` elements in saved searches page and feature listing panel
 - Add `nofollow` to external WhatsApp and Telegram share/contact links
 - Add explicit `type="button"` to projects page toggle button
+- Add `maxLength` to decimal input fields (livingArea, priceAmount)
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
