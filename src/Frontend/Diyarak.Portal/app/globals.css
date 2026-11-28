@@ -707,6 +707,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .noscript-banner { background: var(--warning, #d97706); color: #fff; text-align: center; padding: 0.75rem 1rem; font-weight: 600; }
 
+address { font-style: normal; }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
