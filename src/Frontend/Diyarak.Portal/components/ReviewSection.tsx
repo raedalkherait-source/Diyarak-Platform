@@ -11,9 +11,10 @@ function StarRating({ value, onChange }: { value: number; onChange?: (v: number)
           key={star}
           className={`star ${star <= value ? "filled" : ""} ${onChange ? "interactive" : ""}`}
           onClick={() => onChange?.(star)}
-          onKeyDown={(e) => e.key === "Enter" && onChange?.(star)}
+          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onChange?.(star))}
           role={onChange ? "radio" : undefined}
           aria-checked={onChange ? star === value : undefined}
+          aria-label={onChange ? `${star} ${star === 1 ? "نجمة" : "نجوم"}` : undefined}
           tabIndex={onChange ? 0 : undefined}
         >
           {star <= value ? "★" : "☆"}
