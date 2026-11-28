@@ -43,7 +43,7 @@ export default async function HomePage() {
         <div className="container">
           <h1>ابحث عن بيتك في سوريا</h1>
           <p>شقق، بيوت، أراضٍ ومحلات للبيع والإيجار في جميع المحافظات.</p>
-          <form className="search-card" action="/search" method="get" role="search">
+          <form className="search-card" action="/search" method="get" role="search" aria-label="البحث عن عقار">
             <div className="intent-tabs" role="radiogroup" aria-label="نوع العرض">
               <label>
                 <input type="radio" name="transactionIntent" value="Sell" defaultChecked />
