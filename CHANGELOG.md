@@ -14,6 +14,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Replace `type="number"` with `inputMode="numeric"`/`inputMode="decimal"` on project form inputs
 - Add `maxLength` to numeric inputs in search filters and project form
 - Fix star rating keyboard accessibility (add Space key) and per-star `aria-label`
+- Expand unit tests for contact, redirects, and agency utilities (193 total)
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
