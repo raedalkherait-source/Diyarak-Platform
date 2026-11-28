@@ -11,6 +11,7 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 - Add `format-detection` meta tag to prevent mobile auto phone linking
 - Add width/height to photo grid images to reduce layout shift
 - Add tests for `websiteStructuredData` and `organizationStructuredData` (191 total)
+- Replace `type="number"` with `inputMode="numeric"`/`inputMode="decimal"` on project form inputs
 
 ### Added
 - Unit tests for `label()` utility and all 14 label record maps
