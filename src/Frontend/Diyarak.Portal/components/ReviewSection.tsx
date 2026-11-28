@@ -74,7 +74,7 @@ export function ReviewSection({ subjectId, subjectType, reviews, average, count,
         </form>
       )}
       {state.success && (
-        <p className="form-success review-success">تم إرسال تقييمك بنجاح!</p>
+        <p className="form-success review-success" role="status">تم إرسال تقييمك بنجاح!</p>
       )}
 
       <div className="reviews-list">
