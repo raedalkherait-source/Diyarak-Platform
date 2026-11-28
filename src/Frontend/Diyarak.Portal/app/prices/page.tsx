@@ -105,13 +105,13 @@ export default async function PricesPage({
                 <caption className="sr-only">أسعار العقارات في {isDistrict ? area : label(governorateLabels, area)}</caption>
                 <thead>
                   <tr>
-                    <th>نوع العقار</th>
-                    <th>نوع المعاملة</th>
-                    <th>عدد الإعلانات</th>
-                    <th>متوسط السعر</th>
-                    <th>أقل سعر</th>
-                    <th>أعلى سعر</th>
-                    <th>العملة</th>
+                    <th scope="col">نوع العقار</th>
+                    <th scope="col">نوع المعاملة</th>
+                    <th scope="col">عدد الإعلانات</th>
+                    <th scope="col">متوسط السعر</th>
+                    <th scope="col">أقل سعر</th>
+                    <th scope="col">أعلى سعر</th>
+                    <th scope="col">العملة</th>
                   </tr>
                 </thead>
                 <tbody>

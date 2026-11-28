@@ -139,9 +139,9 @@ export default function ComparePage() {
           <caption className="sr-only">مقارنة الإعلانات</caption>
           <thead>
             <tr>
-              <th></th>
+              <th scope="col"></th>
               {listings.map((li) => (
-                <th key={li.listingId}>
+                <th scope="col" key={li.listingId}>
                   <Link href={`/listings/${li.listingId}`}>{li.headline}</Link>
                 </th>
               ))}
@@ -150,7 +150,7 @@ export default function ComparePage() {
           <tbody>
             {rows.map((row) => (
               <tr key={row.label}>
-                <td className="compare-label">{row.label}</td>
+                <th scope="row" className="compare-label">{row.label}</th>
                 {listings.map((li) => (
                   <td key={li.listingId}>{row.values(li)}</td>
                 ))}
