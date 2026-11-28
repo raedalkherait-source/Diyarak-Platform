@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog conventions. Versions follow Semanti
 ## [Unreleased]
 
 ### Added
+- `spellCheck={false}`, `dir="ltr"` and `autoCapitalize="off"` on the
+  agency registration number input for proper code/ID entry.
 - Unit tests for format utilities (`formatNumber`, `formatPrice`,
   `formatArea`, `formatFloor`, `formatLocation`, `photoSrc`) — 167
   tests across 17 files.
